@@ -1,6 +1,14 @@
 /* eslint-disable react-native/no-inline-styles */
-import React, {useState} from 'react';
-import {View, Text, ScrollView, Image, TouchableOpacity} from 'react-native';
+import React, {useEffect, useState} from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  Image,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
 import ImageIntroSlider from '../../components/ImagesIntroSlider';
 import AppColors from '../../utils/AppColors';
 import {
@@ -15,25 +23,87 @@ import AppImages from '../../assets/images/AppImages';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AppTextInput from '../../components/AppTextInput';
 import AppButton from '../../components/AppButton';
+import axios from 'axios';
+import {Google_API_KEY, Google_Base_Url, Google_Places_Images} from '../../utils/api_content';
 
-const HomeDetails = () => {
+const HomeDetails = ({route}) => {
+  const {placeDetails} = route.params;
+
+
+
+  const [MorePlaceDetails, setMoreInfoDetail] = useState();
+    const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (placeDetails?.place_id) {
+      getMorePlaceInfo();
+    }
+  }, [placeDetails]);
+
+  
+
+  const getMorePlaceInfo = () => {
+    try {
+      setLoading(true)
+      let config = {
+        method: 'post',
+        maxBodyLength: Infinity,
+        url: `${Google_Base_Url}place/details/json?place_id=${placeDetails?.place_id}&fields=name,rating,formatted_address,formatted_phone_number,website,photos&key=${Google_API_KEY}`,
+        headers: {},
+      };
+
+      axios
+        .request(config)
+        .then(response => {
+          // console.log(JSON.stringify(response.data));/
+          setMoreInfoDetail(response.data.result);
+          setLoading(false)
+        })
+        .catch(error => {
+          console.log(error);
+          setLoading(false)
+        });
+    } catch (error) {
+      console.log('error', error);
+      setLoading(false)
+    }
+  };
+
+  if(loading){
+    return (
+      <ActivityIndicator size={'large'} color={AppColors.BLACK}/>
+    )
+  }
+  // console.log("images",images)
+  // return;
+  const extractImageUrls = () => {
+  if (MorePlaceDetails?.photos) {
+    return MorePlaceDetails?.photos?.map(photo => {
+      return `${Google_Places_Images}${photo?.photo_reference}`;
+    });
+  }
+  return [];
+};
+
+// Only render ImageIntroSlider if we have images
+const images = extractImageUrls();
   return (
     <View style={{flex: 1, backgroundColor: AppColors.WHITE}}>
-      <ImageIntroSlider />
+      {images?.length > 0 && <ImageIntroSlider images={images} />}
 
       <ScrollView style={{flex: 1, paddingHorizontal: responsiveWidth(5)}}>
         <LineBreak space={2} />
 
         <View>
           <AppText
-            title={'Restaurant Name'}
+            title={MorePlaceDetails?.name || 'No Name'}
             textColor={AppColors.BLACK}
             textSize={3}
             textFontWeight
           />
           <LineBreak space={2} />
 
-          <View
+          {/* <View
             style={{
               borderTopWidth: 1,
               borderBottomWidth: 1,
@@ -58,7 +128,7 @@ const HomeDetails = () => {
               textSize={1.5}
               lineHeight={2.3}
             />
-          </View>
+          </View> */}
 
           <View
             style={{
@@ -100,7 +170,9 @@ const HomeDetails = () => {
                 color={AppColors.BTNCOLOURS}
               />
               <AppText
-                title={'Grand City St. 100, New York, United States'}
+                title={
+                  MorePlaceDetails?.formatted_address || 'Address not found'
+                }
                 textColor={AppColors.GRAY}
                 textSize={1.8}
               />

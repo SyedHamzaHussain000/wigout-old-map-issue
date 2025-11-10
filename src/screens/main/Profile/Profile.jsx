@@ -137,9 +137,9 @@ const Profile = () => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const userData = useSelector((state: RootState) => state.user.userData);
 
-  useEffect(() => {
-    dispatch(clearToken());
-  }, [])
+  // useEffect(() => {
+  //   dispatch(clearToken());
+  // }, [])
   
 
   return (
@@ -200,7 +200,7 @@ const Profile = () => {
                     setShowLogoutModal(true);
                   }
                 }}>
-                <View style={{flexDirection: 'row', gap: 15, height: 200}}>
+                <View style={{flexDirection: 'row', gap: 15, }}>
                   {item.icon}
                   <AppText
                     title={item.title}

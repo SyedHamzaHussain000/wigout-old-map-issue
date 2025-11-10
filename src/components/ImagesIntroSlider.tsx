@@ -1,4 +1,3 @@
-/* eslint-disable react-native/no-inline-styles */
 import React from 'react';
 import {
   View,
@@ -7,7 +6,6 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import AppIntroSlider from 'react-native-app-intro-slider';
-import AppImages from '../assets/images/AppImages';
 import {
   responsiveFontSize,
   responsiveHeight,
@@ -18,30 +16,16 @@ import {useNavigation} from '@react-navigation/native';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import AppColors from '../utils/AppColors';
 
-const slides = [
-  {
-    key: '1',
-    image: AppImages.resturant,
-  },
-  {
-    key: '2',
-    image: AppImages.resturant,
-  },
-  {
-    key: '3',
-    image: AppImages.resturant,
-  },
-];
-
-const ImageIntroSlider = () => {
+const ImageIntroSlider = ({images}) => {
   const navigation = useNavigation();
-  const renderItem = ({item}: any) => {
+  
+
+
+  // Render the item for the slider
+  const renderItem = ({item}) => {
     return (
-      <ImageBackground source={item.image} style={styles.image}>
-        <View
-          style={{
-            paddingVertical: responsiveHeight(2),
-          }}>
+      <ImageBackground source={{uri: item}} style={styles.image}>
+        <View style={{paddingVertical: responsiveHeight(2)}}>
           <AppHeader
             onBackPress={() => navigation.goBack()}
             backIconColor={AppColors.WHITE}
@@ -63,7 +47,7 @@ const ImageIntroSlider = () => {
   return (
     <View style={{width: responsiveWidth(100), height: responsiveHeight(50)}}>
       <AppIntroSlider
-        data={slides}
+        data={images}  // Pass images to the slider
         renderItem={renderItem}
         showSkipButton={false}
         showNextButton={false}

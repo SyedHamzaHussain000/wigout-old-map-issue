@@ -8,6 +8,8 @@ interface UserState {
   token: string;
   isLoading: boolean;
   error: string | null;
+  current_location: any;
+  places_nearby: any[];
 }
 
 const initialState: UserState = {
@@ -15,6 +17,13 @@ const initialState: UserState = {
   token: '',
   isLoading: false,
   error: null,
+  current_location:{
+    latitude: null,
+    longitude: null,
+    address: '',
+  },
+  places_nearby: [],
+
 };
 
 // Define return type of API response
@@ -66,6 +75,16 @@ const authSlice = createSlice({
         if(action.payload) {
           state.userData = action.payload
         }
+    },
+    setCurrentLocation: (state, action) => {
+
+      state.current_location.latitude = action.payload.latitude;
+      state.current_location.longitude = action.payload.longitude;
+      state.current_location.address = action.payload.address;
+    },
+    setNearbyPlaces: (state, action) => {
+      // Implementation for setting nearby places can be added here
+      state.places_nearby = action.payload; 
     }
   },
   extraReducers: (builder) => {
@@ -87,5 +106,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearToken, setUserData, setToken,UpdateProfile } = authSlice.actions;
+export const { clearToken, setUserData, setToken,UpdateProfile, setCurrentLocation,setNearbyPlaces} = authSlice.actions;
 export default authSlice.reducer;

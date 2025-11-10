@@ -64,12 +64,12 @@ const Login = () => {
       });
 
       if (res.success) {
-        if (res.data?.isCreated) {
+        // if (res.data?.isCreated) {
           store.dispatch(setToken(res?.accessToken));
           store.dispatch(setUserData(res?.data));
-        } else {
-          navigateToRoute('FillYourProfile', {userId: res?.data?._id, token: res?.accessToken});
-        }
+        // } else {
+        //   navigateToRoute('FillYourProfile', {userId: res?.data?._id, token: res?.accessToken});
+        // }
         ShowToast('success', res?.msg);
         setIsLoading(false);
       } else {

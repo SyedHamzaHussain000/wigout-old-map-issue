@@ -6,6 +6,7 @@ import {
   ImageBackground,
   TouchableOpacity,
   KeyboardAvoidingView,
+  Alert,
 } from 'react-native';
 import AppHeader from '../../../components/AppHeader';
 import LineBreak from '../../../components/LineBreak';
@@ -28,11 +29,19 @@ import {Picker} from '@react-native-picker/picker';
 import moment from 'moment';
 import {fillProfileValidation} from '../../../utils/Validation';
 import {useRoute} from '@react-navigation/native';
+import { useSelector } from 'react-redux';
 
 const FillYourProfile = () => {
   const {navigateToRoute} = useCustomNavigation();
-  const userId = useRoute().params?.userId;
-  const token = useRoute().params?.token;
+  // const userId = useRoute().params?.userId;
+  // const token = useRoute().params?.token;
+
+  const token = useSelector((state) => state?.user?.token);
+  const userId = useSelector((state) => state?.user?.userData?._id);
+    const userData = useSelector((state) => state?.user?.userData);
+      const current_location = useSelector((state) => state?.user?.current_location);
+  // Alert.alert("userId", userId)
+
   const [image, setImage] = useState('');
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const [gender, setGender] = useState('male');
@@ -66,13 +75,16 @@ const FillYourProfile = () => {
   };
 
   const handleContinue = () => {
+
+    
+
     const number = phoneRef.current.getValue();
     const isValid = fillProfileValidation(
       image,
       date,
       number,
-      email,
       fullName,
+       userData?.email ,
       nickName,
       gender,
     );
@@ -81,7 +93,7 @@ const FillYourProfile = () => {
       image,
       date: moment(date).format('D/M/YYYY'),
       number,
-      email,
+      email: userData?.email,
       fullName,
       nickName,
       gender,
@@ -97,7 +109,7 @@ const FillYourProfile = () => {
   return (
     <KeyboardAvoidingView style={{flex: 1}} behavior="padding">
       <ScrollView style={{flex: 1, backgroundColor: AppColors.WHITE}}>
-        <AppHeader onBackPress heading={'Fill Your Profile'} />
+        <AppHeader  heading={'Fill Your Profile'} />
 
         <LineBreak space={4} />
 
@@ -163,7 +175,7 @@ const FillYourProfile = () => {
                 </TouchableOpacity>
               }
             />
-            <AppTextInput
+            {/* <AppTextInput
               inputPlaceHolder={'Email'}
               value={email}
               onChangeText={text => setEmail(text)}
@@ -174,9 +186,9 @@ const FillYourProfile = () => {
                   color={AppColors.BLACK}
                 />
               }
-            />
+            /> */}
 
-            <PhoneInputScreen phoneRef={phoneRef} />
+            <PhoneInputScreen phoneRef={phoneRef}  />
 
             <View
               style={{

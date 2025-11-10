@@ -1,5 +1,10 @@
 import Toast from "react-native-toast-message";
 
+// export const Google_API_KEY = 'AIzaSyCSvL6YkmN2Bx3xDlEFVZ5VnxGWWEtslqw';
+export const Google_API_KEY = 'AIzaSyCBBEEmwSoNBnAP64faiQfNAqOiGQuFRKs';
+export const Google_Base_Url = "https://maps.googleapis.com/maps/api/"
+export const Google_Places_Images = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&key=${Google_API_KEY}&photo_reference=`
+
 export const baseUrl = 'https://appsdemo.pro/WIGOut-Backend';
 
 export const endPoints = {

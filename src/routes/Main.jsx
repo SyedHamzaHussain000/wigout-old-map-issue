@@ -26,6 +26,8 @@ import Language from '../screens/main/Profile/Language';
 import HelpCenter from '../screens/main/Profile/HelpCenter';
 import InviteFriends from '../screens/main/Profile/InviteFriends';
 import VisitHistory from '../screens/main/Profile/VisitHistory';
+import SetLocation from '../screens/auth/AccountSetup/SetLocation';
+import EnterAddressManually from '../screens/main/MapCommonScreens/EnterAddressManually';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -47,6 +49,10 @@ const Main = () => {
       <Stack.Screen name="HelpCenter" component={HelpCenter} />
       <Stack.Screen name="InviteFriends" component={InviteFriends} />
       <Stack.Screen name="VisitHistory" component={VisitHistory} />
+
+      <Stack.Screen name="SetLocation" component={SetLocation} />
+      <Stack.Screen name="EnterAddressManually" component={EnterAddressManually} />
+      
     </Stack.Navigator>
   );
 };
@@ -70,7 +76,7 @@ function MyTabs() {
 
           if (route.name === 'Home') {
             iconName = focused ? 'home' : 'home-outline';
-          } else if (route.name === 'Help Me') {
+          } else if (route.name === 'Profile') {
             iconName = focused ? 'person' : 'person-outline';
           } else if (route.name === 'Lists') {
             iconName = focused ? 'clipboard-list' : 'clipboard-list';
@@ -91,9 +97,9 @@ function MyTabs() {
       })}>
       <Tab.Screen name="Home" component={Home} />
       <Tab.Screen name="Discover" component={Explore} />
-      <Tab.Screen name="My Journal" component={Favorites} />
+      {/* <Tab.Screen name="My Journal" component={Favorites} /> */}
       <Tab.Screen name="Lists" component={Lists} />
-      <Tab.Screen name="Help Me" component={Profile} />
+      <Tab.Screen name="Profile" component={Profile} />
     </Tab.Navigator>
   );
 }

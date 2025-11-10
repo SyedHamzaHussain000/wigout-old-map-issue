@@ -1,10 +1,8 @@
 /* eslint-disable react-native/no-inline-styles */
-import React, {useState} from 'react';
+import React, {useEffect, useRef, useState, memo} from 'react';
 import {
   View,
   TouchableOpacity,
-  Image,
-  ScrollView,
   ImageBackground,
 } from 'react-native';
 import AppText from '../../../components/AppTextComps/AppText';
@@ -17,88 +15,158 @@ import {
 import Entypo from 'react-native-vector-icons/Entypo';
 import LineBreak from '../../../components/LineBreak';
 import AntDesign from 'react-native-vector-icons/AntDesign';
-import CongratulationsModal from '../../../components/CongratulationsModal';
 import AppImages from '../../../assets/images/AppImages';
-import AppButton from '../../../components/AppButton';
 import RecommendedCard from '../../../components/RecommendedCard';
 import {oneData} from '../../../utils/LocalData';
+import MapView from 'react-native-map-clustering';
+import { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 
-const Explore = () => {
+import {useSelector} from 'react-redux';
+import FastImage from 'react-native-fast-image';
+import {baseUrl, Google_Places_Images} from '../../../utils/api_content';
+
+const Explore = ({navigation}) => {
   const [showLocationModal, setShowLocationModal] = useState(false);
+  const mapRef = useRef(null);
+
+  const userData = useSelector(state => state.user.userData);
+  const currentLocation = useSelector(state => state.user.current_location);
+  const fetchedLocations = useSelector(state => state?.user?.places_nearby);
+
 
   return (
-    <ImageBackground
-      source={AppImages.big_map}
-      style={{flex: 1, backgroundColor: AppColors.BLACK, alignItems: 'center'}}>
-      <ScrollView style={{flex: 1}}>
-        <LineBreak space={2} />
+    <View style={{flex: 1}}>
+      <MapView
+        ref={mapRef}
+        provider={PROVIDER_GOOGLE}
+        style={{flex: 1}}
+        clusterColor={AppColors.BTNCOLOURS}
+        animationEnabled={false}
+        initialRegion={{
+          latitude: currentLocation?.latitude || 37.78825,
+          longitude: currentLocation?.longitude || -122.4324,
+          latitudeDelta: 0.015,
+          longitudeDelta: 0.0121,
+        }}>
+
+        {/* USER LOCATION MARKER */}
+        {currentLocation && (
+          <Marker
+            coordinate={{
+              latitude: currentLocation.latitude,
+              longitude: currentLocation.longitude,
+            }}>
+            <ImageBackground
+              source={{uri: `${baseUrl}/${userData?.profileImage}`}}
+              style={{
+                height: 35,
+                width: 35,
+                borderRadius: 200,
+                overflow: 'hidden',
+              }}
+            />
+          </Marker>
+        )}
+
+        {/* FETCHED LOCATIONS */}
+        {Array.isArray(fetchedLocations) &&
+          fetchedLocations.length > 0 &&
+          fetchedLocations.map((place, index) => {
+            const lat = place?.geometry?.location?.lat;
+            const lng = place?.geometry?.location?.lng;
+            const photoRef = place?.photos?.[0]?.photo_reference;
+            if (typeof lat !== 'number' || typeof lng !== 'number') return null;
+
+            return (
+              <OptimizedMarker
+                key={index}
+                place={place}
+                photoRef={photoRef}
+                navigation={navigation}
+                coordinate={{latitude: lat, longitude: lng}}
+              />
+            );
+          })}
+      </MapView>
+
+      {/* LOCATION HEADER */}
+      <View
+        style={{
+          backgroundColor: AppColors.WHITE,
+          paddingHorizontal: responsiveWidth(4),
+          paddingVertical: responsiveHeight(2),
+          borderRadius: 25,
+          position: 'absolute',
+          zIndex: 10,
+          top: 20,
+          alignSelf: 'center',
+        }}>
         <View
           style={{
-            backgroundColor: AppColors.WHITE,
-            paddingHorizontal: responsiveWidth(4),
-            paddingVertical: responsiveHeight(2),
-            borderRadius: 25,
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
           }}>
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}>
-            <View>
-              <View style={{flexDirection: 'row', gap: 5}}>
-                <Entypo
-                  name={'location-pin'}
-                  size={responsiveFontSize(2.5)}
-                  color={AppColors.BTNCOLOURS}
-                />
-                <AppText
-                  title={'Location (within 10 km)'}
-                  textColor={AppColors.BLACK}
-                  textSize={1.7}
-                />
-              </View>
-
-              <LineBreak space={1} />
-
+          <View>
+            <View style={{flexDirection: 'row', gap: 5}}>
+              <Entypo
+                name={'location-pin'}
+                size={responsiveFontSize(2.5)}
+                color={AppColors.BTNCOLOURS}
+              />
               <AppText
-                title={'New York, United States'}
+                title={'Location (within 1 km)'}
                 textColor={AppColors.BLACK}
                 textSize={1.7}
-                textFontWeight
               />
             </View>
-            <TouchableOpacity
-              style={{
-                backgroundColor: AppColors.BTNCOLOURS,
-                paddingHorizontal: responsiveWidth(3),
-                paddingVertical: responsiveHeight(1),
-                borderRadius: 20,
-                flexDirection: 'row',
-                gap: 8,
-                alignItems: 'center',
-              }}>
-              <AntDesign
-                name={'edit'}
-                size={responsiveFontSize(1.3)}
-                color={AppColors.WHITE}
-              />
-              <AppText
-                title={'Change'}
-                textColor={AppColors.WHITE}
-                textSize={1.3}
-                textFontWeight
-              />
-            </TouchableOpacity>
+
+            <LineBreak space={1} />
+
+            <AppText
+              title={currentLocation?.address || 'Add location'}
+              textColor={AppColors.BLACK}
+              textSize={1.7}
+              textFontWeight
+              textwidth={60}
+            />
           </View>
+
+          <TouchableOpacity
+            onPress={() => navigation.navigate('SetLocation')}
+            style={{
+              backgroundColor: AppColors.BTNCOLOURS,
+              paddingHorizontal: responsiveWidth(3),
+              paddingVertical: responsiveHeight(1),
+              borderRadius: 20,
+              flexDirection: 'row',
+              gap: 8,
+              alignItems: 'center',
+            }}>
+            <AntDesign
+              name={'edit'}
+              size={responsiveFontSize(1.3)}
+              color={AppColors.WHITE}
+            />
+
+            <AppText
+              title={'Change'}
+              textColor={AppColors.WHITE}
+              textSize={1.3}
+              textFontWeight
+            />
+          </TouchableOpacity>
         </View>
+      </View>
 
-        <LineBreak space={5} />
-
-        <Image source={AppImages.USERS_LOCATION} />
-
-        <LineBreak space={4} />
-
+      {/* RECOMMENDED CARD */}
+      <View
+        style={{
+          position: 'absolute',
+          zIndex: 10,
+          bottom: 20,
+          alignSelf: 'center',
+        }}>
         <RecommendedCard
           item={oneData}
           cardContainerWidth={true ? 90 : 43}
@@ -122,41 +190,38 @@ const Explore = () => {
           containerAlignItems={true ? 'center' : 'flex-start'}
           containerGap={true ? 5 : 0}
         />
-      </ScrollView>
-
-      {/* modal for enabling the location */}
-      <CongratulationsModal
-        visible={showLocationModal}
-        imgSrc={AppImages.LOCATION_MARK}
-        title={'Enable Location'}
-        content={
-          'To use this service, we need permission to access your location.'
-        }
-        buttons={
-          <View>
-            <AppButton
-              title={'Enable Location'}
-              textColor={AppColors.BLACK}
-              textSize={2}
-              btnWidth={80}
-              handlePress={() => {
-                setShowLocationModal(false);
-              }}
-            />
-            <LineBreak space={2} />
-            <AppButton
-              title={'Cancel'}
-              textColor={AppColors.BLACK}
-              textSize={2}
-              btnWidth={80}
-              btnBackgroundColor={'#EEEDFE'}
-              handlePress={() => setShowLocationModal(false)}
-            />
-          </View>
-        }
-      />
-    </ImageBackground>
+      </View>
+    </View>
   );
 };
+
+/* ✅ Optimized Marker Component (memoized + cached image) */
+const OptimizedMarker = memo(({place, coordinate, photoRef, navigation}) => {
+  const imageUrl = photoRef
+    ? `${Google_Places_Images}${photoRef}&maxwidth=100`
+    : null;
+
+  return (
+    <Marker
+      coordinate={coordinate}
+      onPress={() =>
+        navigation.navigate('HomeDetails', {placeDetails: place})
+      }>
+      {imageUrl ? (
+        <FastImage
+          source={{uri: imageUrl}}
+          style={{height: 35, width: 35, borderRadius: 20}}
+          resizeMode={FastImage.resizeMode.cover}
+        />
+      ) : (
+        <FastImage
+          source={AppImages.LOCATION_MARK}
+          style={{height: 35, width: 35, borderRadius: 20}}
+          resizeMode={FastImage.resizeMode.contain}
+        />
+      )}
+    </Marker>
+  );
+});
 
 export default Explore;

@@ -155,12 +155,14 @@ const Home = () => {
   const [showBranding, setShowBranding] = useState(false);
   const [showRating, setShowRating] = useState(false);
   const userData = useSelector((state: RootState) => state.user.userData);
+const fetchedLocations = useSelector(state => state?.user?.places_nearby);
 
+// console.log("fetchedLocations",fetchedLocations)
   // slider two states
   const wendysSliderRef = useRef(null);
   const [wendysCurrentIndex, setWendysCurrentIndex] = useState(0);
   const [wendysShowBranding, setWendysShowBranding] = useState(false);
-
+  
   // slider three states
   const includeSliderRef = useRef(null);
   const [includeCurrentIndex, setIncludeCurrentIndex] = useState(0);
@@ -172,6 +174,18 @@ const Home = () => {
       contentContainerStyle={{flexGrow: 1}}>
       <LineBreak space={3} />
 
+      <FlatList
+      data={fetchedLocations}
+      renderItem={({item, index})=>{
+        console.log("item", item.place_id, index)
+        return(
+          <TouchableOpacity onPress={(res)=> console.log("res", res)}>
+              <AppText title={item.business_status}/>
+          </TouchableOpacity>
+        )
+      }}
+      
+      />
       <View
         style={{
           flexDirection: 'row',
