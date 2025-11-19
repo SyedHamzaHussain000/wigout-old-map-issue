@@ -29,6 +29,7 @@ import RecommendedCard from '../../components/RecommendedCard';
 import {popularEventData, recommendedData} from '../../utils/LocalData';
 import {useSelector} from 'react-redux';
 import {baseUrl} from '../../utils/api_content';
+import FastImage from 'react-native-fast-image';
 
 const slides = [
   {
@@ -154,8 +155,10 @@ const Home = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showBranding, setShowBranding] = useState(false);
   const [showRating, setShowRating] = useState(false);
-  const userData = useSelector((state: RootState) => state.user.userData);
+  const userData = useSelector((state) => state.user.userData);
 const fetchedLocations = useSelector(state => state?.user?.places_nearby);
+
+// console.log("fetchedLocations",fetchedLocations)
 
 // console.log("fetchedLocations",fetchedLocations)
   // slider two states
@@ -166,7 +169,7 @@ const fetchedLocations = useSelector(state => state?.user?.places_nearby);
   // slider three states
   const includeSliderRef = useRef(null);
   const [includeCurrentIndex, setIncludeCurrentIndex] = useState(0);
-  const [includeShowBranding, setIncludeShowBranding] = useState(false);
+  const [includeShowBranding, setIncludeShowBranding] = useState(true);
 
   return (
     <ScrollView
@@ -174,18 +177,6 @@ const fetchedLocations = useSelector(state => state?.user?.places_nearby);
       contentContainerStyle={{flexGrow: 1}}>
       <LineBreak space={3} />
 
-      <FlatList
-      data={fetchedLocations}
-      renderItem={({item, index})=>{
-        console.log("item", item.place_id, index)
-        return(
-          <TouchableOpacity onPress={(res)=> console.log("res", res)}>
-              <AppText title={item.business_status}/>
-          </TouchableOpacity>
-        )
-      }}
-      
-      />
       <View
         style={{
           flexDirection: 'row',
@@ -234,6 +225,8 @@ const fetchedLocations = useSelector(state => state?.user?.places_nearby);
 
       <LineBreak space={3} />
 
+
+         
       <View
         style={{
           paddingHorizontal: responsiveWidth(5),
@@ -260,7 +253,7 @@ const fetchedLocations = useSelector(state => state?.user?.places_nearby);
 
       <LineBreak space={3} />
 
-      {!showBranding && (
+      {/* {!showBranding && (
         <HomeStarter
           slides={slides}
           currentIndex={currentIndex}
@@ -354,7 +347,7 @@ const fetchedLocations = useSelector(state => state?.user?.places_nearby);
           rating={'rating'}
           include={'include'}
         />
-      ) : null}
+      ) : null} */}
 
       {includeShowBranding && (
         <View style={{paddingHorizontal: responsiveWidth(5)}}>
@@ -382,24 +375,45 @@ const fetchedLocations = useSelector(state => state?.user?.places_nearby);
 
           <LineBreak space={2} />
 
-          <FlatList
-            data={recommendedData}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{gap: 12, marginBottom: responsiveHeight(2)}}
-            renderItem={({item}) => {
-              return (
-                <RecommendedCard
-                  item={item}
-                  cardOnPress={() => navigateToRoute('HomeDetails')}
-                  bottomPadding={0.1}
-                  cardWidth={35}
-                  cardContainerWidth={75}
-                  isHeartIconMoveToEnd={true}
+            {
+              fetchedLocations?.length > 0 ? 
+              (
+
+                <FlatList
+                  data={fetchedLocations}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{gap: 12, marginBottom: responsiveHeight(2)}}
+                  renderItem={({item}) => {
+                    console.log("item", item.vicinity)
+                    return (
+                      <>
+                      {
+                        item?.rating > 4 && (
+
+                          <RecommendedCard
+                            item={item}
+                            name={item?.name}
+                            address={item?.vicinity}
+                            CardImg={item?.photos[0]?.photo_reference}
+                            cardOnPress={() => navigateToRoute('HomeDetails',{placeDetails: item})}
+                            bottomPadding={0.1}
+                            cardWidth={35}
+                            cardContainerWidth={75}
+                            isHeartIconMoveToEnd={true}
+                            locationMaxWidth={60}
+                          />
+                        )
+                      }
+
+                      </>
+                    );
+                  }}
                 />
-              );
-            }}
-          />
+              ):(
+                <AppText title={"No Recommendation found"}/>
+              )
+            }
 
           <LineBreak space={2} />
 
@@ -413,7 +427,7 @@ const fetchedLocations = useSelector(state => state?.user?.places_nearby);
           <LineBreak space={2} />
 
           <FlatList
-            data={popularEventData}
+            data={fetchedLocations}
             ItemSeparatorComponent={() => <LineBreak space={2} />}
             columnWrapperStyle={{gap: 15, marginBottom: responsiveHeight(2)}}
             numColumns={2}
@@ -421,6 +435,9 @@ const fetchedLocations = useSelector(state => state?.user?.places_nearby);
               return (
                 <RecommendedCard
                   item={item}
+                  name={item?.name}
+                            address={item?.vicinity}
+                            CardImg={item?.photos[0]?.photo_reference}
                   cardOnPress={() => navigateToRoute('HomeDetails')}
                   cardContainerWidth={43}
                   cardWidth={19}
@@ -435,7 +452,7 @@ const fetchedLocations = useSelector(state => state?.user?.places_nearby);
                   dateNumOfLines={1}
                   dateMaxWidth={35}
                   locationNumOfLines={1}
-                  locationMaxWidth={21}
+                  locationMaxWidth={25}
                   titleMaxWidth={35}
                   titleNumOfLines={1}
                 />

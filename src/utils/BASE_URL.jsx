@@ -1,0 +1,1 @@
+export default BASE_URL = "https://appsdemo.pro/WIGOut-Backend/api/user/"

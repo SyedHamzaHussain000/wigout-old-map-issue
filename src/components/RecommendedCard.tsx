@@ -14,9 +14,13 @@ import AppText from './AppTextComps/AppText';
 import SVGXml from './SVGXML';
 import {AppIcons} from '../assets/icons';
 import AppButton from './AppButton';
+import { Google_Places_Images } from '../utils/api_content';
 
 type cardProps = {
   item?: any;
+  name?: string;
+  address?:string;
+  CardImg?: any;
   cardWidth?: any;
   cardContainerWidth?: any;
   titleFontSize?: any;
@@ -51,6 +55,9 @@ type cardProps = {
 
 const RecommendedCard = ({
   item,
+  name,
+  address,
+  CardImg,
   cardContainerWidth,
   textContainerPaddingHorizontal,
   containerPaddingHorizontal,
@@ -113,7 +120,7 @@ const RecommendedCard = ({
               : responsiveWidth(4),
           }}>
           <Image
-            source={item.cardImg}
+            source={{uri: `${Google_Places_Images}${CardImg}`}}
             style={{
               alignSelf: 'center',
               width: cardWidth
@@ -159,7 +166,7 @@ const RecommendedCard = ({
               gap: 10,
             }}>
             <AppText
-              title={item.title}
+              title={name}
               textColor={AppColors.BLACK}
               textSize={titleFontSize ? titleFontSize : 2.5}
               textFontWeight
@@ -201,14 +208,14 @@ const RecommendedCard = ({
                   color={AppColors.BTNCOLOURS}
                 />
                 <AppText
-                  title={item.location}
+                  title={address}
                   textColor={AppColors.GRAY}
                   textSize={locationFontSize ? locationFontSize : 2}
                   numberOfLines={locationNumOfLines}
                   textwidth={locationMaxWidth}
                 />
               </View>
-              {isShowFavIcon ? null : (
+              {/* {isShowFavIcon ? null : (
                 <TouchableOpacity onPress={heartOnPress}>
                   <AntDesign
                     name={item?.isFav ? 'hearto' : 'heart'}
@@ -216,7 +223,7 @@ const RecommendedCard = ({
                     color={AppColors.BTNCOLOURS}
                   />
                 </TouchableOpacity>
-              )}
+              )} */}
               {item?.isCompleted ? (
                 <View
                   style={{

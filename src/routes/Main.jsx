@@ -28,6 +28,7 @@ import InviteFriends from '../screens/main/Profile/InviteFriends';
 import VisitHistory from '../screens/main/Profile/VisitHistory';
 import SetLocation from '../screens/auth/AccountSetup/SetLocation';
 import EnterAddressManually from '../screens/main/MapCommonScreens/EnterAddressManually';
+import ListViewDetail from '../screens/main/Lists/ListViewDetail';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -52,6 +53,9 @@ const Main = () => {
 
       <Stack.Screen name="SetLocation" component={SetLocation} />
       <Stack.Screen name="EnterAddressManually" component={EnterAddressManually} />
+
+      
+      <Stack.Screen name="ListViewDetail" component={ListViewDetail} />
       
     </Stack.Navigator>
   );

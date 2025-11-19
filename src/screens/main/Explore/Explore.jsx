@@ -71,7 +71,7 @@ const Explore = ({navigation}) => {
         {/* FETCHED LOCATIONS */}
         {Array.isArray(fetchedLocations) &&
           fetchedLocations.length > 0 &&
-          fetchedLocations.map((place, index) => {
+          fetchedLocations.slice(0, 5).map((place, index) => {
             const lat = place?.geometry?.location?.lat;
             const lng = place?.geometry?.location?.lng;
             const photoRef = place?.photos?.[0]?.photo_reference;

@@ -10,6 +10,7 @@ interface UserState {
   error: string | null;
   current_location: any;
   places_nearby: any[];
+  Save_Place_Detail: any;
 }
 
 const initialState: UserState = {
@@ -23,6 +24,7 @@ const initialState: UserState = {
     address: '',
   },
   places_nearby: [],
+  Save_Place_Detail: null
 
 };
 
@@ -62,8 +64,8 @@ const authSlice = createSlice({
   initialState,
   reducers: {
     clearToken: (state) => {
-      state.token = '';
-      state.userData = {};
+      state.token = ''
+      state.userData = {}
     },
     setToken: (state, action) => {
       state.token = action.payload;
@@ -85,6 +87,9 @@ const authSlice = createSlice({
     setNearbyPlaces: (state, action) => {
       // Implementation for setting nearby places can be added here
       state.places_nearby = action.payload; 
+    },
+    setPlaceDetail:  (state, action) => {
+      state.Save_Place_Detail = action.payload
     }
   },
   extraReducers: (builder) => {
@@ -106,5 +111,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearToken, setUserData, setToken,UpdateProfile, setCurrentLocation,setNearbyPlaces} = authSlice.actions;
+export const { clearToken, setUserData, setToken,UpdateProfile, setCurrentLocation,setNearbyPlaces,setPlaceDetail} = authSlice.actions;
 export default authSlice.reducer;
