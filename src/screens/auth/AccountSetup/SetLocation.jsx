@@ -1,6 +1,12 @@
 /* eslint-disable react-native/no-inline-styles */
 import React, {useEffect, useRef, useState} from 'react';
-import {View, ImageBackground, KeyboardAvoidingView, Image, Alert} from 'react-native';
+import {
+  View,
+  ImageBackground,
+  KeyboardAvoidingView,
+  Image,
+  Alert,
+} from 'react-native';
 import AppHeader from '../../../components/AppHeader';
 import AppColors from '../../../utils/AppColors';
 import {responsiveHeight} from '../../../utils/Responsive_Dimensions';
@@ -28,14 +34,13 @@ const SetLocation = ({navigation}) => {
   const [locationName, setLocationName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
-  const [allNearbyPlaces , setAllNearbyPlaces] = useState([]);
+  const [allNearbyPlaces, setAllNearbyPlaces] = useState([]);
   const data = useRoute()?.params?.data;
   const currentLocation = useSelector(state => state.user.current_location);
 
   const userData = useSelector(state => state?.user?.userData);
   const token = useSelector(state => state?.user?.token);
   const fetchNearbyPlaces = useSelector(state => state?.user?.places_nearby);
-
 
   const mapRef = useRef(null);
 
@@ -54,16 +59,15 @@ const SetLocation = ({navigation}) => {
     }
   }, [currentLocation]);
 
-  useEffect(()=>{
-     if (userData?.isCreated == true) {
-      if(allNearbyPlaces?.length > 0){
-
-        navigateToRoute("Main", {
-  screen: 'Discover',
-}) 
+  useEffect(() => {
+    if (userData?.isCreated == true) {
+      if (allNearbyPlaces?.length > 0) {
+        navigateToRoute('Main', {
+          screen: 'Discover',
+        });
       }
-    } 
-  },[allNearbyPlaces])
+    }
+  }, [allNearbyPlaces]);
 
   const fetchCurrentLocation = async () => {
     setLocationLoading(true);
@@ -82,12 +86,9 @@ const SetLocation = ({navigation}) => {
       }),
     );
     setLocationLoading(false);
-    const res =  await FetchNearbyPlaces(location, dipatch);
-    setAllNearbyPlaces(res)
+    const res = await FetchNearbyPlaces(location, dipatch);
+    setAllNearbyPlaces(res);
   };
-
-
-  
 
   const handleLocationContinue = async () => {
     if (!currentLocation.address) {
@@ -95,24 +96,29 @@ const SetLocation = ({navigation}) => {
     }
 
 
+    const fetchResponnse = await FetchNearbyPlaces(
+          currentLocation,
+          dipatch,
+        );
+
+        console.log("fetchResponnse",fetchResponnse)
+
     if (userData?.isCreated == true) {
       // Alert.alert("calling")
 
       try {
         
-        const fetchResponnse = await FetchNearbyPlaces(currentLocation, dipatch);
-        
 
-        setAllNearbyPlaces(fetchResponnse)
-          navigateToRoute("Main", {
-  screen: 'Discover',
-}) 
+
+
+        setAllNearbyPlaces(fetchResponnse);
+        navigateToRoute('Main', {
+          screen: 'Discover',
+        });
       } catch (error) {
-        console.log("Error in fetching nearby places", error)
+        console.log('Error in fetching nearby places', error);
       }
-
     } else {
-      
       setIsLoading(true);
       const res = await createProfile({
         id: data?.userId,
@@ -132,7 +138,7 @@ const SetLocation = ({navigation}) => {
       } else {
         ShowToast('error', res?.msg || res?.message);
       }
-      
+
       setIsLoading(false);
     }
   };

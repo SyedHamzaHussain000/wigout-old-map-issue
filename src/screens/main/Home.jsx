@@ -1,6 +1,6 @@
 /* eslint-disable react/no-unstable-nested-components */
 /* eslint-disable react-native/no-inline-styles */
-import React, {useRef, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   View,
   ScrollView,
@@ -170,6 +170,7 @@ const fetchedLocations = useSelector(state => state?.user?.places_nearby);
   const includeSliderRef = useRef(null);
   const [includeCurrentIndex, setIncludeCurrentIndex] = useState(0);
   const [includeShowBranding, setIncludeShowBranding] = useState(true);
+
 
   return (
     <ScrollView
@@ -385,7 +386,9 @@ const fetchedLocations = useSelector(state => state?.user?.places_nearby);
                   showsHorizontalScrollIndicator={false}
                   contentContainerStyle={{gap: 12, marginBottom: responsiveHeight(2)}}
                   renderItem={({item}) => {
-                    console.log("item", item.vicinity)
+                    console.log("itemsss", item.photos)
+
+
                     return (
                       <>
                       {
@@ -395,7 +398,7 @@ const fetchedLocations = useSelector(state => state?.user?.places_nearby);
                             item={item}
                             name={item?.name}
                             address={item?.vicinity}
-                            CardImg={item?.photos[0]?.photo_reference}
+                            CardImg={item?.photos?.length > 0 && item?.photos[0]?.photo_reference}
                             cardOnPress={() => navigateToRoute('HomeDetails',{placeDetails: item})}
                             bottomPadding={0.1}
                             cardWidth={35}
@@ -426,39 +429,48 @@ const fetchedLocations = useSelector(state => state?.user?.places_nearby);
 
           <LineBreak space={2} />
 
-          <FlatList
-            data={fetchedLocations}
-            ItemSeparatorComponent={() => <LineBreak space={2} />}
-            columnWrapperStyle={{gap: 15, marginBottom: responsiveHeight(2)}}
-            numColumns={2}
-            renderItem={({item}) => {
-              return (
-                <RecommendedCard
-                  item={item}
-                  name={item?.name}
-                            address={item?.vicinity}
-                            CardImg={item?.photos[0]?.photo_reference}
-                  cardOnPress={() => navigateToRoute('HomeDetails')}
-                  cardContainerWidth={43}
-                  cardWidth={19}
-                  titleFontSize={2}
-                  dateFontSize={1.5}
-                  locationFontSize={1.3}
-                  containerPaddingHorizontal={2}
-                  textContainerPaddingHorizontal={2}
-                  containerPaddingVertical={1}
-                  containerborderRadius={25}
-                  bottomPadding={1}
-                  dateNumOfLines={1}
-                  dateMaxWidth={35}
-                  locationNumOfLines={1}
-                  locationMaxWidth={25}
-                  titleMaxWidth={35}
-                  titleNumOfLines={1}
-                />
-              );
-            }}
-          />
+            {
+              fetchedLocations.length > 0 ?
+
+              <FlatList
+                data={fetchedLocations}
+                ItemSeparatorComponent={() => <LineBreak space={2} />}
+                columnWrapperStyle={{gap: 15, marginBottom: responsiveHeight(2)}}
+                numColumns={2}
+                renderItem={({item}) => {
+    
+                  console.log("item..", item)
+
+                  return (
+                    <RecommendedCard
+                      item={item}
+                      name={item?.name}
+                                address={item?.vicinity}
+                                CardImg={item?.photos?.length > 0 && item?.photos[0]?.photo_reference}
+                      cardOnPress={() => navigateToRoute('HomeDetails')}
+                      cardContainerWidth={43}
+                      cardWidth={19}
+                      titleFontSize={2}
+                      dateFontSize={1.5}
+                      locationFontSize={1.3}
+                      containerPaddingHorizontal={2}
+                      textContainerPaddingHorizontal={2}
+                      containerPaddingVertical={1}
+                      containerborderRadius={25}
+                      bottomPadding={1}
+                      dateNumOfLines={1}
+                      dateMaxWidth={35}
+                      locationNumOfLines={1}
+                      locationMaxWidth={25}
+                      titleMaxWidth={35}
+                      titleNumOfLines={1}
+                    />
+                  );
+                }}
+              />
+              :
+              <AppText title={"No Nearby resturants found"}/>
+            }
         </View>
       )}
 

@@ -33,7 +33,7 @@ const EnterAddressManually = ({navigation}) => {
   const setSearchLocation = async searchKey => {
     // alert(‘hello’)
     setSelection(searchKey);
-    const BASE_URL = `${Google_Base_Url}place/autocomplete/json?input=${searchKey}&key=${Google_API_KEY}&types=airport&components=country:us`;
+    const BASE_URL = `${Google_Base_Url}place/autocomplete/json?input=${searchKey}&key=${Google_API_KEY}&components=country:us`;
     const response = await axios.get(BASE_URL, {
       params: {
         key: Google_API_KEY,

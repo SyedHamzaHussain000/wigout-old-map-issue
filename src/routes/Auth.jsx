@@ -51,7 +51,8 @@ export const CreateProfileRoute = () => (
       <Stack.Screen name="SetLocation" component={SetLocation} />
       
 
-      
+            <Stack.Screen name="EnterAddressManually" component={EnterAddressManually} />
+
     </Stack.Navigator>
 
 )
