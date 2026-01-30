@@ -1,23 +1,26 @@
-import { View, Text, TouchableOpacity, ScrollView, Image } from 'react-native'
-import React from 'react'
+import {View, Text, TouchableOpacity, ScrollView, Image} from 'react-native';
+import React from 'react';
 import AppColors from '../../../utils/AppColors';
 import LineBreak from '../../../components/LineBreak';
 import AppText from '../../../components/AppTextComps/AppText';
-import { responsiveFontSize, responsiveHeight, responsiveWidth } from '../../../utils/Responsive_Dimensions';
+import {
+  responsiveFontSize,
+  responsiveHeight,
+  responsiveWidth,
+} from '../../../utils/Responsive_Dimensions';
 import AppImages from '../../../assets/images/AppImages';
 import ImageIntroSlider from '../../../components/ImagesIntroSlider';
-import Ionicons from 'react-native-vector-icons/Ionicons'
-import AntDesign from 'react-native-vector-icons/AntDesign'
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import AntDesign from 'react-native-vector-icons/AntDesign';
 const ListViewDetail = ({route}) => {
-    const {placeDetails} = route.params
+  const {placeDetails} = route.params;
 
-
-
-
-   return (
+  return (
     <View style={{flex: 1, backgroundColor: AppColors.WHITE}}>
       <ScrollView style={{flex: 1}}>
-        {placeDetails.photos?.length > 0 && <ImageIntroSlider images={placeDetails.photos} />}
+        {placeDetails.photos?.length > 0 && (
+          <ImageIntroSlider images={placeDetails.photos} />
+        )}
         <LineBreak space={2} />
 
         <View style={{paddingHorizontal: 20}}>
@@ -28,8 +31,6 @@ const ListViewDetail = ({route}) => {
             textFontWeight
           />
           <LineBreak space={2} />
-
-          
 
           {/* <View
             style={{
@@ -70,7 +71,6 @@ const ListViewDetail = ({route}) => {
               textSize={2}
               textFontWeight
             />
-            
 
             <LineBreak space={1} />
 
@@ -140,22 +140,25 @@ const ListViewDetail = ({route}) => {
                   /> */}
                 </View>
 
-                <View style={{gap:5}}>
+                <View style={{gap: 5}}>
                   <AppText
                     title={placeDetails.actionType}
                     textSize={3.5}
                     textColor={AppColors.BLACK}
                   />
-                  <View style={{flexDirection:'row', alignItems:'center'}}>
-                    <AppText title={"Review: "} textSize={2} textColor={AppColors.GRAY}/>
-                  <AppText
-                    title={placeDetails.reviewText}
-                    textSize={2}
-                    textColor={AppColors.BLACK}
+                  <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                    <AppText
+                      title={'Review: '}
+                      textSize={2}
+                      textColor={AppColors.GRAY}
                     />
-                    </View>
+                    <AppText
+                      title={placeDetails.reviewText}
+                      textSize={2}
+                      textColor={AppColors.BLACK}
+                    />
+                  </View>
                 </View>
-
               </View>
             </View>
           </View>
@@ -182,9 +185,7 @@ const ListViewDetail = ({route}) => {
                 color={AppColors.BTNCOLOURS}
               />
               <AppText
-                title={
-                  placeDetails?.address || 'Address not found'
-                }
+                title={placeDetails?.address || 'Address not found'}
                 textColor={AppColors.GRAY}
                 textSize={1.8}
               />
@@ -200,14 +201,11 @@ const ListViewDetail = ({route}) => {
               />
             </TouchableOpacity>
           </View>
-
-
-          
         </View>
         <LineBreak space={2} />
       </ScrollView>
     </View>
   );
-}
+};
 
-export default ListViewDetail
+export default ListViewDetail;

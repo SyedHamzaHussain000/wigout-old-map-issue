@@ -1,6 +1,12 @@
 /* eslint-disable react-native/no-inline-styles */
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Image, ScrollView, View } from 'react-native';
+import React, {useEffect, useState} from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  Image,
+  ScrollView,
+  View,
+} from 'react-native';
 import AppColors from '../../../utils/AppColors';
 import LineBreak from '../../../components/LineBreak';
 import AppHeader from '../../../components/AppHeader';
@@ -14,14 +20,14 @@ import AppImages from '../../../assets/images/AppImages';
 import AppText from '../../../components/AppTextComps/AppText';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AppButton from '../../../components/AppButton';
-import { useCustomNavigation } from '../../../utils/Hooks';
-import { GetReviews } from '../../../ApiCalls/Main/Reviews/ReviewsApiCall';
-import { useSelector } from 'react-redux';
+import {useCustomNavigation} from '../../../utils/Hooks';
+import {GetReviews} from '../../../ApiCalls/Main/Reviews/ReviewsApiCall';
+import {useSelector} from 'react-redux';
 
 const tabsData = [
-  { id: 1, title: 'Go Again' },
-  { id: 2, title: 'Avoid' },
-  { id: 3, title: 'Help Me Decide' },
+  {id: 1, title: 'Go Again'},
+  {id: 2, title: 'Avoid'},
+  {id: 3, title: 'Help Me Decide'},
 ];
 
 const data = [
@@ -51,49 +57,46 @@ const data = [
   },
 ];
 
-const Lists = ({ navigation }) => {
-  const { navigateToRoute } = useCustomNavigation();
-  const [isSelectedTab, setIsSelectedTab] = useState({ id: 1 });
+const Lists = ({navigation}) => {
+  const {navigateToRoute} = useCustomNavigation();
+  const [isSelectedTab, setIsSelectedTab] = useState({id: 1});
 
-  const [goAgain, setGoAgain] = useState([])
-  const [avoid, setAvoid] = useState([])
-  const [loader, setLoader] = useState(false)
-  const token = useSelector(state => state.user.token)
+  const [goAgain, setGoAgain] = useState([]);
+  const [avoid, setAvoid] = useState([]);
+  const [loader, setLoader] = useState(false);
+  const token = useSelector(state => state.user.token);
 
   useEffect(() => {
     const nav = navigation.addListener('focus', () => {
+      getList();
+    });
 
-      getList()
-    })
-
-    return nav
-  }, [navigation])
+    return nav;
+  }, [navigation]);
 
   const getList = async () => {
-    setLoader(true)
-    const getReviews = await GetReviews(token)
-    console.log('gerreviews', getReviews)
-
+    setLoader(true);
+    const getReviews = await GetReviews(token);
+    console.log('gerreviews', getReviews);
 
     // console.log("avoid",getReviews)
-    const Go_Again = getReviews.reviews.filter(res => res.actionType == "Go Again")
-    const Avoid = getReviews.reviews.filter(res => res.actionType == "Avoid")
+    const Go_Again = getReviews.reviews.filter(
+      res => res.actionType == 'Go Again',
+    );
+    const Avoid = getReviews.reviews.filter(res => res.actionType == 'Avoid');
 
-    setGoAgain(Go_Again)
-    setAvoid(Avoid)
-    setLoader(false)
-
-  }
-
-
+    setGoAgain(Go_Again);
+    setAvoid(Avoid);
+    setLoader(false);
+  };
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: AppColors.WHITE }}>
+    <ScrollView style={{flex: 1, backgroundColor: AppColors.WHITE}}>
       <AppHeader onBackPress heading={'Lists'} />
 
       <LineBreak space={3} />
 
-      <View style={{ paddingHorizontal: responsiveWidth(5) }}>
+      <View style={{paddingHorizontal: responsiveWidth(5)}}>
         <View>
           <TopTabs
             data={tabsData}
@@ -105,18 +108,15 @@ const Lists = ({ navigation }) => {
         <LineBreak space={3} />
 
         <View>
-
-          {
-            loader && (
-              <ActivityIndicator size={'large'} color={AppColors.BLACK} />
-            )
-          }
+          {loader && (
+            <ActivityIndicator size={'large'} color={AppColors.BLACK} />
+          )}
           <FlatList
             data={isSelectedTab.id == 2 ? avoid : goAgain}
             ItemSeparatorComponent={<LineBreak space={2} />}
             ListFooterComponent={<LineBreak space={2} />}
-            renderItem={({ item }) => {
-              console.log("item===", item)
+            renderItem={({item}) => {
+              console.log('item===', item);
               return (
                 <View
                   style={{
@@ -133,8 +133,8 @@ const Lists = ({ navigation }) => {
                       alignItems: 'center',
                     }}>
                     <Image
-                      source={{ uri: item?.photos[0] }}
-                      style={{ width: 40, height: 40, borderRadius: 100 }}
+                      source={{uri: item?.photos[0]}}
+                      style={{width: 40, height: 40, borderRadius: 100}}
                     />
                     <View>
                       <AppText
@@ -202,7 +202,11 @@ const Lists = ({ navigation }) => {
                             btnBackgroundColor={AppColors.BTNCOLOURS}
                             btnWidth={isSelectedTab.id == 3 ? 20 : 16}
                             borderRadius={4}
-                            handlePress={() => navigateToRoute('ListViewDetail', { placeDetails: item })}
+                            handlePress={() =>
+                              navigateToRoute('ListViewDetail', {
+                                placeDetails: item,
+                              })
+                            }
                           />
                         </View>
                       </View>

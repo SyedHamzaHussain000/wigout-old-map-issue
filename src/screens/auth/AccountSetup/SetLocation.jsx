@@ -1,5 +1,5 @@
 /* eslint-disable react-native/no-inline-styles */
-import React, { useEffect, useRef, useState } from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   View,
   ImageBackground,
@@ -9,28 +9,28 @@ import {
 } from 'react-native';
 import AppHeader from '../../../components/AppHeader';
 import AppColors from '../../../utils/AppColors';
-import { responsiveHeight } from '../../../utils/Responsive_Dimensions';
+import {responsiveHeight} from '../../../utils/Responsive_Dimensions';
 import AppImages from '../../../assets/images/AppImages';
 import LocationModal from '../../../components/LocationModal';
-import { useCustomNavigation } from '../../../utils/Hooks';
-import { useRoute } from '@react-navigation/native';
-import { createProfile } from '../../../GlobalFunctions/auth';
-import { ShowToast } from '../../../utils/api_content';
-import { store } from '../../../redux/Store';
-import { setCurrentLocation, setToken, setUserData } from '../../../redux/Slices';
+import {useCustomNavigation} from '../../../utils/Hooks';
+import {useRoute} from '@react-navigation/native';
+import {createProfile} from '../../../GlobalFunctions/auth';
+import {ShowToast} from '../../../utils/api_content';
+import {store} from '../../../redux/Store';
+import {setCurrentLocation, setToken, setUserData} from '../../../redux/Slices';
 import MapView, {
   Marker,
   MarkerAnimated,
   PROVIDER_GOOGLE,
 } from 'react-native-maps';
-import { useDispatch, useSelector } from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import LatLngIntoAddress from '../../../GlobalFunctions/other/LatLngIntoAddress';
-import { GetCurrentLocation } from '../../../GlobalFunctions/other/GetCurrentLocation';
+import {GetCurrentLocation} from '../../../GlobalFunctions/other/GetCurrentLocation';
 import AppText from '../../../components/AppTextComps/AppText';
 import FetchNearbyPlaces from '../../../ApiCalls/Main/FetchNearbyPlaces';
 
-const SetLocation = ({ navigation }) => {
-  const { navigateToRoute } = useCustomNavigation();
+const SetLocation = ({navigation}) => {
+  const {navigateToRoute} = useCustomNavigation();
   const [locationName, setLocationName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
@@ -95,22 +95,14 @@ const SetLocation = ({ navigation }) => {
       return ShowToast('error', 'Location is required');
     }
 
+    const fetchResponnse = await FetchNearbyPlaces(currentLocation, dipatch);
 
-    const fetchResponnse = await FetchNearbyPlaces(
-      currentLocation,
-      dipatch,
-    );
-
-    console.log("fetchResponnse", fetchResponnse)
+    console.log('fetchResponnse', fetchResponnse);
 
     if (userData?.isCreated == true) {
       // Alert.alert("calling")
 
       try {
-
-
-
-
         setAllNearbyPlaces(fetchResponnse);
         navigateToRoute('Main', {
           screen: 'Discover',
@@ -144,8 +136,8 @@ const SetLocation = ({ navigation }) => {
   };
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
-      <View style={{ flex: 1 }}>
+    <KeyboardAvoidingView style={{flex: 1}} behavior="padding">
+      <View style={{flex: 1}}>
         <View
           style={{
             backgroundColor: AppColors.WHITE,
@@ -159,7 +151,7 @@ const SetLocation = ({ navigation }) => {
           ref={mapRef}
           provider={PROVIDER_GOOGLE}
           poiClickEnabled={true}
-          style={{ flex: 1 }}
+          style={{flex: 1}}
           initialRegion={{
             latitude: currentLocation?.latitude || 37.78825,
             longitude: currentLocation?.longitude || -122.4324,
@@ -174,7 +166,7 @@ const SetLocation = ({ navigation }) => {
             }}>
             <Image
               source={AppImages.LOCATION_MARK}
-              style={{ height: 40, width: 40 }}
+              style={{height: 40, width: 40}}
             />
           </Marker>
         </MapView>

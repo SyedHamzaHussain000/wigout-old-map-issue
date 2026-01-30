@@ -14,12 +14,12 @@ import AppText from './AppTextComps/AppText';
 import SVGXml from './SVGXML';
 import {AppIcons} from '../assets/icons';
 import AppButton from './AppButton';
-import { Google_Places_Images } from '../utils/api_content';
+import {Google_Places_Images} from '../utils/api_content';
 
 type cardProps = {
   item?: any;
   name?: string;
-  address?:string;
+  address?: string;
   CardImg?: any;
   cardWidth?: any;
   cardContainerWidth?: any;
@@ -48,9 +48,11 @@ type cardProps = {
   cancelBookingAndLeaveReviewOnPress?: any;
   viewETicketOnPress?: any;
   isHeartIconMoveToEnd?: any;
-  badgeWidth?:any;
-  badgeHeight?:any;
-  cardContainerBackgroundColor?:any;
+  badgeWidth?: any;
+  badgeHeight?: any;
+  cardContainerBackgroundColor?: any;
+  containerHeight?: any;
+  imageHeight?: any;
 };
 
 const RecommendedCard = ({
@@ -88,6 +90,8 @@ const RecommendedCard = ({
   badgeWidth,
   badgeHeight,
   cardContainerBackgroundColor,
+  containerHeight,
+  imageHeight,
 }: cardProps) => {
   return (
     <>
@@ -102,6 +106,7 @@ const RecommendedCard = ({
           width: cardContainerWidth
             ? responsiveWidth(cardContainerWidth)
             : 'auto',
+          height: containerHeight ? containerHeight : 'auto',
         }}>
         <View
           style={{
@@ -127,7 +132,9 @@ const RecommendedCard = ({
                 ? responsiveHeight(cardWidth)
                 : responsiveWidth(70),
               borderRadius: containerborderRadius ? containerborderRadius : 32,
-              height: cardWidth
+              height: imageHeight
+                ? imageHeight
+                : cardWidth
                 ? responsiveHeight(cardWidth)
                 : responsiveHeight(27),
             }}
@@ -153,7 +160,11 @@ const RecommendedCard = ({
                 textSize={1.3}
               />
               {badgeShown && (
-                <SVGXml icon={AppIcons.badge} width={badgeWidth ? badgeWidth : '20'} height={badgeHeight ? badgeHeight : '20'} />
+                <SVGXml
+                  icon={AppIcons.badge}
+                  width={badgeWidth ? badgeWidth : '20'}
+                  height={badgeHeight ? badgeHeight : '20'}
+                />
               )}
             </View>
           )}
@@ -173,14 +184,16 @@ const RecommendedCard = ({
               numberOfLines={titleNumOfLines}
               textwidth={titleMaxWidth}
             />
-           {item.date && <AppText
-              title={item.date}
-              textColor={AppColors.BTNCOLOURS}
-              textSize={dateFontSize ? dateFontSize : 1.9}
-              textFontWeight
-              numberOfLines={dateNumOfLines}
-              textwidth={dateMaxWidth}
-            />}
+            {item.date && (
+              <AppText
+                title={item.date}
+                textColor={AppColors.BTNCOLOURS}
+                textSize={dateFontSize ? dateFontSize : 1.9}
+                textFontWeight
+                numberOfLines={dateNumOfLines}
+                textwidth={dateMaxWidth}
+              />
+            )}
 
             <View
               style={{

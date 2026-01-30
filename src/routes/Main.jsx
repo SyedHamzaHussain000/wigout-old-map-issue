@@ -1,7 +1,7 @@
 /* eslint-disable react/no-unstable-nested-components */
 import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createStackNavigator } from '@react-navigation/stack';
+import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+import {createStackNavigator} from '@react-navigation/stack';
 import {
   responsiveFontSize,
   responsiveHeight,
@@ -33,6 +33,7 @@ import JournalHome from '../screens/main/Journal/JournalHome';
 import MyLikes from '../screens/main/Journal/MyLikes';
 import MyHates from '../screens/main/Journal/MyHates';
 import HelpMeDecide from '../screens/main/Journal/HelpMeDecide';
+import TopRated from '../screens/main/TopRated/TopRates';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -41,12 +42,15 @@ const Main = () => {
   return (
     <Stack.Navigator
       initialRouteName="Main"
-      screenOptions={{ headerShown: false }}>
+      screenOptions={{headerShown: false}}>
       <Stack.Screen name="Main" component={MyTabs} />
       <Stack.Screen name="Notifications" component={Notifications} />
       <Stack.Screen name="HomeDetails" component={HomeDetails} />
       <Stack.Screen name="EditProfile" component={EditProfile} />
-      <Stack.Screen name="NotificationsSettings" component={NotificationsSettings} />
+      <Stack.Screen
+        name="NotificationsSettings"
+        component={NotificationsSettings}
+      />
       <Stack.Screen name="Payments" component={Payments} />
       <Stack.Screen name="LinkedAccounts" component={LinkedAccounts} />
       <Stack.Screen name="Security" component={Security} />
@@ -56,7 +60,10 @@ const Main = () => {
       <Stack.Screen name="VisitHistory" component={VisitHistory} />
 
       <Stack.Screen name="SetLocation" component={SetLocation} />
-      <Stack.Screen name="EnterAddressManually" component={EnterAddressManually} />
+      <Stack.Screen
+        name="EnterAddressManually"
+        component={EnterAddressManually}
+      />
       <Stack.Screen name="ListViewDetail" component={ListViewDetail} />
       <Stack.Screen name="MyLikes" component={MyLikes} />
       <Stack.Screen name="MyHates" component={MyHates} />
@@ -68,9 +75,9 @@ const Main = () => {
 function MyTabs() {
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
+      screenOptions={({route}) => ({
         headerShown: false,
-        tabBarLabelStyle: { fontSize: responsiveFontSize(1.4) },
+        tabBarLabelStyle: {fontSize: responsiveFontSize(1.4)},
         tabBarActiveTintColor: AppColors.WHITE,
         tabBarStyle: {
           height: responsiveHeight(10),
@@ -79,14 +86,14 @@ function MyTabs() {
           paddingTop: responsiveHeight(1.5),
           backgroundColor: AppColors.BTNCOLOURS,
         },
-        tabBarIcon: ({ focused, color, size }) => {
+        tabBarIcon: ({focused, color, size}) => {
           let iconName;
 
           if (route.name === 'Home') {
             iconName = focused ? 'home' : 'home-outline';
           } else if (route.name === 'Profile') {
             iconName = focused ? 'person' : 'person-outline';
-          } else if (route.name === 'Lists') {
+          } else if (route.name === 'Top Rated') {
             iconName = focused ? 'clipboard-list' : 'clipboard-list';
           } else if (route.name === 'My Likes') {
             iconName = focused ? 'heart' : 'heart-outline';
@@ -96,7 +103,7 @@ function MyTabs() {
 
           if (route.name === 'Discover') {
             return <MaterialIcons name={iconName} size={size} color={color} />;
-          } else if (route.name === 'Lists') {
+          } else if (route.name === 'Top Rated') {
             return <FontAwesome5 name={iconName} size={size} color={color} />;
           } else {
             return <Ionicons name={iconName} size={size} color={color} />;
@@ -106,7 +113,7 @@ function MyTabs() {
       <Tab.Screen name="Home" component={Home} />
       <Tab.Screen name="Discover" component={Explore} />
       <Tab.Screen name="My Likes" component={JournalHome} />
-      <Tab.Screen name="Lists" component={Lists} />
+      <Tab.Screen name="Top Rated" component={TopRated} />
       <Tab.Screen name="Profile" component={Profile} />
     </Tab.Navigator>
   );

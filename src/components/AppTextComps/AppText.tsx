@@ -15,12 +15,13 @@ type textProps = {
   textFontWeight?: boolean;
   textAlignment?: any;
   textwidth?: any;
-  lineHeight?:any;
-  numberOfLines?:any;
-  borderBottomColor?:any;
-  borderBottomWidth?:any;
-  paddingBottom?:any;
-  textTransform?:any;
+  lineHeight?: any;
+  numberOfLines?: any;
+  borderBottomColor?: any;
+  borderBottomWidth?: any;
+  paddingBottom?: any;
+  textTransform?: any;
+  paddingHorizontal?: any;
 };
 
 const AppText = ({
@@ -36,6 +37,7 @@ const AppText = ({
   borderBottomWidth,
   paddingBottom,
   textTransform,
+  paddingHorizontal,
 }: textProps) => {
   return (
     <Text
@@ -54,6 +56,9 @@ const AppText = ({
         borderBottomColor: borderBottomColor ? borderBottomColor : null,
         textTransform: textTransform ? textTransform : null,
         paddingBottom: paddingBottom ? responsiveHeight(paddingBottom) : null,
+        paddingHorizontal: paddingHorizontal
+          ? responsiveWidth(paddingHorizontal)
+          : null,
       }}>
       {title}
     </Text>
