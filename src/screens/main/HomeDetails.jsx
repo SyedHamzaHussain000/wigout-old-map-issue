@@ -1,5 +1,5 @@
 /* eslint-disable react-native/no-inline-styles */
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -32,17 +32,17 @@ import {
 } from '../../utils/api_content';
 import RatingWithProgressbar from '../../components/RatingWithProgressbar';
 import Entypo from 'react-native-vector-icons/Entypo';
-import {useDispatch, useSelector} from 'react-redux';
-import {setPlaceDetail} from '../../redux/Slices';
+import { useDispatch, useSelector } from 'react-redux';
+import { setPlaceDetail } from '../../redux/Slices';
 import AntDesign from 'react-native-vector-icons/AntDesign';
-import {AddReviews} from '../../ApiCalls/Main/Reviews/ReviewsApiCall';
+import { AddReviews } from '../../ApiCalls/Main/Reviews/ReviewsApiCall';
 import ShowError from '../../utils/ShowError';
 import FastImage from 'react-native-fast-image';
 // import { Google_API_KEY } from '@env';
 import Modal from 'react-native-modal';
 
-const HomeDetails = ({route}) => {
-  const {placeDetails} = route.params;
+const HomeDetails = ({ route }) => {
+  const { placeDetails } = route.params;
   // console.log("Google_API_KEY",process.env.Google_API_KEY)
   // const MorePlaceDetails = useSelector(state => state.user.Save_Place_Detail);
   const token = useSelector(state => state.user.token);
@@ -93,7 +93,7 @@ const HomeDetails = ({route}) => {
 
   // Compute breakdown from reviews
   const getRatingBreakdown = () => {
-    const breakdown = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0};
+    const breakdown = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
     const totalReviews = MorePlaceDetails?.reviews?.length || 0;
 
     if (totalReviews === 0) return [];
@@ -141,6 +141,7 @@ const HomeDetails = ({route}) => {
 
   // Only render ImageIntroSlider if we have images
   const images = extractImageUrls();
+  console.log('images', images)
 
   const CeateReview = async type => {
     setButtonLoader(true);
@@ -159,20 +160,18 @@ const HomeDetails = ({route}) => {
     };
 
     const _addReview = await AddReviews(token, data);
-    if(_addReview.success == true)
-    {
-      if(type == "Go Again")
-      {
+    if (_addReview.success == true) {
+      if (type == "Go Again") {
 
-      
+
         setShowCelebration(true)
-        
+
         setTimeout(() => {
           setShowCelebration(false)
         }, 2000);
       }
     }
-      console.log(_addReview)
+    console.log(_addReview)
     setTypeReview('');
     setButtonLoader(false);
     ShowError(_addReview.message, 2000);
@@ -180,12 +179,12 @@ const HomeDetails = ({route}) => {
     console.log('_addReview', _addReview);
   };
   return (
-    <View style={{flex: 1, backgroundColor: AppColors.WHITE}}>
-      <ScrollView style={{flex: 1}}>
+    <View style={{ flex: 1, backgroundColor: AppColors.WHITE }}>
+      <ScrollView style={{ flex: 1 }}>
         {images?.length > 0 && <ImageIntroSlider images={images} />}
         <LineBreak space={2} />
 
-        <View style={{paddingHorizontal: 20}}>
+        <View style={{ paddingHorizontal: 20 }}>
           <AppText
             title={MorePlaceDetails?.name || 'No Name'}
             textColor={AppColors.BLACK}
@@ -253,17 +252,17 @@ const HomeDetails = ({route}) => {
                 />
                 <FastImage
                   source={require('../../assets/gif/celebrate.gif')}
-                  style={{height: 200}}
+                  style={{ height: 200 }}
                   resizeMode={FastImage.resizeMode.contain}
                 />
               </View>
             </Modal>
 
-            <View style={{flexDirection: 'row', alignItems: 'center'}}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <FlatList
                 data={ratingData}
                 ItemSeparatorComponent={<LineBreak space={2} />}
-                renderItem={({item}) => (
+                renderItem={({ item }) => (
                   <View
                     style={{
                       flexDirection: 'row',
@@ -290,13 +289,13 @@ const HomeDetails = ({route}) => {
                     <RatingWithProgressbar
                       progress={item.progress}
                       animated
-                      style={{width: '70%'}}
+                      style={{ width: '70%' }}
                     />
                   </View>
                 )}
               />
 
-              <View style={{gap: 20}}>
+              <View style={{ gap: 20 }}>
                 <View>
                   <View
                     style={{
@@ -354,7 +353,7 @@ const HomeDetails = ({route}) => {
 
             <LineBreak space={2} />
 
-            <View style={{flexDirection: 'row', alignItems: 'center', gap: 5}}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
               <Ionicons
                 name={'location'}
                 size={responsiveFontSize(1.8)}
@@ -371,10 +370,10 @@ const HomeDetails = ({route}) => {
 
             <LineBreak space={2} />
 
-            <TouchableOpacity onPress={() => {}}>
+            <TouchableOpacity onPress={() => { }}>
               <Image
                 source={AppImages.USER_LOCATION}
-                style={{width: responsiveWidth(90)}}
+                style={{ width: responsiveWidth(90) }}
                 resizeMode="contain"
               />
             </TouchableOpacity>

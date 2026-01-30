@@ -8,9 +8,9 @@ import {
   Pressable,
   TouchableOpacity,
 } from 'react-native';
-import React, {useRef, useState} from 'react';
+import React, { useRef, useState } from 'react';
 
-import {Google_API_KEY, Google_Base_Url} from '../../../utils/api_content';
+import { Google_API_KEY, Google_Base_Url } from '../../../utils/api_content';
 import GooglePlacesTextInput from 'react-native-google-places-textinput';
 import AppColors from '../../../utils/AppColors';
 import {
@@ -19,10 +19,10 @@ import {
 } from '../../../utils/Responsive_Dimensions';
 import AppText from '../../../components/AppTextComps/AppText';
 import axios from 'axios';
-import {useDispatch} from 'react-redux';
-import {setCurrentLocation} from '../../../redux/Slices';
+import { useDispatch } from 'react-redux';
+import { setCurrentLocation } from '../../../redux/Slices';
 
-const EnterAddressManually = ({navigation}) => {
+const EnterAddressManually = ({ navigation }) => {
   const inputRef = useRef(null);
   const [predictions, setPredictions] = useState([]);
   const [selection, setSelection] = useState('');
@@ -47,30 +47,30 @@ const EnterAddressManually = ({navigation}) => {
   };
 
   const selectLocation = async placeDetail => {
-      try {
-          setLoader(true)
-        const response = await axios.get(
-          `${Google_Base_Url}place/details/json`,
-          {
-            params: {
-              place_id: placeDetail.place_id,
-              key: Google_API_KEY,
-            },
+    try {
+      setLoader(true)
+      const response = await axios.get(
+        `${Google_Base_Url}place/details/json`,
+        {
+          params: {
+            place_id: placeDetail.place_id,
+            key: Google_API_KEY,
           },
-        );
+        },
+      );
 
-        const location = response.data.result.geometry.location;
+      const location = response.data.result.geometry.location;
 
-        dispatch(
-          setCurrentLocation({latitude: location.lat, longitude: location.lng, address: placeDetail.description}),
-        );
-        setLoader(false)
-        navigation.goBack()
-        return location;
-      } catch (error) {
-        setLoader(false)
-        console.error('Error fetching place details:', error);
-      }
+      dispatch(
+        setCurrentLocation({ latitude: location.lat, longitude: location.lng, address: placeDetail.description }),
+      );
+      setLoader(false)
+      navigation.goBack()
+      return location;
+    } catch (error) {
+      setLoader(false)
+      console.error('Error fetching place details:', error);
+    }
 
 
     // console.log('first', placeDetail);
@@ -78,7 +78,7 @@ const EnterAddressManually = ({navigation}) => {
   };
 
   return (
-    <View style={{padding: 20}}>
+    <View style={{ padding: 20 }}>
       <TextInput
         autoCapitalize="none"
         ref={inputRef}
@@ -120,7 +120,7 @@ const EnterAddressManually = ({navigation}) => {
               return (
                 <TouchableOpacity
                   onPress={() => selectLocation(val)}
-                  style={{marginTop: 10}}>
+                  style={{ marginTop: 10 }}>
                   <AppText
                     title={val.description}
                     textColor={AppColors.BLACK}

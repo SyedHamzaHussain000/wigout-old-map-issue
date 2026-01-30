@@ -96,34 +96,34 @@ export const forgotPassword = async ({ email }: any) => {
     }
 };
 
-export const verifyOtpForResetPassword = async ({email, otp}: any) => {
-  try {
-    const data = await axios.post(`${baseUrl}${endPoints.verifyOtp}`, {
-      email: email.toString(),
-      OTP: otp,
-    });
+export const verifyOtpForResetPassword = async ({ email, otp }: any) => {
+    try {
+        const data = await axios.post(`${baseUrl}${endPoints.verifyOtp}`, {
+            email: email.toString(),
+            OTP: otp,
+        });
 
-    return data?.data;
-  } catch (error) {
-    return {
-      success: false,
-      message: error?.response?.data?.message || error.message,
-    };
-  }
+        return data?.data;
+    } catch (error) {
+        return {
+            success: false,
+            message: error?.response?.data?.message || error.message,
+        };
+    }
 };
 
-export const resetPassword = async ({userId, newPassword}: any) => {
- try {
-    const data = await axios.post(`${baseUrl}${endPoints.resetPassword}`, {
-      userId: userId.toString(),
-      newPassword: newPassword.toString(),
-    });
+export const resetPassword = async ({ userId, newPassword }: any) => {
+    try {
+        const data = await axios.post(`${baseUrl}${endPoints.resetPassword}`, {
+            userId: userId.toString(),
+            newPassword: newPassword.toString(),
+        });
 
-    return data?.data;
-  } catch (error) {
-    return {
-      success: false,
-      message: error?.response?.data?.message || error.message,
-    };
-  }
+        return data?.data;
+    } catch (error) {
+        return {
+            success: false,
+            message: error?.response?.data?.message || error.message,
+        };
+    }
 }

@@ -1,1 +1,1 @@
-export default BASE_URL = "https://appsdemo.pro/WIGOut-Backend/api/user/"
+export default BASE_URL = "https://wigout.apiforapp.link/api/user/"

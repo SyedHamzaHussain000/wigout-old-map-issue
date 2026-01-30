@@ -1,5 +1,5 @@
 /* eslint-disable react-native/no-inline-styles */
-import React, {useEffect, useRef, useState, memo} from 'react';
+import React, { useEffect, useRef, useState, memo } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -17,15 +17,15 @@ import LineBreak from '../../../components/LineBreak';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import AppImages from '../../../assets/images/AppImages';
 import RecommendedCard from '../../../components/RecommendedCard';
-import {oneData} from '../../../utils/LocalData';
+import { oneData } from '../../../utils/LocalData';
 import MapView from 'react-native-map-clustering';
 import { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 
-import {useSelector} from 'react-redux';
+import { useSelector } from 'react-redux';
 import FastImage from 'react-native-fast-image';
-import {baseUrl, Google_Places_Images} from '../../../utils/api_content';
+import { baseUrl, Google_Places_Images } from '../../../utils/api_content';
 
-const Explore = ({navigation}) => {
+const Explore = ({ navigation }) => {
   const [showLocationModal, setShowLocationModal] = useState(false);
   const mapRef = useRef(null);
 
@@ -35,11 +35,11 @@ const Explore = ({navigation}) => {
 
 
   return (
-    <View style={{flex: 1}}>
+    <View style={{ flex: 1 }}>
       <MapView
         ref={mapRef}
         provider={PROVIDER_GOOGLE}
-        style={{flex: 1}}
+        style={{ flex: 1 }}
         clusterColor={AppColors.BTNCOLOURS}
         animationEnabled={false}
         initialRegion={{
@@ -57,7 +57,7 @@ const Explore = ({navigation}) => {
               longitude: currentLocation.longitude,
             }}>
             <ImageBackground
-              source={{uri: `${baseUrl}/${userData?.profileImage}`}}
+              source={{ uri: `${baseUrl}/${userData?.profileImage}` }}
               style={{
                 height: 35,
                 width: 35,
@@ -83,7 +83,7 @@ const Explore = ({navigation}) => {
                 place={place}
                 photoRef={photoRef}
                 navigation={navigation}
-                coordinate={{latitude: lat, longitude: lng}}
+                coordinate={{ latitude: lat, longitude: lng }}
               />
             );
           })}
@@ -108,7 +108,7 @@ const Explore = ({navigation}) => {
             alignItems: 'center',
           }}>
           <View>
-            <View style={{flexDirection: 'row', gap: 5}}>
+            <View style={{ flexDirection: 'row', gap: 5 }}>
               <Entypo
                 name={'location-pin'}
                 size={responsiveFontSize(2.5)}
@@ -196,7 +196,7 @@ const Explore = ({navigation}) => {
 };
 
 /* ✅ Optimized Marker Component (memoized + cached image) */
-const OptimizedMarker = memo(({place, coordinate, photoRef, navigation}) => {
+const OptimizedMarker = memo(({ place, coordinate, photoRef, navigation }) => {
   const imageUrl = photoRef
     ? `${Google_Places_Images}${photoRef}&maxwidth=100`
     : null;
@@ -205,18 +205,18 @@ const OptimizedMarker = memo(({place, coordinate, photoRef, navigation}) => {
     <Marker
       coordinate={coordinate}
       onPress={() =>
-        navigation.navigate('HomeDetails', {placeDetails: place})
+        navigation.navigate('HomeDetails', { placeDetails: place })
       }>
       {imageUrl ? (
         <FastImage
-          source={{uri: imageUrl}}
-          style={{height: 35, width: 35, borderRadius: 20}}
+          source={{ uri: imageUrl }}
+          style={{ height: 35, width: 35, borderRadius: 20 }}
           resizeMode={FastImage.resizeMode.cover}
         />
       ) : (
         <FastImage
           source={AppImages.LOCATION_MARK}
-          style={{height: 35, width: 35, borderRadius: 20}}
+          style={{ height: 35, width: 35, borderRadius: 20 }}
           resizeMode={FastImage.resizeMode.contain}
         />
       )}
