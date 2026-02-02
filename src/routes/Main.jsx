@@ -34,6 +34,7 @@ import MyLikes from '../screens/main/Journal/MyLikes';
 import MyHates from '../screens/main/Journal/MyHates';
 import HelpMeDecide from '../screens/main/Journal/HelpMeDecide';
 import TopRated from '../screens/main/TopRated/TopRates';
+import SpinTheWheel from '../screens/main/Journal/SpinTheWheel';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -68,6 +69,7 @@ const Main = () => {
       <Stack.Screen name="MyLikes" component={MyLikes} />
       <Stack.Screen name="MyHates" component={MyHates} />
       <Stack.Screen name="HelpMeDecide" component={HelpMeDecide} />
+      <Stack.Screen name="SpinTheWheel" component={SpinTheWheel} />
     </Stack.Navigator>
   );
 };
