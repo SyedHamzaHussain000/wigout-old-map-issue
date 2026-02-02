@@ -13,7 +13,7 @@ export const AddReviews = async (token, data) => {
 
 export const GetReviews = async token => {
   try {
-    const response = await ApiCall('GET', 'reviews', '', token);
+    const response = await ApiCall('GET', 'getUserReview', '', token);
     console.log('resss', response.message);
 
     return response.data;
@@ -35,17 +35,16 @@ export const addNote = async (data, token) => {
   }
 };
 
-// export const deleteReview = async ({noteId, token}: any) => {
-//   try {
-//     const data = await axios.post(`${baseUrl}${endPoints.deleteNote}`, {
-//       noteId: noteId.toString(),
-//     });
+export const RemoveReview = async (data, token) => {
+  try {
+    const url = `deleteReview?reviewId=${data?.reviewId}`;
+    const response = await ApiCall('DELETE', url, {}, token);
 
-//     return data?.data;
-//   } catch (error) {
-//     return {
-//       success: false,
-//       message: error?.response?.data?.message || error.message,
-//     };
-//   }
-// };
+    return response?.data || response;
+  } catch (error) {
+    return {
+      success: false,
+      message: error?.response?.data?.message || error.message,
+    };
+  }
+};

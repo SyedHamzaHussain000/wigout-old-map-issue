@@ -7,6 +7,7 @@ import {
   Image,
   StyleSheet,
   SafeAreaView,
+  ActivityIndicator,
 } from 'react-native';
 import AppColors from '../../../utils/AppColors';
 import AppText from '../../../components/AppTextComps/AppText';
@@ -58,6 +59,14 @@ const JournalHome = ({navigation}) => {
     }
     setLoader(false);
   };
+
+  if (loader) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color={AppColors.BTNCOLOURS} />
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={{flex: 1, backgroundColor: AppColors.WHITE}}>
@@ -246,6 +255,11 @@ const styles = StyleSheet.create({
     height: 45,
     borderRadius: 22.5,
     backgroundColor: '#FFCDD2',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  center: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },

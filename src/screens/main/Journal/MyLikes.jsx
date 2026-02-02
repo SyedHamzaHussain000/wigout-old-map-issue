@@ -27,6 +27,7 @@ import {useSelector} from 'react-redux';
 import {
   addNote,
   GetReviews,
+  RemoveReview,
 } from '../../../ApiCalls/Main/Reviews/ReviewsApiCall';
 import AppButton from '../../../components/AppButton';
 
@@ -80,15 +81,9 @@ const MyLikes = ({navigation, route}) => {
     }
   };
 
-  const handleRemove = async item => {
-    let id = item?._id;
-
-    setFilteredLikes(prev => prev.filter(item => item?._id !== id));
-  };
-
   const renderItem = ({item}) => {
     const isEditing = editingItemId === item._id;
-    // console.log('ITEM:-', item);
+    // console.log('ITEM:-', item?.notes);
     return (
       <View style={styles.cardContainer}>
         <View style={styles.cardHeader}>
@@ -121,6 +116,7 @@ const MyLikes = ({navigation, route}) => {
               />
             </View>
           </TouchableOpacity>
+
           <View style={styles.actionButtons}>
             <TouchableOpacity
               style={[
@@ -141,6 +137,19 @@ const MyLikes = ({navigation, route}) => {
             </TouchableOpacity>
           </View>
         </View>
+
+        {item?.notes?.length > 0 && (
+          <View style={styles.displayNote}>
+            {item.notes.map((note, index) => (
+              <AppText
+                key={index}
+                title={note.noteText}
+                textColor={AppColors.BLACK}
+                textSize={1.6}
+              />
+            ))}
+          </View>
+        )}
 
         {isEditing && (
           <View style={styles.noteSection}>
@@ -180,6 +189,22 @@ const MyLikes = ({navigation, route}) => {
     );
   };
 
+  const handleRemove = async item => {
+    let id = item?._id;
+    let data = {
+      reviewId: id,
+    };
+
+    setLoader(true);
+    const res = await RemoveReview(data, token);
+    console.log('RES i RemoveReview:-', res);
+    if (res?.success) {
+      fetchMyLikes();
+    } else {
+      setLoader(false);
+    }
+  };
+
   const handleAddNote = async item => {
     let data = {
       reviewId: item?._id,
@@ -187,8 +212,10 @@ const MyLikes = ({navigation, route}) => {
     };
     let res = await addNote(data, token);
     console.log('RES:-', res);
-    // setEditingItemId(null);
     setNote('');
+    fetchMyLikes();
+    // setEditingItemId(null);
+    // navigation.goBack();
   };
 
   return (
@@ -217,7 +244,7 @@ const MyLikes = ({navigation, route}) => {
         <LineBreak space={2} />
 
         {/* Search Bar */}
-        <View style={{paddingHorizontal: 20}}>
+        <View style={styles.searchContainer}>
           <AppTextInput
             inputPlaceHolder={'Track your experiences'}
             inputWidth={80}
@@ -286,6 +313,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     marginTop: responsiveHeight(2),
+  },
+  searchContainer: {
+    marginHorizontal: 20,
+    borderWidth: 1,
+    borderColor: '#E8F5E9',
+    borderRadius: 10,
   },
   cardContainer: {
     backgroundColor: AppColors.WHITE,
@@ -378,6 +411,20 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  displayNote: {
+    backgroundColor: '#F9F9F9',
+    padding: 10,
+    borderRadius: 10,
+    marginTop: 10,
+    borderLeftWidth: 3,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderRightWidth: 1,
+    borderLeftColor: AppColors.BTNCOLOURS,
+    borderRightColor: '#E8F5E9',
+    borderTopColor: '#E8F5E9',
+    borderBottomColor: '#E8F5E9',
   },
 });
 

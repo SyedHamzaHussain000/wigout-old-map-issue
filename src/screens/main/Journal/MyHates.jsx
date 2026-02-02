@@ -23,7 +23,11 @@ import {useCustomNavigation} from '../../../utils/Hooks';
 import BackIcon from '../../../components/AppTextComps/BackIcon';
 
 import {useSelector} from 'react-redux';
-import {GetReviews} from '../../../ApiCalls/Main/Reviews/ReviewsApiCall';
+import {
+  addNote,
+  GetReviews,
+  RemoveReview,
+} from '../../../ApiCalls/Main/Reviews/ReviewsApiCall';
 
 const MyHates = ({navigation, route}) => {
   const {hatesData} = route.params || {};
@@ -101,16 +105,22 @@ const MyHates = ({navigation, route}) => {
         <LineBreak space={3} />
 
         {/* Search Bar */}
-        <AppTextInput
-          inputPlaceHolder={'Track your experiences'}
-          inputWidth={80}
-          value={searchQuery}
-          onChangeText={handleSearch}
-          logo={<Ionicons name="search" size={20} color={AppColors.GRAY} />}
-          rightIcon={
-            <MaterialIcons name="tune" size={20} color={AppColors.BTNCOLOURS} />
-          }
-        />
+        <View style={styles.searchContainer}>
+          <AppTextInput
+            inputPlaceHolder={'Track your experiences'}
+            inputWidth={80}
+            value={searchQuery}
+            onChangeText={handleSearch}
+            logo={<Ionicons name="search" size={20} color={AppColors.GRAY} />}
+            rightIcon={
+              <MaterialIcons
+                name="tune"
+                size={20}
+                color={AppColors.BTNCOLOURS}
+              />
+            }
+          />
+        </View>
         <LineBreak space={3} />
         {loader && (
           <View style={styles.center}>
@@ -141,12 +151,6 @@ const MyHates = ({navigation, route}) => {
         </View>
       )
     );
-  };
-
-  const handleRemove = async item => {
-    let id = item?._id;
-
-    setFilteredHates(prev => prev.filter(item => item?._id !== id));
   };
 
   const renderItem = ({item}) => {
@@ -205,6 +209,19 @@ const MyHates = ({navigation, route}) => {
           </View>
         </View>
 
+        {item?.notes?.length > 0 && (
+          <View style={styles.displayNote}>
+            {item.notes.map((note, index) => (
+              <AppText
+                key={index}
+                title={note.noteText}
+                textColor={AppColors.BLACK}
+                textSize={1.6}
+              />
+            ))}
+          </View>
+        )}
+
         {isEditing && (
           <View style={styles.noteSection}>
             <TextInput
@@ -218,10 +235,7 @@ const MyHates = ({navigation, route}) => {
             <View style={styles.noteButtons}>
               <TouchableOpacity
                 style={styles.saveBtn}
-                onPress={() => {
-                  // Logic to save note
-                  setEditingItemId(null);
-                }}>
+                onPress={() => handleAddNote(item)}>
                 <AppText
                   title="Save"
                   textColor={AppColors.WHITE}
@@ -244,6 +258,35 @@ const MyHates = ({navigation, route}) => {
         )}
       </View>
     );
+  };
+
+  const handleRemove = async item => {
+    let id = item?._id;
+    let data = {
+      reviewId: id,
+    };
+
+    setLoader(true);
+    const res = await RemoveReview(data, token);
+    console.log('RES i RemoveReview:-', res);
+    if (res?.success) {
+      fetchMyHates();
+    } else {
+      setLoader(false);
+    }
+  };
+
+  const handleAddNote = async item => {
+    let data = {
+      reviewId: item?._id,
+      noteText: note,
+    };
+    let res = await addNote(data, token);
+    console.log('RES:-', res);
+    setNote('');
+    fetchMyHates();
+    // setEditingItemId(null);
+    // navigation.goBack();
   };
 
   return (
@@ -303,6 +346,11 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     borderColor: '#FFCDD2',
+  },
+  searchContainer: {
+    borderWidth: 1,
+    borderColor: '#FFEBEE',
+    borderRadius: 10,
   },
   cardContainer: {
     backgroundColor: AppColors.WHITE,
@@ -395,6 +443,20 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  displayNote: {
+    backgroundColor: '#FFF5F5',
+    padding: 10,
+    borderRadius: 10,
+    marginTop: 10,
+    borderLeftWidth: 3,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderRightWidth: 1,
+    borderLeftColor: '#F44336',
+    borderRightColor: '#FFEBEE',
+    borderTopColor: '#FFEBEE',
+    borderBottomColor: '#FFEBEE',
   },
 });
 
