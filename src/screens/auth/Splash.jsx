@@ -1,6 +1,7 @@
 /* eslint-disable react-native/no-inline-styles */
 import React, {useEffect} from 'react';
 import {View, Image} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import AppColors from '../../utils/AppColors';
 import AppImages from '../../assets/images/AppImages';
 import {
@@ -9,13 +10,35 @@ import {
 } from '../../utils/Responsive_Dimensions';
 import {useCustomNavigation} from '../../utils/Hooks';
 
+const ONBOARDING_KEY = '@hasSeenOnBoarding';
+
 const Splash = () => {
   const {navigateToRoute} = useCustomNavigation();
 
   useEffect(() => {
-    setTimeout(() => {
-      navigateToRoute('OnBoarding');
-    }, 1500);
+    const checkOnBoardingStatus = async () => {
+      try {
+        const hasSeenOnBoarding = await AsyncStorage.getItem(ONBOARDING_KEY);
+
+        setTimeout(() => {
+          if (hasSeenOnBoarding === 'true') {
+            // User has seen OnBoarding before, skip to GetStarted
+            navigateToRoute('Login');
+          } else {
+            // First time user, show OnBoarding
+            navigateToRoute('OnBoarding');
+          }
+        }, 1500);
+      } catch (error) {
+        console.error('Error checking OnBoarding status:', error);
+        // On error, default to showing OnBoarding
+        setTimeout(() => {
+          navigateToRoute('OnBoarding');
+        }, 1500);
+      }
+    };
+
+    checkOnBoardingStatus();
   }, [navigateToRoute]);
 
   return (

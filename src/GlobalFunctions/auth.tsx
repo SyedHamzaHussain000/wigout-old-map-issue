@@ -4,9 +4,10 @@ import {baseUrl, endPoints} from '../utils/api_content';
 export const signUp = async ({email, password}: any) => {
   try {
     const data = await axios.post(`${baseUrl}${endPoints.signUp}`, {
-      email: email.toString(),
+      email: email.toString()?.toLowerCase(),
       password: password.toString(),
     });
+    console.log('DATA in signUp:-', data);
 
     return data?.data;
   } catch (error) {
@@ -20,10 +21,10 @@ export const signUp = async ({email, password}: any) => {
 export const signIn = async ({email, password}: any) => {
   try {
     const data = await axios.post(`${baseUrl}${endPoints.signIn}`, {
-      email: email.toString(),
+      email: email.toString()?.toLowerCase(),
       password: password.toString(),
     });
-
+    console.log('DATA in signIn:-', data);
     return data?.data;
   } catch (error) {
     return {

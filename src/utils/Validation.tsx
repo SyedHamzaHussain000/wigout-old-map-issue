@@ -1,6 +1,9 @@
-import { ShowToast } from "./api_content";
+import {ShowToast} from './api_content';
 
-export const signUpAndSignInFormValidation = (email: string, password: string) => {
+export const signUpAndSignInFormValidation = (
+  email: string,
+  password: string,
+) => {
   // Email required
   if (!email) {
     return ShowToast('error', 'Email is required');
@@ -25,7 +28,15 @@ export const signUpAndSignInFormValidation = (email: string, password: string) =
   return true; // ✅ Passed validation
 };
 
-export const fillProfileValidation = (image: string, fullName: string, nickName: string, date: string, email: string, number: string, gender: string) => {
+export const fillProfileValidation = (
+  image: string,
+  fullName: string,
+  nickName: string,
+  date: string,
+  email: string,
+  number: string,
+  gender: string,
+) => {
   if (!image) {
     return ShowToast('error', 'Image is required');
   }
@@ -39,7 +50,7 @@ export const fillProfileValidation = (image: string, fullName: string, nickName:
   }
 
   if (!date) {
-    return ShowToast('error', 'Nick Name is required');
+    return ShowToast('error', 'Date is required');
   }
 
   if (!email) {
@@ -51,8 +62,8 @@ export const fillProfileValidation = (image: string, fullName: string, nickName:
   }
 
   if (!gender) {
-    return ShowToast('error', 'Nick Name is required');
+    return ShowToast('error', 'Gender is required');
   }
 
   return true;
-}
+};

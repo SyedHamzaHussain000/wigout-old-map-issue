@@ -24,11 +24,14 @@ const EmailForForgotPassword = () => {
 
     setIsLoading(true);
 
-    const res = await forgotPassword({email});
+    const res = await forgotPassword({email: email?.toLowerCase()});
 
     if (res?.success) {
       ShowToast('success', res?.msg);
-      navigateToRoute('OtpVerification', {email, userId: res?.data?.userId});
+      navigateToRoute('OtpVerification', {
+        email: email?.toLowerCase(),
+        userId: res?.data?.userId,
+      });
     } else {
       ShowToast('error', res?.msg || res?.message);
     }

@@ -124,7 +124,20 @@ const HomeDetails = ({route}) => {
       });
     }
     if (placeDetails?.photos && Array.isArray(placeDetails.photos)) {
-      return placeDetails.photos;
+      return placeDetails.photos
+        .map(photo => {
+          // If photo is already a string (URI), return it
+          if (typeof photo === 'string') {
+            return photo;
+          }
+          // If photo is an object with photo_reference, construct the URI
+          if (photo?.photo_reference) {
+            return `${Google_Places_Images}${photo.photo_reference}`;
+          }
+          // Fallback: return null for invalid entries
+          return null;
+        })
+        .filter(Boolean); // Remove null entries
     }
     return [];
   };

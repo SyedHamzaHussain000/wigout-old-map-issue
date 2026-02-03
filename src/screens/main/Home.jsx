@@ -1,6 +1,6 @@
 /* eslint-disable react/no-unstable-nested-components */
 /* eslint-disable react-native/no-inline-styles */
-import React, { useEffect, useRef, useState } from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   View,
   ScrollView,
@@ -13,9 +13,9 @@ import AppColors from '../../utils/AppColors';
 import LineBreak from '../../components/LineBreak';
 import AppImages from '../../assets/images/AppImages';
 import AppText from '../../components/AppTextComps/AppText';
-import { AppIcons } from '../../assets/icons';
+import {AppIcons} from '../../assets/icons';
 import SVGXml from '../../components/SVGXML';
-import { useCustomNavigation } from '../../utils/Hooks';
+import {useCustomNavigation} from '../../utils/Hooks';
 import {
   responsiveFontSize,
   responsiveHeight,
@@ -26,9 +26,9 @@ import FontAwesome6 from 'react-native-vector-icons/FontAwesome6';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import HomeStarter from '../../components/HomeStarter';
 import RecommendedCard from '../../components/RecommendedCard';
-import { popularEventData, recommendedData } from '../../utils/LocalData';
-import { useSelector } from 'react-redux';
-import { baseUrl } from '../../utils/api_content';
+import {popularEventData, recommendedData} from '../../utils/LocalData';
+import {useSelector} from 'react-redux';
+import {baseUrl} from '../../utils/api_content';
 import FastImage from 'react-native-fast-image';
 
 const slides = [
@@ -64,55 +64,55 @@ const wendysSlides = [
     key: 1,
     title: 'How much would you rate this Brand?',
     data: [
-      { id: 1, num: '1' },
-      { id: 2, num: '2' },
-      { id: 3, num: '3' },
-      { id: 4, num: '4' },
-      { id: 5, num: '5' },
+      {id: 1, num: '1'},
+      {id: 2, num: '2'},
+      {id: 3, num: '3'},
+      {id: 4, num: '4'},
+      {id: 5, num: '5'},
     ],
   },
   {
     key: 2,
     title: 'How much would you rate this Brand?',
     data: [
-      { id: 1, num: '1' },
-      { id: 2, num: '2' },
-      { id: 3, num: '3' },
-      { id: 4, num: '4' },
-      { id: 5, num: '5' },
+      {id: 1, num: '1'},
+      {id: 2, num: '2'},
+      {id: 3, num: '3'},
+      {id: 4, num: '4'},
+      {id: 5, num: '5'},
     ],
   },
   {
     key: 3,
     title: 'How much would you rate this Brand?',
     data: [
-      { id: 1, num: '1' },
-      { id: 2, num: '2' },
-      { id: 3, num: '3' },
-      { id: 4, num: '4' },
-      { id: 5, num: '5' },
+      {id: 1, num: '1'},
+      {id: 2, num: '2'},
+      {id: 3, num: '3'},
+      {id: 4, num: '4'},
+      {id: 5, num: '5'},
     ],
   },
   {
     key: 4,
     title: 'How much would you rate this Brand?',
     data: [
-      { id: 1, num: '1' },
-      { id: 2, num: '2' },
-      { id: 3, num: '3' },
-      { id: 4, num: '4' },
-      { id: 5, num: '5' },
+      {id: 1, num: '1'},
+      {id: 2, num: '2'},
+      {id: 3, num: '3'},
+      {id: 4, num: '4'},
+      {id: 5, num: '5'},
     ],
   },
   {
     key: 5,
     title: 'How much would you rate this Brand?',
     data: [
-      { id: 1, num: '1' },
-      { id: 2, num: '2' },
-      { id: 3, num: '3' },
-      { id: 4, num: '4' },
-      { id: 5, num: '5' },
+      {id: 1, num: '1'},
+      {id: 2, num: '2'},
+      {id: 3, num: '3'},
+      {id: 4, num: '4'},
+      {id: 5, num: '5'},
     ],
   },
 ];
@@ -141,26 +141,26 @@ const invcludesSlides = [
 ];
 
 const brands = [
-  { id: 1, brand: AppImages.brand_one },
-  { id: 2, brand: AppImages.brand_two },
-  { id: 3, brand: AppImages.brand_three },
-  { id: 4, brand: AppImages.brand_four },
-  { id: 5, brand: AppImages.brand_five },
-  { id: 6, brand: AppImages.brand_six },
+  {id: 1, brand: AppImages.brand_one},
+  {id: 2, brand: AppImages.brand_two},
+  {id: 3, brand: AppImages.brand_three},
+  {id: 4, brand: AppImages.brand_four},
+  {id: 5, brand: AppImages.brand_five},
+  {id: 6, brand: AppImages.brand_six},
 ];
 
 const Home = () => {
   const sliderRef = useRef(null);
-  const { navigateToRoute } = useCustomNavigation();
+  const {navigateToRoute} = useCustomNavigation();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showBranding, setShowBranding] = useState(false);
   const [showRating, setShowRating] = useState(false);
-  const userData = useSelector((state) => state.user.userData);
+  const userData = useSelector(state => state.user.userData);
   const fetchedLocations = useSelector(state => state?.user?.places_nearby);
 
-  // console.log("fetchedLocations",fetchedLocations)
+  console.log('fetchedLocations:--', fetchedLocations);
+  console.log('userData:-', userData);
 
-  // console.log("fetchedLocations",fetchedLocations)
   // slider two states
   const wendysSliderRef = useRef(null);
   const [wendysCurrentIndex, setWendysCurrentIndex] = useState(0);
@@ -171,11 +171,10 @@ const Home = () => {
   const [includeCurrentIndex, setIncludeCurrentIndex] = useState(0);
   const [includeShowBranding, setIncludeShowBranding] = useState(true);
 
-
   return (
     <ScrollView
-      style={{ flex: 1, backgroundColor: AppColors.WHITE }}
-      contentContainerStyle={{ flexGrow: 1 }}>
+      style={{flex: 1, backgroundColor: AppColors.WHITE}}
+      contentContainerStyle={{flexGrow: 1}}>
       <LineBreak space={3} />
 
       <View
@@ -185,14 +184,14 @@ const Home = () => {
           justifyContent: 'space-between',
           paddingHorizontal: responsiveWidth(5),
         }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 18 }}>
+        <View style={{flexDirection: 'row', alignItems: 'center', gap: 18}}>
           <TouchableOpacity>
             <Image
-              source={{ uri: `${baseUrl}/${userData?.profileImage}` }}
-              style={{ width: 50, height: 50, borderRadius: 100 }}
+              source={{uri: `${baseUrl}/${userData?.profileImage}`}}
+              style={{width: 50, height: 50, borderRadius: 100}}
             />
           </TouchableOpacity>
-          <View style={{ gap: 2 }}>
+          <View style={{gap: 2}}>
             <AppText
               title={'Good Morning 👋'}
               textColor={AppColors.GRAY}
@@ -206,7 +205,7 @@ const Home = () => {
             />
           </View>
         </View>
-        <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+        <View style={{flexDirection: 'row', gap: 10, alignItems: 'center'}}>
           <TouchableOpacity
             onPress={() => navigateToRoute('Notifications')}
             style={{
@@ -225,8 +224,6 @@ const Home = () => {
       </View>
 
       <LineBreak space={3} />
-
-
 
       <View
         style={{
@@ -351,7 +348,7 @@ const Home = () => {
       ) : null} */}
 
       {includeShowBranding && (
-        <View style={{ paddingHorizontal: responsiveWidth(5) }}>
+        <View style={{paddingHorizontal: responsiveWidth(5)}}>
           <View
             style={{
               flexDirection: 'row',
@@ -364,7 +361,7 @@ const Home = () => {
               textSize={2}
               textFontWeight
             />
-            <TouchableOpacity onPress={() => { }}>
+            <TouchableOpacity onPress={() => {}}>
               <AppText
                 title={'See All'}
                 textColor={AppColors.BTNCOLOURS}
@@ -376,47 +373,47 @@ const Home = () => {
 
           <LineBreak space={2} />
 
-          {
-            fetchedLocations?.length > 0 ?
-              (
+          {fetchedLocations?.length > 0 ? (
+            <FlatList
+              data={fetchedLocations}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{
+                gap: 12,
+                marginBottom: responsiveHeight(2),
+              }}
+              renderItem={({item}) => {
+                console.log('itemsss', item.photos);
 
-                <FlatList
-                  data={fetchedLocations}
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={{ gap: 12, marginBottom: responsiveHeight(2) }}
-                  renderItem={({ item }) => {
-                    console.log("itemsss", item.photos)
-
-
-                    return (
-                      <>
-                        {
-                          item?.rating > 4 && (
-
-                            <RecommendedCard
-                              item={item}
-                              name={item?.name}
-                              address={item?.vicinity}
-                              CardImg={item?.photos?.length > 0 && item?.photos[0]?.photo_reference}
-                              cardOnPress={() => navigateToRoute('HomeDetails', { placeDetails: item })}
-                              bottomPadding={0.1}
-                              cardWidth={35}
-                              cardContainerWidth={75}
-                              isHeartIconMoveToEnd={true}
-                              locationMaxWidth={60}
-                            />
-                          )
+                return (
+                  <>
+                    {item?.rating > 4 && (
+                      <RecommendedCard
+                        item={item}
+                        name={item?.name}
+                        address={item?.vicinity}
+                        CardImg={
+                          item?.photos?.length > 0
+                            ? item?.photos[0]?.photo_reference
+                            : null
                         }
-
-                      </>
-                    );
-                  }}
-                />
-              ) : (
-                <AppText title={"No Recommendation found"} />
-              )
-          }
+                        cardOnPress={() =>
+                          navigateToRoute('HomeDetails', {placeDetails: item})
+                        }
+                        bottomPadding={0.1}
+                        cardWidth={35}
+                        cardContainerWidth={75}
+                        isHeartIconMoveToEnd={true}
+                        locationMaxWidth={60}
+                      />
+                    )}
+                  </>
+                );
+              }}
+            />
+          ) : (
+            <AppText title={'No Recommendation found'} />
+          )}
 
           <LineBreak space={2} />
 
@@ -429,49 +426,52 @@ const Home = () => {
 
           <LineBreak space={2} />
 
-          {
-            fetchedLocations.length > 0 ?
+          {fetchedLocations.length > 0 ? (
+            <FlatList
+              data={fetchedLocations}
+              ItemSeparatorComponent={() => <LineBreak space={2} />}
+              columnWrapperStyle={{gap: 15, marginBottom: responsiveHeight(2)}}
+              numColumns={2}
+              renderItem={({item}) => {
+                console.log('item..', item);
 
-              <FlatList
-                data={fetchedLocations}
-                ItemSeparatorComponent={() => <LineBreak space={2} />}
-                columnWrapperStyle={{ gap: 15, marginBottom: responsiveHeight(2) }}
-                numColumns={2}
-                renderItem={({ item }) => {
-
-                  console.log("item..", item)
-
-                  return (
-                    <RecommendedCard
-                      item={item}
-                      name={item?.name}
-                      address={item?.vicinity}
-                      CardImg={item?.photos?.length > 0 && item?.photos[0]?.photo_reference}
-                      // cardOnPress={() => navigateToRoute('HomeDetails')}
-                      cardOnPress={() => navigateToRoute('HomeDetails', { placeDetails: item })}
-                      cardContainerWidth={43}
-                      cardWidth={19}
-                      titleFontSize={2}
-                      dateFontSize={1.5}
-                      locationFontSize={1.3}
-                      containerPaddingHorizontal={2}
-                      textContainerPaddingHorizontal={2}
-                      containerPaddingVertical={1}
-                      containerborderRadius={25}
-                      bottomPadding={1}
-                      dateNumOfLines={1}
-                      dateMaxWidth={35}
-                      locationNumOfLines={1}
-                      locationMaxWidth={25}
-                      titleMaxWidth={35}
-                      titleNumOfLines={1}
-                    />
-                  );
-                }}
-              />
-              :
-              <AppText title={"No Nearby resturants found"} />
-          }
+                return (
+                  <RecommendedCard
+                    item={item}
+                    name={item?.name}
+                    address={item?.vicinity}
+                    CardImg={
+                      item?.photos?.length > 0
+                        ? item?.photos[0]?.photo_reference
+                        : null
+                    }
+                    // cardOnPress={() => navigateToRoute('HomeDetails')}
+                    cardOnPress={() =>
+                      navigateToRoute('HomeDetails', {placeDetails: item})
+                    }
+                    cardContainerWidth={43}
+                    cardWidth={19}
+                    titleFontSize={2}
+                    dateFontSize={1.5}
+                    locationFontSize={1.3}
+                    containerPaddingHorizontal={2}
+                    textContainerPaddingHorizontal={2}
+                    containerPaddingVertical={1}
+                    containerborderRadius={25}
+                    bottomPadding={1}
+                    dateNumOfLines={1}
+                    dateMaxWidth={35}
+                    locationNumOfLines={1}
+                    locationMaxWidth={25}
+                    titleMaxWidth={35}
+                    titleNumOfLines={1}
+                  />
+                );
+              }}
+            />
+          ) : (
+            <AppText title={'No Nearby resturants found'} />
+          )}
         </View>
       )}
 

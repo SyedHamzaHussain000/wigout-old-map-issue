@@ -1,5 +1,5 @@
 /* eslint-disable react-native/no-inline-styles */
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import {
   View,
   ScrollView,
@@ -22,11 +22,11 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import AppButton from '../../components/AppButton';
 import SVGXml from '../../components/SVGXML';
-import { AppIcons } from '../../assets/icons';
-import { useCustomNavigation } from '../../utils/Hooks';
-import { signUp } from '../../GlobalFunctions/auth';
-import { ShowToast } from '../../utils/api_content';
-import { signUpAndSignInFormValidation } from '../../utils/Validation';
+import {AppIcons} from '../../assets/icons';
+import {useCustomNavigation} from '../../utils/Hooks';
+import {signUp} from '../../GlobalFunctions/auth';
+import {ShowToast} from '../../utils/api_content';
+import {signUpAndSignInFormValidation} from '../../utils/Validation';
 
 const socialIcons = [
   {
@@ -44,40 +44,41 @@ const socialIcons = [
 ];
 
 const SignUp = () => {
-  const [isFocused, setIsFocused] = useState({ email: false, password: false });
+  const [isFocused, setIsFocused] = useState({email: false, password: false});
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { navigateToRoute } = useCustomNavigation();
+  const {navigateToRoute} = useCustomNavigation();
 
   const handleSignUp = async () => {
     const isValid = signUpAndSignInFormValidation(email, password);
     if (isValid === true) {
       setIsLoading(true);
       const res = await signUp({
-        email: email,
+        email: email?.toLowerCase(),
         password: password,
       });
 
       if (res.success) {
-        navigateToRoute('BuildYourList');
+        navigateToRoute('Login'); // BuildYourList
         ShowToast('success', res?.msg);
         setIsLoading(false);
       } else {
         ShowToast('error', res?.msg || res?.message);
         setIsLoading(false);
+        console.log('ERR in SignUp:-', res);
       }
     }
   };
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: AppColors.WHITE }}>
+    <ScrollView style={{flex: 1, backgroundColor: AppColors.WHITE}}>
       <AppHeader onBackPress />
 
-      <View style={{ paddingHorizontal: responsiveWidth(5) }}>
-        <View style={{ width: responsiveWidth(100), alignItems: 'center' }}>
+      <View style={{paddingHorizontal: responsiveWidth(5)}}>
+        <View style={{width: responsiveWidth(100), alignItems: 'center'}}>
           <Image
             source={AppImages.signup_logo}
             style={{
@@ -105,8 +106,8 @@ const SignUp = () => {
               inputPlaceHolder={'Email'}
               inputWidth={70}
               isFocused={isFocused.email}
-              onFocus={() => setIsFocused(prev => ({ ...prev, email: true }))}
-              onBlur={() => setIsFocused(prev => ({ ...prev, email: false }))}
+              onFocus={() => setIsFocused(prev => ({...prev, email: true}))}
+              onBlur={() => setIsFocused(prev => ({...prev, email: false}))}
               placeholderTextColor={AppColors.BLACK}
               value={email}
               onChangeText={text => setEmail(text)}
@@ -128,8 +129,8 @@ const SignUp = () => {
               inputWidth={70}
               isFocused={isFocused.password}
               placeholderTextColor={AppColors.BLACK}
-              onFocus={() => setIsFocused(prev => ({ ...prev, password: true }))}
-              onBlur={() => setIsFocused(prev => ({ ...prev, password: false }))}
+              onFocus={() => setIsFocused(prev => ({...prev, password: true}))}
+              onBlur={() => setIsFocused(prev => ({...prev, password: false}))}
               value={password}
               onChangeText={text => setPassword(text)}
               logo={
@@ -157,7 +158,8 @@ const SignUp = () => {
             />
           </View>
           <LineBreak space={4} />
-          <View
+
+          {/* <View
             style={{
               flexDirection: 'row',
               alignItems: 'center',
@@ -193,9 +195,10 @@ const SignUp = () => {
               textColor={AppColors.BLACK}
               textSize={2}
             />
-          </View>
+          </View> */}
+
           <LineBreak space={4} />
-          <View style={{ alignItems: 'center' }}>
+          <View style={{alignItems: 'center'}}>
             <AppButton
               title={'Sign up'}
               handlePress={() => handleSignUp()}
@@ -205,7 +208,7 @@ const SignUp = () => {
               loading={isLoading}
             />
             <LineBreak space={6} />
-            <View style={{ flexDirection: 'row', gap: 20, alignItems: 'center' }}>
+            <View style={{flexDirection: 'row', gap: 20, alignItems: 'center'}}>
               <View
                 style={{
                   backgroundColor: AppColors.GRAY,
@@ -236,7 +239,7 @@ const SignUp = () => {
                 justifyContent: 'center',
                 gap: 20,
               }}
-              renderItem={({ item }) => {
+              renderItem={({item}) => {
                 return (
                   <TouchableOpacity
                     style={{
@@ -254,7 +257,7 @@ const SignUp = () => {
               }}
             />
             <LineBreak space={2} />
-            <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+            <View style={{flexDirection: 'row', gap: 10, alignItems: 'center'}}>
               <AppText
                 title={'Already have an account?'}
                 textAlignment={'center'}

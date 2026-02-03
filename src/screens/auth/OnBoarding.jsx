@@ -1,6 +1,7 @@
 /* eslint-disable react-native/no-inline-styles */
 import React, {useRef} from 'react';
 import {ImageBackground, View} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import AppIntroSlider from 'react-native-app-intro-slider';
 import AppImages from '../../assets/images/AppImages';
 import {
@@ -13,9 +14,23 @@ import AppButton from '../../components/AppButton';
 import LineBreak from '../../components/LineBreak';
 import {useCustomNavigation} from '../../utils/Hooks';
 
+const ONBOARDING_KEY = '@hasSeenOnBoarding';
+
 const OnBoarding = () => {
   const AppIntroSliderRef = useRef(null);
   const {navigateToRoute} = useCustomNavigation();
+
+  const handleOnBoardingComplete = async () => {
+    try {
+      // Mark OnBoarding as completed
+      await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
+      navigateToRoute('GetStarted');
+    } catch (error) {
+      console.error('Error saving OnBoarding status:', error);
+      // Navigate anyway even if storage fails
+      navigateToRoute('GetStarted');
+    }
+  };
 
   const slides = [
     {
@@ -66,10 +81,7 @@ const OnBoarding = () => {
         }}
         renderDoneButton={() => {
           return (
-            <AppButton
-              title={'Done'}
-              handlePress={() => navigateToRoute('GetStarted')}
-            />
+            <AppButton title={'Done'} handlePress={handleOnBoardingComplete} />
           );
         }}
         renderItem={({item, index}) => {

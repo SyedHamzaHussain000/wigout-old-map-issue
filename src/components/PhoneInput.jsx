@@ -16,7 +16,6 @@ const PhoneInputScreen = ({phoneRef, defaultVal}) => {
     if (phoneRef.current) {
       // console.log("phoneRef.current.getPickerData()",phoneRef.current.getPickerData())
       setPickerData(phoneRef.current.getPickerData());
-      
     }
   }, []);
 
@@ -33,9 +32,7 @@ const PhoneInputScreen = ({phoneRef, defaultVal}) => {
       <PhoneInput
         ref={phoneRef}
         onPressFlag={onPressFlag}
-        initialCountry={"us"}
-        
-        
+        initialCountry={'us'}
         initialValue={defaultVal}
         style={{
           paddingHorizontal: responsiveWidth(7),
@@ -43,13 +40,11 @@ const PhoneInputScreen = ({phoneRef, defaultVal}) => {
           borderRadius: 12,
           backgroundColor: AppColors.inputBg,
         }}
-        
         textStyle={{color: AppColors.BLACK, marginLeft: 10}}
         autoFormat
         textProps={{
           placeholder: '+1 000 000 000',
         }}
-
       />
 
       {/* <CountryPicker

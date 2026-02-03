@@ -1,5 +1,5 @@
 /* eslint-disable react-native/no-inline-styles */
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   ScrollView,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   FlatList,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import AppColors from '../../utils/AppColors';
 import AppHeader from '../../components/AppHeader';
 import LineBreak from '../../components/LineBreak';
@@ -29,6 +30,11 @@ import {signUpAndSignInFormValidation} from '../../utils/Validation';
 import {ShowToast} from '../../utils/api_content';
 import {setToken, setUserData} from '../../redux/Slices';
 import {store} from '../../redux/Store';
+
+// AsyncStorage keys for Remember Me feature
+const REMEMBER_ME_EMAIL = '@rememberedEmail';
+const REMEMBER_ME_PASSWORD = '@rememberedPassword';
+const REMEMBER_ME_ENABLED = '@rememberMeEnabled';
 
 const socialIcons = [
   {
@@ -54,22 +60,68 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
+  // Load saved credentials on component mount
+  useEffect(() => {
+    loadSavedCredentials();
+  }, []);
+
+  const loadSavedCredentials = async () => {
+    try {
+      const savedEmail = await AsyncStorage.getItem(REMEMBER_ME_EMAIL);
+      const savedPassword = await AsyncStorage.getItem(REMEMBER_ME_PASSWORD);
+      const isRememberMeEnabled = await AsyncStorage.getItem(
+        REMEMBER_ME_ENABLED,
+      );
+
+      if (isRememberMeEnabled === 'true' && savedEmail && savedPassword) {
+        setEmail(savedEmail);
+        setPassword(savedPassword);
+        setRememberMe(true);
+      }
+    } catch (error) {
+      console.error('Error loading saved credentials:', error);
+    }
+  };
+
+  const saveCredentials = async (userEmail, userPassword) => {
+    try {
+      await AsyncStorage.setItem(REMEMBER_ME_EMAIL, userEmail);
+      await AsyncStorage.setItem(REMEMBER_ME_PASSWORD, userPassword);
+      await AsyncStorage.setItem(REMEMBER_ME_ENABLED, 'true');
+    } catch (error) {
+      console.error('Error saving credentials:', error);
+    }
+  };
+
+  const clearSavedCredentials = async () => {
+    try {
+      await AsyncStorage.removeItem(REMEMBER_ME_EMAIL);
+      await AsyncStorage.removeItem(REMEMBER_ME_PASSWORD);
+      await AsyncStorage.removeItem(REMEMBER_ME_ENABLED);
+    } catch (error) {
+      console.error('Error clearing credentials:', error);
+    }
+  };
+
   const handleSignIn = async () => {
     const isValid = signUpAndSignInFormValidation(email, password);
     if (isValid === true) {
       setIsLoading(true);
       const res = await signIn({
-        email: email,
+        email: email?.toLowerCase(),
         password: password,
       });
 
       if (res.success) {
-        // if (res.data?.isCreated) {
-          store.dispatch(setToken(res?.accessToken));
-          store.dispatch(setUserData(res?.data));
-        // } else {
-        //   navigateToRoute('FillYourProfile', {userId: res?.data?._id, token: res?.accessToken});
-        // }
+        // Save or clear credentials based on Remember Me checkbox
+        if (rememberMe) {
+          await saveCredentials(email, password);
+        } else {
+          await clearSavedCredentials();
+        }
+
+        store.dispatch(setToken(res?.accessToken));
+        store.dispatch(setUserData(res?.data));
         ShowToast('success', res?.msg);
         setIsLoading(false);
       } else {
@@ -81,7 +133,7 @@ const Login = () => {
 
   return (
     <ScrollView style={{flex: 1, backgroundColor: AppColors.WHITE}}>
-      <AppHeader onBackPress />
+      <AppHeader onBackPress={false} />
 
       <View style={{paddingHorizontal: responsiveWidth(5)}}>
         <View style={{width: responsiveWidth(100), alignItems: 'center'}}>
@@ -163,7 +215,7 @@ const Login = () => {
               secureTextEntry={!showPassword}
             />
           </View>
-          <LineBreak space={4} />
+          <LineBreak space={2} />
           <View
             style={{
               flexDirection: 'row',
@@ -201,7 +253,9 @@ const Login = () => {
               textSize={2}
             />
           </View>
-          <LineBreak space={4} />
+
+          <LineBreak space={2} />
+
           <View style={{alignItems: 'center'}}>
             <AppButton
               title={'Sign in'}
@@ -212,6 +266,7 @@ const Login = () => {
               loading={isLoading}
             />
             <LineBreak space={2} />
+
             <TouchableOpacity onPress={() => navigateToRoute('ForgotPassword')}>
               <AppText
                 title={'Forgot the password?'}
@@ -221,7 +276,9 @@ const Login = () => {
                 textFontWeight
               />
             </TouchableOpacity>
-            <LineBreak space={6} />
+
+            <LineBreak space={4} />
+
             <View style={{flexDirection: 'row', gap: 20, alignItems: 'center'}}>
               <View
                 style={{
@@ -244,7 +301,9 @@ const Login = () => {
                 }}
               />
             </View>
+
             <LineBreak space={4} />
+
             <FlatList
               data={socialIcons}
               horizontal

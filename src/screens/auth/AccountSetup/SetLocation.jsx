@@ -158,17 +158,19 @@ const SetLocation = ({navigation}) => {
             latitudeDelta: 0.015,
             longitudeDelta: 0.0121,
           }}>
-          <Marker
-            tracksViewChanges={false}
-            coordinate={{
-              latitude: currentLocation.latitude,
-              longitude: currentLocation.longitude,
-            }}>
-            <Image
-              source={AppImages.LOCATION_MARK}
-              style={{height: 40, width: 40}}
-            />
-          </Marker>
+          {currentLocation?.latitude && currentLocation?.longitude && (
+            <Marker
+              tracksViewChanges={false}
+              coordinate={{
+                latitude: currentLocation.latitude,
+                longitude: currentLocation.longitude,
+              }}>
+              <Image
+                source={AppImages.LOCATION_MARK}
+                style={{height: 40, width: 40}}
+              />
+            </Marker>
+          )}
         </MapView>
 
         <LocationModal
