@@ -23,6 +23,8 @@ import {
   responsiveHeight,
   responsiveWidth,
 } from '../../utils/Responsive_Dimensions';
+import {useUserPreferences} from '../../utils/UserPreferences';
+
 import {baseUrl} from '../../utils/api_content';
 import HomeCard from '../../components/HomeCard';
 import ScreenWrapper from '../../components/ScreenWrapper';
@@ -31,6 +33,8 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import FetchNearbyPlaces from '../../ApiCalls/Main/FetchNearbyPlaces';
 import {GetReviews} from '../../ApiCalls/Main/Reviews/ReviewsApiCall';
 import {GetWishList} from '../../ApiCalls/Main/WishList_API/WishListAPI';
+import {setRecommendedPlaces} from '../../redux/Slices';
+import {useIsFocused} from '@react-navigation/native';
 // import {requestLocationPermission} from '../../utils/Permissions';
 // import {startBackgroundService} from '../../services/BackgroundLocationService';
 
@@ -56,6 +60,9 @@ const Home = () => {
   const fetchedLocations = useSelector(
     state => state?.user?.places_nearby || [],
   );
+  const placesRecommended = useSelector(
+    state => state?.user?.places_recommended || [],
+  );
   const currentLocation = useSelector(state => state.user.current_location);
   const token = useSelector(state => state.user.token);
 
@@ -72,19 +79,157 @@ const Home = () => {
   const headerAnim = useRef(new Animated.Value(0)).current;
   const recommendedAnim = useRef(new Animated.Value(0)).current;
   const nearbyAnim = useRef(new Animated.Value(0)).current;
+  const isFocussed = useIsFocused();
 
   // Flow control states
   const [includeShowBranding, setIncludeShowBranding] = useState(true);
 
-  // Filtered list for high-rated locations
-  const recommendedLocations = [...fetchedLocations]
-    .filter(item => item?.rating > 4)
-    .sort((a, b) => b.rating - a.rating);
+  const {recommendedLocations} = useUserPreferences(
+    likedItems,
+    wishlistItems,
+    placesRecommended,
+  );
 
   // Fetch logic for category/location updates
   useEffect(() => {
     fetchData();
   }, [currentLocation, selectedCategory]);
+
+  // Fetch logic for recommendations (location only, independent of category)
+  // DEPRECATED: Combined into focus listener to ensure data synchronization
+  // useEffect(() => {
+  //   fetchRecommendedData();
+  // }, [currentLocation, isFocussed]);
+
+  const getDisplayCategory = item => {
+    const types = item?.types || [];
+    const filterTypes = [
+      'point_of_interest',
+      'establishment',
+      'food',
+      'restaurant',
+      'health',
+      'store',
+      'natural_feature',
+    ];
+
+    const meaningfulType =
+      types.find(t => !filterTypes.includes(t)) || types[0];
+    if (!meaningfulType) return 'Place';
+
+    return meaningfulType
+      .replace(/_/g, ' ')
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
+  const fetchRecommendedData = async (
+    currentLiked = [],
+    currentWishlist = [],
+  ) => {
+    const loc =
+      currentLocation?.latitude && currentLocation?.longitude
+        ? currentLocation
+        : DEFAULT_LOCATION;
+
+    try {
+      // 1. Broad fetch for general recommendations
+      const broadResults = await FetchNearbyPlaces(
+        loc,
+        dispatch,
+        'all',
+        '',
+        'skip',
+      );
+
+      // 2. Targeted fetch for user's specific interests
+      let targetedResults = [];
+
+      // Extract interests from both categories and Google types
+      const rawInterests = [...currentLiked, ...currentWishlist].flatMap(
+        item => {
+          const cats = [];
+          if (item.category) cats.push(item.category.toLowerCase());
+          if (item.types && Array.isArray(item.types)) {
+            cats.push(...item.types.map(t => t.toLowerCase()));
+          }
+          return cats;
+        },
+      );
+
+      // Filter out generic tags
+      const filterTypes = [
+        'point_of_interest',
+        'establishment',
+        'food',
+        'restaurant',
+        'health',
+        'store',
+        'natural_feature',
+      ];
+
+      // 1. Filter out generic tags and unusable empty strings
+      const filteredRaw = rawInterests.filter(
+        cat => cat && !filterTypes.includes(cat),
+      );
+
+      // 2. Count frequencies
+      const frequencyMap = {};
+      filteredRaw.forEach(cat => {
+        const normalized = cat.trim().toLowerCase().replace(/\s+/g, '_');
+        frequencyMap[normalized] = (frequencyMap[normalized] || 0) + 1;
+      });
+
+      // 3. Sort unique interests by frequency (descending)
+      const sortedInterests = Object.keys(frequencyMap).sort(
+        (a, b) => frequencyMap[b] - frequencyMap[a],
+      );
+
+      // Top 5 niche interests
+      const topInterests = sortedInterests.slice(0, 5);
+
+      console.log('Engine Debug: Top niche interests (frequency-based):', {
+        counts: frequencyMap,
+        selected: topInterests,
+      });
+
+      if (topInterests.length > 0) {
+        const targetedFetches = topInterests.map(interest => {
+          // Robust fetch: use as type, and use original as keyword
+          const keyword = interest.replace(/_/g, ' ');
+          return FetchNearbyPlaces(loc, dispatch, interest, keyword, 'skip');
+        });
+        const resultsArray = await Promise.all(targetedFetches);
+        targetedResults = resultsArray.flat();
+        console.log(
+          `Engine Debug: Targeted fetch (Top ${topInterests.length}) returned ${targetedResults.length} items`,
+        );
+      }
+
+      // 3. Merge and deduplicate
+      const combined = [...broadResults, ...targetedResults];
+      console.log(
+        `Engine Debug: Combined ${broadResults.length} broad and ${targetedResults.length} targeted results.`,
+      );
+
+      const uniqueMap = new Map();
+      combined.forEach(item => {
+        const id = item.place_id || item.placeId || item?._id;
+        if (id && !uniqueMap.has(id)) {
+          uniqueMap.set(id, item);
+        }
+      });
+
+      const finalSet = Array.from(uniqueMap.values());
+      console.log(
+        `Engine Debug: Dispatching ${finalSet.length} unique recommended places.`,
+      );
+      dispatch(setRecommendedPlaces(finalSet));
+    } catch (error) {
+      console.log('Error fetching recommended data:', error);
+    }
+  };
 
   const fetchData = async () => {
     const loc =
@@ -117,34 +262,44 @@ const Home = () => {
   };
 
   useEffect(() => {
-    const fetchUserLists = async () => {
+    const refreshAllData = async () => {
       if (!token) return;
       try {
+        // 1. Fetch latest user history
+        console.log(
+          'Home focused: Refreshing user history and recommendations...',
+        );
         const [revRes, wishRes] = await Promise.all([
           GetReviews(token),
           GetWishList(token),
         ]);
 
+        let freshLiked = [];
+        let freshWishlist = [];
+
         if (revRes?.reviews) {
-          setLikedItems(
-            revRes.reviews.filter(r => r.actionType === 'Go Again'),
-          );
+          freshLiked = revRes.reviews.filter(r => r.actionType === 'Go Again');
+          setLikedItems(freshLiked);
           setAvoidItems(revRes.reviews.filter(r => r.actionType === 'Avoid'));
         }
 
         const wishlistData = wishRes?.wishLists || wishRes?.data || wishRes;
         if (wishlistData && Array.isArray(wishlistData)) {
-          setWishlistItems(wishlistData);
+          freshWishlist = wishlistData;
+          setWishlistItems(freshWishlist);
         }
+
+        // 2. Trigger recommendations with FRESH data immediately
+        fetchRecommendedData(freshLiked, freshWishlist);
       } catch (error) {
-        console.log('Error fetching user lists on Home:', error);
+        console.log('Error refreshing data on Home focus:', error);
       }
     };
 
-    const unsubscribe = navigation.addListener('focus', fetchUserLists);
-    fetchUserLists(); // Initial fetch
+    const unsubscribe = navigation.addListener('focus', refreshAllData);
+    refreshAllData(); // Initial refresh
     return unsubscribe;
-  }, [navigation, token]);
+  }, [navigation, token, currentLocation]);
 
   // Handle Background Location Service initialization
   // useEffect(() => {
@@ -432,7 +587,7 @@ const Home = () => {
                   name={item?.name}
                   address={item?.vicinity}
                   CardImg={item?.photos?.[0]?.photo_reference}
-                  category={selectedCategory.name}
+                  category={getDisplayCategory(item)}
                   cardHeight={30}
                   cardWidth={75}
                   cardOnPress={() =>
@@ -460,6 +615,7 @@ const Home = () => {
 
   // console.log('fetchedLocations:-', fetchedLocations);
   // console.log('recommendedLocations:-', recommendedLocations);
+  console.log('placesRecommended:-', placesRecommended);
   return (
     <ScreenWrapper>
       {isLoading ? (

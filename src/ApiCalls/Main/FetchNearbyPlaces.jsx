@@ -7,6 +7,7 @@ const FetchNearbyPlaces = async (
   dispatch,
   type = 'restaurant',
   keyword = '',
+  customAction = null,
 ) => {
   // If type is 'all' or empty, we omit the type parameter to get a broad set of results
   const typeParam = type && type !== 'all' ? `&type=${type}` : '';
@@ -24,10 +25,16 @@ const FetchNearbyPlaces = async (
     };
 
     const result = await axios.request(config);
-    console.log('res in FetchNearbyPlaces:-', result.data.results);
-    dispatch(setNearbyPlaces(result.data.results || []));
+    const results = result.data.results || [];
+    if (customAction === 'skip') {
+      // Do nothing, just return results
+    } else if (customAction) {
+      dispatch(customAction(results));
+    } else if (dispatch) {
+      dispatch(setNearbyPlaces(results));
+    }
 
-    return result.data.results || [];
+    return results;
   } catch (error) {
     console.log('error in FetchNearbyPlaces', error);
     dispatch(setNearbyPlaces([]));

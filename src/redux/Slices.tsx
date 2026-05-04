@@ -10,6 +10,7 @@ interface UserState {
   error: string | null;
   current_location: any;
   places_nearby: any[];
+  places_recommended: any[];
   Save_Place_Detail: any;
   isFirstTime: boolean;
   isListBuilt: boolean;
@@ -27,6 +28,7 @@ const initialState: UserState = {
     address: '',
   },
   places_nearby: [],
+  places_recommended: [],
   Save_Place_Detail: null,
   isFirstTime: true,
   isListBuilt: false,
@@ -96,6 +98,9 @@ const authSlice = createSlice({
       // Implementation for setting nearby places can be added here
       state.places_nearby = action.payload;
     },
+    setRecommendedPlaces: (state, action) => {
+      state.places_recommended = action.payload;
+    },
     setPlaceDetail: (state, action) => {
       state.Save_Place_Detail = action.payload;
     },
@@ -143,6 +148,7 @@ export const {
   UpdateProfile,
   setCurrentLocation,
   setNearbyPlaces,
+  setRecommendedPlaces,
   setPlaceDetail,
   setIsFirstTime,
   setIsListBuilt,
