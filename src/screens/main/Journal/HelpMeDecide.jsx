@@ -36,29 +36,41 @@ const HelpMeDecide = () => {
   const {navigateToRoute} = useCustomNavigation();
   const token = useSelector(state => state.user.token);
   const [customOption, setCustomOption] = useState('');
-  const [myLikes, setMyLikes] = useState([]);
+  const [wishlistItems, setWishlistItems] = useState([]);
+  const [goAgainItems, setGoAgainItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedOptions, setSelectedOptions] = useState([]);
 
   useEffect(() => {
-    fetchMyLikes();
+    fetchData();
   }, []);
 
-  const fetchMyLikes = async () => {
+  const fetchData = async () => {
     setLoading(true);
     try {
-      const response = await GetWishList(token);
-      if (response?.success) {
-        setMyLikes(response.wishLists || []);
+      const [wishlistRes, reviewsRes] = await Promise.all([
+        GetWishList(token),
+        GetReviews(token),
+      ]);
+
+      if (wishlistRes?.success) {
+        setWishlistItems(wishlistRes.wishLists || []);
+      }
+
+      if (reviewsRes?.reviews) {
+        const likes = reviewsRes.reviews.filter(
+          res => res.actionType === 'Go Again',
+        );
+        setGoAgainItems(likes);
       }
     } catch (error) {
-      console.log('Error fetching wishlist in HelpMeDecide:', error);
+      console.log('Error fetching data in HelpMeDecide:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const addToSpinner = item => {
+  const addToSpinner = (item, type = 'Saved Place') => {
     // Check if already selected
     if (selectedOptions.some(option => option.id === item._id)) {
       return;
@@ -66,11 +78,13 @@ const HelpMeDecide = () => {
     const newOption = {
       id: item._id,
       name: item.name || item.restaurantName,
-      category: 'Saved Place',
+      category: type,
       image: item.image
         ? {uri: `${Google_Places_Images}${item.image}`}
         : item.photos?.[0]
-        ? {uri: `${Google_Places_Images}${item.photos[0]}`}
+        ? item.photos[0].startsWith('http')
+          ? {uri: item.photos[0]}
+          : {uri: `${Google_Places_Images}${item.photos[0]}`}
         : AppImages.resturant,
       fullData: item,
     };
@@ -90,27 +104,32 @@ const HelpMeDecide = () => {
   };
 
   const handleDecideForMe = () => {
-    if (myLikes.length < 2) {
+    const combinedAll = [...wishlistItems, ...goAgainItems];
+    if (combinedAll.length < 2) {
       Alert.alert(
         'Info',
-        'You need at least 2 saved places to use "Decide for me".',
+        'You need at least 2 saved or liked places to use "Decide for me".',
       );
       return;
     }
 
     // Pick random items (2 to 6)
-    const shuffled = [...myLikes].sort(() => 0.5 - Math.random());
+    const shuffled = [...combinedAll].sort(() => 0.5 - Math.random());
     const count = Math.min(shuffled.length, 6);
     const randomPick = shuffled.slice(0, count);
 
     const options = randomPick.map(item => ({
       id: item._id,
       name: item.name || item.restaurantName,
-      category: 'Saved Place',
+      category: wishlistItems.some(w => w._id === item._id)
+        ? 'Saved Place'
+        : 'Liked Place',
       image: item.image
         ? {uri: `${Google_Places_Images}${item.image}`}
         : item.photos?.[0]
-        ? {uri: `${Google_Places_Images}${item.photos[0]}`}
+        ? item.photos[0].startsWith('http')
+          ? {uri: item.photos[0]}
+          : {uri: `${Google_Places_Images}${item.photos[0]}`}
         : AppImages.resturant,
       fullData: item,
     }));
@@ -267,12 +286,11 @@ const HelpMeDecide = () => {
               textFontWeight
             />
             <LineBreak space={2} />
-            <LineBreak space={2} />
 
             {loading ? (
               <ActivityIndicator size="small" color={AppColors.BTNCOLOURS} />
-            ) : myLikes.length > 0 ? (
-              myLikes.map(item => {
+            ) : wishlistItems.length > 0 ? (
+              wishlistItems.map(item => {
                 const isSelected = selectedOptions.some(
                   opt => opt.id === item._id,
                 );
@@ -288,6 +306,10 @@ const HelpMeDecide = () => {
                         source={
                           item.image
                             ? {uri: `${Google_Places_Images}${item.image}`}
+                            : item.photos?.[0]
+                            ? item.photos[0].startsWith('http')
+                              ? {uri: item.photos[0]}
+                              : {uri: `${Google_Places_Images}${item.photos[0]}`}
                             : AppImages.resturant
                         }
                         style={styles.placeImage}
@@ -312,7 +334,7 @@ const HelpMeDecide = () => {
                         isSelected && {backgroundColor: AppColors.GRAY},
                       ]}
                       disabled={isSelected}
-                      onPress={() => addToSpinner(item)}>
+                      onPress={() => addToSpinner(item, 'Saved Place')}>
                       <AppText
                         title={isSelected ? 'Added' : 'Add'}
                         textColor={AppColors.WHITE}
@@ -324,9 +346,79 @@ const HelpMeDecide = () => {
               })
             ) : (
               <AppText
-                title={
-                  'No likes yet. Add some places to your likes list first!'
-                }
+                title={'No items in wishlist yet.'}
+                textColor={AppColors.GRAY}
+                textSize={1.4}
+              />
+            )}
+
+            <LineBreak space={3} />
+            <AppText
+              title={'Choose from your Go Again list:'}
+              textColor={AppColors.BLACK}
+              textSize={1.6}
+              textFontWeight
+            />
+            <LineBreak space={2} />
+
+            {loading ? (
+              <ActivityIndicator size="small" color={AppColors.BTNCOLOURS} />
+            ) : goAgainItems.length > 0 ? (
+              goAgainItems.map(item => {
+                const isSelected = selectedOptions.some(
+                  opt => opt.id === item._id,
+                );
+                return (
+                  <View key={item._id} style={styles.placeItem}>
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 12,
+                      }}>
+                      <Image
+                        source={
+                          item.photos?.[0]
+                            ? item.photos[0].startsWith('http')
+                              ? {uri: item.photos[0]}
+                              : {uri: `${Google_Places_Images}${item.photos[0]}`}
+                            : AppImages.resturant
+                        }
+                        style={styles.placeImage}
+                      />
+                      <View>
+                        <AppText
+                          title={item.restaurantName || item.name}
+                          textColor={AppColors.BLACK}
+                          textSize={1.6}
+                          textFontWeight
+                        />
+                        <AppText
+                          title={'Liked Place'}
+                          textColor={AppColors.GRAY}
+                          textSize={1.2}
+                        />
+                      </View>
+                    </View>
+                    <TouchableOpacity
+                      style={[
+                        styles.addBtnSmall,
+                        isSelected && {backgroundColor: AppColors.GRAY},
+                      ]}
+                      disabled={isSelected}
+                      onPress={() => addToSpinner(item, 'Liked Place')}>
+                      <AppText
+                        title={isSelected ? 'Added' : 'Add'}
+                        textColor={AppColors.WHITE}
+                        textSize={1.4}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                );
+              })
+            ) : (
+              <AppText
+                title={'No liked places yet.'}
                 textColor={AppColors.GRAY}
                 textSize={1.4}
               />

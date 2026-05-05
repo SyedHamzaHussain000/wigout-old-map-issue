@@ -17,19 +17,26 @@ import {
 import {useCustomNavigation} from '../../../utils/Hooks';
 import BackgroundScreen from '../../../components/AppTextComps/BackgroundScreen';
 import {setIsListBuilt} from '../../../redux/Slices';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const {width} = Dimensions.get('window');
 
-const BuildYourList = ({navigation}) => {
+const BuildYourList = ({navigation, route}) => {
   const {navigateToRoute, goBack} = useCustomNavigation();
   const dispatch = useDispatch();
   const userSelector = useSelector(state => state.user);
   const {isListBuilt} = userSelector;
 
+  const isFromTab = route.params?.isFromTab;
+
   const handleSkip = () => {
     if (isListBuilt) {
-      // Return to main app if already built (e.g. from Profile)
-      navigation.navigate('MainTabs');
+      if (isFromTab) {
+        navigation.goBack();
+      } else {
+        // Return to main app if already built (e.g. from Profile)
+        navigation.navigate('MainTabs');
+      }
     } else {
       // Complete onboarding
       dispatch(setIsListBuilt(true));
@@ -70,7 +77,6 @@ const BuildYourList = ({navigation}) => {
     <BackgroundScreen>
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          {/* <View style={{width: 25}} /> */}
           {/* <TouchableOpacity onPress={() => goBack()}>
             <Ionicons
               name="arrow-back"
@@ -120,13 +126,15 @@ const BuildYourList = ({navigation}) => {
               />
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
-              <AppText
-                title="I'll do it later"
-                textSize={1.8}
-                textColor={AppColors.BTNCOLOURS}
-              />
-            </TouchableOpacity>
+            {!isFromTab && (
+              <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
+                <AppText
+                  title="I'll do it later"
+                  textSize={1.8}
+                  textColor={AppColors.BTNCOLOURS}
+                />
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </SafeAreaView>

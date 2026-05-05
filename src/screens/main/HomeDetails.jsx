@@ -534,7 +534,7 @@ const HomeDetails = ({route}) => {
 
   // console.log('personalReview:-', personalReview);
   // console.log('placeId:-', placeDetails?.placeId);
-  // console.log('placeDetails:-', placeDetails);
+  console.log('placeDetails:-', placeDetails);
   // console.log('ratingData:-', ratingData);
   return (
     <ScreenWrapper>

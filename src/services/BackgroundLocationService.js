@@ -59,11 +59,13 @@ const checkProximityAndNotify = async token => {
   Geolocation.getCurrentPosition(
     async position => {
       const {latitude, longitude} = position.coords;
-      console.log('Current Background Location:', latitude, longitude);
-      // let latitude = 37.450089;
-      // let longitude = -122.117392;
-      // let latitude = 37.3225578; // testing
-      // let longitude = -122.0346885; // testing
+      // console.log('Current Background Location:', latitude, longitude);
+      // let latitude = 37.393622; // AVOID
+      // let longitude = -122.078756; // AVOID
+      // let latitude = 37.4500894; // GO AGAIN
+      // let longitude = -122.117392; // GO AGAIN
+      // let latitude = 37.3225578; // NEW
+      // let longitude = -122.0346885; // NEW
 
       // 1. Send to Backend (existing logic)
       notifyUserForNearbyReviewedPlaces(token, latitude, longitude);
@@ -190,8 +192,8 @@ const checkFirstTimeVisit = async (
     const reviewedIds = new Set(reviews.map(r => r.placeId));
     const wishlistIds = new Set(wishlist.map(w => w.placeId));
 
-    console.log('Reviewed place-ids:', [...reviewedIds]);
-    console.log('Wishlist place-ids:', [...wishlistIds]);
+    // console.log('Reviewed place-ids:', [...reviewedIds]);
+    // console.log('Wishlist place-ids:', [...wishlistIds]);
 
     const newNearbyPlaces = nearby.filter(p => {
       const isNew =

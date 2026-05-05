@@ -71,6 +71,7 @@ const BrowseCategories = ({navigation}) => {
         name: 'Restaurants',
         icon: 'restaurant-outline',
         type: 'restaurant',
+        keyword: 'restaurant eat food dining eat-out takeaway delivery',
         library: 'Ionicons',
       },
       {
@@ -78,6 +79,7 @@ const BrowseCategories = ({navigation}) => {
         name: 'Hotel',
         icon: 'office-building',
         type: 'lodging',
+        keyword: 'hotel inn motel accommodation stay overnight lodging',
         library: 'MaterialCommunityIcons',
       },
       {
@@ -85,24 +87,53 @@ const BrowseCategories = ({navigation}) => {
         name: 'Cafes',
         icon: 'cafe-outline',
         type: 'cafe',
+        keyword: 'cafe coffee shop tea lounge',
         library: 'Ionicons',
       },
       {
         id: '4',
-        name: 'Grocery Stores',
-        icon: 'bag-handle-outline',
-        type: 'grocery_or_supermarket',
-        library: 'Ionicons',
+        name: 'RV Parks & Recreation',
+        icon: 'rv-truck',
+        type: 'rv_park',
+        keyword: 'rv park recreation rv-park camping campground campsite',
+        library: 'MaterialCommunityIcons',
       },
       {
         id: '5',
-        name: 'Vacation Destinations',
-        icon: 'airplane-outline',
-        type: 'transit_station',
+        name: 'To do Near Me',
+        icon: 'map-outline',
+        type: '',
+        keyword: 'zoo museum science center art show',
         library: 'Ionicons',
       },
       {
         id: '6',
+        name: 'Shopping',
+        icon: 'cart-outline',
+        type: '',
+        keyword: 'shopping mall store clothing_store',
+        library: 'Ionicons',
+      },
+      {
+        id: '7',
+        name: 'Bar',
+        icon: 'beer-outline',
+        type: 'bar',
+        keyword:
+          'bar pub nightclub lounge alcoholic drinks cocktails beer wine spirits',
+        library: 'Ionicons',
+      },
+      {
+        id: '8',
+        name: 'Gym',
+        icon: 'fitness-outline',
+        type: 'gym',
+        keyword:
+          'gym fitness workout health exercise sports equipment training',
+        library: 'Ionicons',
+      },
+      {
+        id: '9',
         name: 'Other',
         icon: 'storefront-outline',
         type: 'establishment',
@@ -143,8 +174,9 @@ const BrowseCategories = ({navigation}) => {
       if (!current_location?.latitude) return;
       setLoading(true);
       const cat = categories.find(c => c.name === selectedCategory);
-      const type = query ? '' : cat?.type || 'restaurant';
-      await FetchNearbyPlaces(current_location, dispatch, type, query);
+      const type = query ? '' : cat?.type || '';
+      const keyword = query || cat?.keyword || '';
+      await FetchNearbyPlaces(current_location, dispatch, type, keyword);
       setLoading(false);
     },
     [selectedCategory, current_location, categories, dispatch],
@@ -416,7 +448,7 @@ const BrowseCategories = ({navigation}) => {
           style={styles.statChip}>
           <Ionicons name="thumbs-down" size={16} color="#D32F2F" />
           <AppText
-            title={`${hatesCount} Avoids`}
+            title={`${hatesCount} Avoid`}
             textSize={1.3}
             textColor="#D32F2F"
             textFontWeight

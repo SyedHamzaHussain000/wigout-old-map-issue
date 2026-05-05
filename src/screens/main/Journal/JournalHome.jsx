@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useCallback, useRef} from 'react';
+import React, {useState, useEffect, useCallback, useRef, useMemo} from 'react';
 import {
   View,
   ScrollView,
@@ -7,6 +7,7 @@ import {
   StyleSheet,
   SafeAreaView,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import {useSelector} from 'react-redux';
 
@@ -60,11 +61,45 @@ const JournalHome = ({navigation}) => {
   const [wishlistItems, setWishlistItems] = useState([]);
   const [visitedItems, setVisitedItems] = useState([]);
   const [loader, setLoader] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [winner, setWinner] = useState(null);
   const [celebrating, setCelebrating] = useState(false);
   const wheelRef = useRef(null);
   const isFocused = useIsFocused();
   const currentLocation = useSelector(state => state.user.current_location);
+
+  const combinedItems = useMemo(() => {
+    const combined = [];
+    const ids = new Set();
+
+    // Process Go Again items
+    likesData.forEach(item => {
+      const id = item.placeId || item.restaurantId || item._id;
+      if (id && !ids.has(id)) {
+        ids.add(id);
+        combined.push({
+          id,
+          name: item.restaurantName || item.name || 'Unknown Place',
+          fullData: item,
+        });
+      }
+    });
+
+    // Process Wishlist items
+    wishlistItems.forEach(item => {
+      const id = item.placeId || item.restaurantId || item._id;
+      if (id && !ids.has(id)) {
+        ids.add(id);
+        combined.push({
+          id,
+          name: item.name || item.restaurantName || 'Unknown Place',
+          fullData: item,
+        });
+      }
+    });
+
+    return combined;
+  }, [likesData, wishlistItems]);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -84,48 +119,51 @@ const JournalHome = ({navigation}) => {
   };
 
   // Use useCallback to prevent unnecessary function recreation
-  const fetchData = useCallback(async () => {
-    if (!token) return;
-    setLoader(true);
-    try {
-      // Running both API calls in parallel for faster loading
-      const [reviewsRes, wishlistRes] = await Promise.all([
-        GetReviews(token),
-        GetWishList(token),
-      ]);
+  const fetchData = useCallback(
+    async (showLoader = true) => {
+      if (!token) return;
+      if (showLoader) setLoader(true);
+      try {
+        // Running both API calls in parallel for faster loading
+        const [reviewsRes, wishlistRes] = await Promise.all([
+          GetReviews(token),
+          GetWishList(token),
+        ]);
 
-      if (reviewsRes?.reviews) {
-        const reviews = reviewsRes?.reviews;
-        const likes = reviews.filter(res => res.actionType === 'Go Again');
-        const hates = reviews.filter(res => res.actionType === 'Avoid');
+        if (reviewsRes?.reviews) {
+          const reviews = reviewsRes?.reviews;
+          const likes = reviews.filter(res => res.actionType === 'Go Again');
+          const hates = reviews.filter(res => res.actionType === 'Avoid');
 
-        setLikesData(likes);
-        setHatesData(hates);
+          setLikesData(likes);
+          setHatesData(hates);
 
-        // Deduplicate visitedItems based on placeId or _id
-        const visitedMap = new Map();
-        [...likes, ...hates].forEach(item => {
-          const id = item.placeId || item.restaurantId || item._id;
-          if (!visitedMap.has(id)) {
-            visitedMap.set(id, item);
-          } else {
-            // If already exists, keep the most recent one (assuming reviews are sorted by newest first, or just keeping the first encountered)
-            // If they are not sorted, we should sort them first.
-            // The API usually returns them in some order. Assuming first is newest.
-          }
-        });
-        setVisitedItems(Array.from(visitedMap.values()));
+          // Deduplicate visitedItems based on placeId or _id
+          const visitedMap = new Map();
+          [...likes, ...hates].forEach(item => {
+            const id = item.placeId || item.restaurantId || item._id;
+            if (!visitedMap.has(id)) {
+              visitedMap.set(id, item);
+            } else {
+              // If already exists, keep the most recent one (assuming reviews are sorted by newest first, or just keeping the first encountered)
+              // If they are not sorted, we should sort them first.
+              // The API usually returns them in some order. Assuming first is newest.
+            }
+          });
+          setVisitedItems(Array.from(visitedMap.values()));
+        }
+
+        if (wishlistRes?.success) {
+          setWishlistItems(wishlistRes?.wishLists || []);
+        }
+      } catch (error) {
+        console.error('Error fetching Journal data:', error);
+      } finally {
+        if (showLoader) setLoader(false);
       }
-
-      if (wishlistRes?.success) {
-        setWishlistItems(wishlistRes?.wishLists || []);
-      }
-    } catch (error) {
-      console.error('Error fetching Journal data:', error);
-    } finally {
-      setLoader(false);
-    }
-  }, [token]);
+    },
+    [token],
+  );
 
   // Handle Background Location Service initialization
   useEffect(() => {
@@ -149,14 +187,26 @@ const JournalHome = ({navigation}) => {
     return unsubscribe;
   }, [navigation, fetchData]);
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchData(false);
+    setRefreshing(false);
+  };
+
   return (
     <ScreenWrapper>
       <SafeAreaView style={{flex: 1}}>
         <ScrollView
           style={styles.container}
           showsVerticalScrollIndicator={false}
-          // Added RefreshControl here if you want pull-to-refresh later
-        >
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[AppColors.BTNCOLOURS]}
+              tintColor={AppColors.BTNCOLOURS}
+            />
+          }>
           {/* Redesigned Header to match Explore page */}
           <View style={styles.header}>
             <View style={styles.userInfo}>
@@ -240,7 +290,7 @@ const JournalHome = ({navigation}) => {
                 />
               </View>
               <AppText
-                title={'Avoids'}
+                title={'Avoid'}
                 textColor={AppColors.BLACK}
                 textSize={1.8}
                 textFontWeight
@@ -301,7 +351,7 @@ const JournalHome = ({navigation}) => {
           <LineBreak space={2} />
 
           {/* Wheel Spinner */}
-          {wishlistItems.length > 1 && (
+          {combinedItems.length > 1 && (
             <View style={styles.wheelSection}>
               <AppText
                 title={"Can't decide? Spin the wheel!"}
@@ -314,11 +364,7 @@ const JournalHome = ({navigation}) => {
               <View style={styles.wheelWrapper}>
                 <WheelSpinner
                   ref={wheelRef}
-                  data={wishlistItems.map(item => ({
-                    id: item._id,
-                    name: item.name,
-                    fullData: item,
-                  }))}
+                  data={combinedItems}
                   onSpinEnd={handleSpinEnd}
                   size={responsiveWidth(70)}
                 />
@@ -361,7 +407,7 @@ const JournalHome = ({navigation}) => {
                 </View>
               ) : (
                 <AppButton
-                  title="Spin"
+                  title="Surprise Me"
                   handlePress={triggerSpin}
                   btnWidth={40}
                   btnHeight={40}

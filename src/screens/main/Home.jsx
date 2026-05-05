@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   ScrollView,
   TextInput,
+  RefreshControl,
 } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import {useDispatch, useSelector} from 'react-redux';
@@ -30,6 +31,7 @@ import HomeCard from '../../components/HomeCard';
 import ScreenWrapper from '../../components/ScreenWrapper';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import FetchNearbyPlaces from '../../ApiCalls/Main/FetchNearbyPlaces';
 import {GetReviews} from '../../ApiCalls/Main/Reviews/ReviewsApiCall';
 import {GetWishList} from '../../ApiCalls/Main/WishList_API/WishListAPI';
@@ -40,10 +42,23 @@ import {useIsFocused} from '@react-navigation/native';
 
 const CATEGORIES = [
   {id: '1', name: 'Restaurants', type: 'restaurant', icon: 'restaurant'},
-  {id: '2', name: 'Grocery Stores', type: 'store', icon: 'storefront'},
+  {
+    id: '2',
+    name: 'RV Parks & Recreation',
+    type: 'rv_park',
+    icon: 'rv-truck',
+    library: 'MaterialCommunityIcons',
+  },
   {id: '3', name: 'Gas', type: 'gas_station', icon: 'local-gas-station'},
   {id: '4', name: 'Hotels', type: 'lodging', icon: 'hotel'},
-  {id: '5', name: 'Shopping', type: 'shopping_mall', icon: 'shopping-bag'},
+  {
+    id: '5',
+    name: 'To do Near Me',
+    type: '',
+    keyword: 'zoo museum science center art show',
+    icon: 'map-marker-radius',
+    library: 'MaterialCommunityIcons',
+  },
   {id: '6', name: 'Cafes', type: 'cafe', icon: 'local-cafe'},
 ];
 
@@ -67,6 +82,7 @@ const Home = () => {
   const token = useSelector(state => state.user.token);
 
   const [isLoading, setIsLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(CATEGORIES[0]);
   const [search, setSearch] = useState('');
   const [likedItems, setLikedItems] = useState([]);
@@ -231,15 +247,20 @@ const Home = () => {
     }
   };
 
-  const fetchData = async () => {
+  const fetchData = async (showLoader = true) => {
     const loc =
       currentLocation?.latitude && currentLocation?.longitude
         ? currentLocation
         : DEFAULT_LOCATION;
 
-    setIsLoading(true);
-    await FetchNearbyPlaces(loc, dispatch, selectedCategory.type);
-    setIsLoading(false);
+    if (showLoader) setIsLoading(true);
+    await FetchNearbyPlaces(
+      loc,
+      dispatch,
+      selectedCategory.type,
+      selectedCategory.keyword || '',
+    );
+    if (showLoader) setIsLoading(false);
 
     // Re-trigger entrance animations if data arrives later
     Animated.stagger(150, [
@@ -259,6 +280,35 @@ const Home = () => {
         useNativeDriver: true,
       }),
     ]).start();
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    if (token) {
+      try {
+        const [revRes, wishRes] = await Promise.all([
+          GetReviews(token),
+          GetWishList(token),
+        ]);
+        let freshLiked = [];
+        let freshWishlist = [];
+        if (revRes?.reviews) {
+          freshLiked = revRes.reviews.filter(r => r.actionType === 'Go Again');
+          setLikedItems(freshLiked);
+          setAvoidItems(revRes.reviews.filter(r => r.actionType === 'Avoid'));
+        }
+        const wishlistData = wishRes?.wishLists || wishRes?.data || wishRes;
+        if (wishlistData && Array.isArray(wishlistData)) {
+          freshWishlist = wishlistData;
+          setWishlistItems(freshWishlist);
+        }
+        await fetchRecommendedData(freshLiked, freshWishlist);
+      } catch (error) {
+        console.log('Error refreshing data:', error);
+      }
+    }
+    await fetchData(false); // Refresh nearby places without full screen loader
+    setRefreshing(false);
   };
 
   useEffect(() => {
@@ -454,7 +504,7 @@ const Home = () => {
           style={styles.statChip}>
           <Ionicons name="thumbs-down" size={16} color="#D32F2F" />
           <AppText
-            title={`${avoidItems.length} Avoids`}
+            title={`${avoidItems.length} Avoid`}
             textSize={1.3}
             textColor="#D32F2F"
             textFontWeight
@@ -514,12 +564,21 @@ const Home = () => {
                 onPress={() => setSelectedCategory(category)}
                 activeOpacity={0.7}>
                 <View style={styles.tabContent}>
-                  <MaterialIcons
-                    name={category.icon}
-                    size={responsiveFontSize(2)}
-                    color={isActive ? AppColors.WHITE : AppColors.GRAY}
-                    style={{marginRight: 6}}
-                  />
+                  {category.library === 'MaterialCommunityIcons' ? (
+                    <MaterialCommunityIcons
+                      name={category.icon}
+                      size={responsiveFontSize(2)}
+                      color={isActive ? AppColors.WHITE : AppColors.GRAY}
+                      style={{marginRight: 6}}
+                    />
+                  ) : (
+                    <MaterialIcons
+                      name={category.icon}
+                      size={responsiveFontSize(2)}
+                      color={isActive ? AppColors.WHITE : AppColors.GRAY}
+                      style={{marginRight: 6}}
+                    />
+                  )}
                   <AppText
                     title={category.name}
                     textColor={isActive ? AppColors.WHITE : AppColors.GRAY}
@@ -626,6 +685,14 @@ const Home = () => {
         <FlatList
           data={includeShowBranding ? fetchedLocations : []}
           ListHeaderComponent={renderHeader()}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[AppColors.BTNCOLOURS]}
+              tintColor={AppColors.BTNCOLOURS}
+            />
+          }
           numColumns={2}
           keyExtractor={(_, index) => `nearby-${index}`}
           columnWrapperStyle={styles.columnWrapper}

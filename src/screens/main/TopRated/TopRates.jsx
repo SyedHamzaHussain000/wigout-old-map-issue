@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   TextInput,
+  RefreshControl,
 } from 'react-native';
 import {useDispatch, useSelector} from 'react-redux';
 import AppHeader from '../../../components/AppHeader';
@@ -25,16 +26,30 @@ import {useCustomNavigation, useDebounce} from '../../../utils/Hooks';
 import AppText from '../../../components/AppTextComps/AppText';
 import HomeCard from '../../../components/HomeCard';
 import Animated, {FadeIn, FadeInDown, Layout} from 'react-native-reanimated';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import Ionicons from 'react-native-vector-icons/Ionicons';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const CATEGORIES = [
   {id: '1', name: 'Restaurants', type: 'restaurant', icon: 'restaurant'},
-  {id: '2', name: 'Grocery Stores', type: 'store', icon: 'storefront'},
+  {
+    id: '2',
+    name: 'RV Parks & Recreation',
+    type: 'rv_park',
+    icon: 'rv-truck',
+    library: 'MaterialCommunityIcons',
+  },
   {id: '3', name: 'Gas', type: 'gas_station', icon: 'local-gas-station'},
   {id: '4', name: 'Hotels', type: 'lodging', icon: 'hotel'},
-  {id: '5', name: 'Shopping', type: 'shopping_mall', icon: 'shopping-bag'},
+  {
+    id: '5',
+    name: 'To do Near Me',
+    type: '',
+    keyword: 'zoo museum science center art show',
+    icon: 'map-marker-radius',
+    library: 'MaterialCommunityIcons',
+  },
   {id: '6', name: 'Cafes', type: 'cafe', icon: 'local-cafe'},
 ];
 
@@ -68,6 +83,7 @@ const TopRated = ({navigation}) => {
   const placesNearby = useSelector(state => state.user.places_nearby);
   const token = useSelector(state => state.user.token);
   const [isLoading, setIsLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(CATEGORIES[0]);
   const [search, setSearch] = useState('');
   const [excludedPlaceIds, setExcludedPlaceIds] = useState(new Set());
@@ -118,15 +134,48 @@ const TopRated = ({navigation}) => {
     }
   }, [currentLocation, selectedCategory, debouncedSearch]);
 
-  const fetchData = async (query = '') => {
-    setIsLoading(true);
+  const fetchData = async (query = '', showLoader = true) => {
+    if (showLoader) setIsLoading(true);
     await FetchNearbyPlaces(
       currentLocation,
       dispatch,
       selectedCategory.type,
-      query,
+      query || selectedCategory.keyword || '',
     );
-    setIsLoading(false);
+    if (showLoader) setIsLoading(false);
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    if (token) {
+      try {
+        const [revRes, wishRes] = await Promise.all([
+          GetReviews(token),
+          GetWishList(token),
+        ]);
+
+        const ids = new Set();
+        if (revRes?.reviews) {
+          const liked = revRes.reviews.filter(r => r.actionType === 'Go Again');
+          const avoided = revRes.reviews.filter(r => r.actionType === 'Avoid');
+          setLikedItems(liked);
+          setAvoidItems(avoided);
+          revRes.reviews.forEach(r => ids.add(r.placeId));
+        }
+
+        const wishlistData = wishRes?.wishLists || wishRes?.data || wishRes;
+        if (wishlistData && Array.isArray(wishlistData)) {
+          setWishlistItems(wishlistData);
+          wishlistData.forEach(w => ids.add(w.placeId));
+        }
+
+        setExcludedPlaceIds(ids);
+      } catch (error) {
+        console.log('Error refreshing filters:', error);
+      }
+    }
+    await fetchData(debouncedSearch, false);
+    setRefreshing(false);
   };
 
   // Sort places by rating in descending order and filter out excluded items
@@ -169,7 +218,7 @@ const TopRated = ({navigation}) => {
             style={styles.statChip}>
             <Ionicons name="thumbs-down" size={16} color="#D32F2F" />
             <AppText
-              title={`${avoidItems.length} Avoids`}
+              title={`${avoidItems.length} Avoid`}
               textSize={1.3}
               textColor="#D32F2F"
               textFontWeight
@@ -231,12 +280,21 @@ const TopRated = ({navigation}) => {
                   onPress={() => setSelectedCategory(category)}
                   activeOpacity={0.7}>
                   <View style={styles.tabContent}>
-                    <MaterialIcons
-                      name={category.icon}
-                      size={responsiveFontSize(2)}
-                      color={isActive ? AppColors.WHITE : AppColors.GRAY}
-                      style={{marginRight: 6}}
-                    />
+                    {category.library === 'MaterialCommunityIcons' ? (
+                      <MaterialCommunityIcons
+                        name={category.icon}
+                        size={responsiveFontSize(2)}
+                        color={isActive ? AppColors.WHITE : AppColors.GRAY}
+                        style={{marginRight: 6}}
+                      />
+                    ) : (
+                      <MaterialIcons
+                        name={category.icon}
+                        size={responsiveFontSize(2)}
+                        color={isActive ? AppColors.WHITE : AppColors.GRAY}
+                        style={{marginRight: 6}}
+                      />
+                    )}
                     <AppText
                       title={category.name}
                       textColor={isActive ? AppColors.WHITE : AppColors.GRAY}
@@ -268,6 +326,14 @@ const TopRated = ({navigation}) => {
             </View>
           ) : topRatedPlaces.length > 0 ? (
             <Animated.FlatList
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                  colors={[AppColors.BTNCOLOURS]}
+                  tintColor={AppColors.BTNCOLOURS}
+                />
+              }
               entering={FadeIn.duration(400)}
               data={topRatedPlaces}
               renderItem={renderItem}

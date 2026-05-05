@@ -158,7 +158,7 @@ const SearchForPlaces = ({navigation}) => {
       const res = await RemoveReview({reviewId: existing._id}, token);
       if (res?.success) {
         setAvoidItems(prev => prev.filter(a => a._id !== existing._id));
-        ShowError('Removed from Avoids');
+        ShowError('Removed from Avoid');
       }
       return;
     }
@@ -199,7 +199,7 @@ const SearchForPlaces = ({navigation}) => {
         ...prev,
         {_id: res.review?._id, placeId: item.place_id},
       ]);
-      ShowError('Added to Avoids');
+      ShowError('Added to Avoid');
     }
   };
 
@@ -362,7 +362,7 @@ const SearchForPlaces = ({navigation}) => {
           style={styles.statChip}>
           <Ionicons name="thumbs-down" size={16} color="#D32F2F" />
           <AppText
-            title={`${avoidItems.length} Avoids`}
+            title={`${avoidItems.length} Avoid`}
             textSize={1.3}
             textColor="#D32F2F"
             textFontWeight

@@ -227,7 +227,7 @@ const MyHates = ({navigation, route}) => {
         setMyHates(hatedPlaces);
       }
     } catch (e) {
-      console.log('Error fetching avoids:', e);
+      console.log('Error fetching avoid:', e);
     } finally {
       setLoader(false);
     }
@@ -302,7 +302,7 @@ const MyHates = ({navigation, route}) => {
         </View>
         <LineBreak space={2} /> */}
         <AppTextInput
-          placeholder={'Search your avoids...'}
+          placeholder={'Search your avoid...'}
           value={searchQuery}
           onChangeText={setSearchQuery}
           logo={<Ionicons name="search" size={20} color={AppColors.GRAY} />}
@@ -330,7 +330,7 @@ const MyHates = ({navigation, route}) => {
         <View style={styles.header}>
           <BackIcon onBackPress={goBack} iconColor={AppColors.BLACK} />
           <AppText
-            title={'Avoids'}
+            title={'Avoid'}
             textColor={AppColors.BLACK}
             textSize={2.8}
             textFontWeight

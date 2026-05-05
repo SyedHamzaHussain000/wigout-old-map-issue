@@ -56,17 +56,22 @@ const TAB_CONFIG = {
     focused: 'home',
     unfocused: 'home-outline',
   },
-  Discover: {
+  // Discover: {
+  //   lib: MaterialIcons,
+  //   focused: 'explore',
+  //   unfocused: 'explore',
+  // },
+  'Build List': {
     lib: MaterialIcons,
-    focused: 'explore',
-    unfocused: 'explore',
+    focused: 'list-alt',
+    unfocused: 'list-alt',
   },
   Explore: {
     lib: MaterialIcons,
     focused: 'manage-search',
     unfocused: 'manage-search',
   },
-  'Top Rated': {
+  'Local Faves': {
     lib: Foundation,
     focused: 'clipboard-notes',
     unfocused: 'clipboard-notes',
@@ -101,9 +106,14 @@ const MyTabs = () => {
         },
       })}>
       <Tab.Screen name="Home" component={JournalHome} />
-      <Tab.Screen name="Discover" component={Discover} />
+      {/* <Tab.Screen name="Discover" component={Discover} /> */}
+      <Tab.Screen
+        name="Build List"
+        component={BuildYourList}
+        initialParams={{isFromTab: true}}
+      />
       <Tab.Screen name="Explore" component={Home} />
-      <Tab.Screen name="Top Rated" component={TopRated} />
+      <Tab.Screen name="Local Faves" component={TopRated} />
       <Tab.Screen name="Profile" component={Profile} />
     </Tab.Navigator>
   );

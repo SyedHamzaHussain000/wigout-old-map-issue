@@ -66,18 +66,18 @@ const Profile = () => {
           />
         ),
       },
-      {
-        id: 3,
-        title: 'Build Your List',
-        navTo: 'BuildYourList',
-        icon: (
-          <FontAwesome5
-            name="star"
-            size={responsiveFontSize(2)}
-            color={AppColors.BTNCOLOURS}
-          />
-        ),
-      },
+      // {
+      //   id: 3,
+      //   title: 'Build Your List',
+      //   navTo: 'BuildYourList',
+      //   icon: (
+      //     <FontAwesome5
+      //       name="star"
+      //       size={responsiveFontSize(2)}
+      //       color={AppColors.BTNCOLOURS}
+      //     />
+      //   ),
+      // },
       // {
       //   id: 4,
       //   title: 'Payments',
