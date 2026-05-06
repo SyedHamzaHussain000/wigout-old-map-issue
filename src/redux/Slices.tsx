@@ -15,6 +15,11 @@ interface UserState {
   isFirstTime: boolean;
   isListBuilt: boolean;
   reminders: any[];
+  notificationSettings: {
+    soundVibrate: boolean;
+    backgroundLocation: boolean;
+    recommendations: boolean;
+  };
 }
 
 const initialState: UserState = {
@@ -33,6 +38,11 @@ const initialState: UserState = {
   isFirstTime: true,
   isListBuilt: false,
   reminders: [],
+  notificationSettings: {
+    soundVibrate: true,
+    backgroundLocation: false,
+    recommendations: true,
+  },
 };
 
 // Define return type of API response
@@ -118,6 +128,15 @@ const authSlice = createSlice({
         item => item.id !== action.payload,
       );
     },
+    updateNotificationSettings: (
+      state,
+      action: PayloadAction<Partial<UserState['notificationSettings']>>,
+    ) => {
+      state.notificationSettings = {
+        ...state.notificationSettings,
+        ...action.payload,
+      };
+    },
   },
   extraReducers: builder => {
     builder
@@ -154,5 +173,6 @@ export const {
   setIsListBuilt,
   addReminder,
   deleteReminder,
+  updateNotificationSettings,
 } = authSlice.actions;
 export default authSlice.reducer;

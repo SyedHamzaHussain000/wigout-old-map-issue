@@ -1,11 +1,6 @@
-import {useState} from 'react';
-import {
-  View,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-} from 'react-native';
+import React, {Fragment} from 'react';
+import {FlatList, TouchableOpacity, StyleSheet} from 'react-native';
+import {useDispatch, useSelector} from 'react-redux';
 import LineBreak from '../../../components/LineBreak';
 import AppHeader from '../../../components/AppHeader';
 import ScreenWrapper from '../../../components/ScreenWrapper';
@@ -15,69 +10,91 @@ import AppText from '../../../components/AppTextComps/AppText';
 import FontAwesome6 from 'react-native-vector-icons/FontAwesome6';
 import {
   responsiveFontSize,
+  responsiveHeight,
   responsiveWidth,
 } from '../../../utils/Responsive_Dimensions';
+import {updateNotificationSettings} from '../../../redux/Slices';
+import {
+  startBackgroundService,
+  stopBackgroundService,
+} from '../../../services/BackgroundLocationService';
 
 const data = [
-  {id: 1, title: 'Enable Sound & Vibrate'},
-  {id: 6, title: 'Payments'},
-  {id: 7, title: 'Reminders'},
-  {id: 8, title: 'Recommendations'},
-  {id: 9, title: 'App Updates'},
-  {id: 10, title: 'New Service Available'},
-  {id: 11, title: 'New Tips Available'},
+  {id: 1, title: 'Enable Sound & Vibrate', key: 'soundVibrate'},
+  {id: 2, title: 'Background Location', key: 'backgroundLocation'},
+  {id: 3, title: 'Recommendations', key: 'recommendations'},
 ];
 
 const NotificationsSettings = () => {
   const navigation = useNavigation();
-  const [toggles, setToggles] = useState({});
+  const dispatch = useDispatch();
+  const settings = useSelector(state => state.user.notificationSettings);
 
-  const handleToggle = id => {
-    setToggles(prev => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
+  const handleToggle = (id, key) => {
+    const newValue = !settings[key];
+    dispatch(updateNotificationSettings({[key]: newValue}));
+
+    // Specific logic for background location
+    if (key === 'backgroundLocation') {
+      if (newValue) {
+        startBackgroundService();
+      } else {
+        stopBackgroundService();
+      }
+    }
   };
 
-  const renderItem = ({item}) => (
-    <View style={styles.row}>
-      <AppText
-        title={item.title}
-        textColor={AppColors.BLACK}
-        textSize={2}
-        textFontWeight
-      />
-      <TouchableOpacity onPress={() => handleToggle(item.id)}>
+  const renderItem = ({item}) => {
+    const isEnabled = settings[item.key];
+    return (
+      <TouchableOpacity
+        style={styles.row}
+        activeOpacity={0.7}
+        onPress={() => handleToggle(item.id, item.key)}>
+        <AppText
+          title={item.title}
+          textColor={AppColors.BLACK}
+          textSize={1.8}
+          textFontWeight="700"
+        />
         <FontAwesome6
-          name={toggles[item.id] ? 'toggle-on' : 'toggle-off'}
+          name={isEnabled ? 'toggle-on' : 'toggle-off'}
           size={responsiveFontSize(4)}
-          color={toggles[item.id] ? AppColors.BTNCOLOURS : AppColors.LIGHTGRAY}
+          color={isEnabled ? AppColors.BTNCOLOURS : AppColors.LIGHTGRAY}
         />
       </TouchableOpacity>
-    </View>
+    );
+  };
+
+  const ListHeader = () => (
+    <Fragment>
+      <AppHeader
+        onBackPress={() => navigation.goBack()}
+        heading="Notification Settings"
+      />
+      <LineBreak space={4} />
+    </Fragment>
   );
 
   return (
     <ScreenWrapper>
-      <ScrollView style={{flex: 1}}>
-      <LineBreak space={1} />
-      <AppHeader
-        onBackPress={() => navigation.goBack()}
-        heading="Notifications"
-      />
-      <LineBreak space={4} />
       <FlatList
         data={data}
         keyExtractor={item => item.id.toString()}
-        ItemSeparatorComponent={() => <LineBreak space={3} />}
+        ListHeaderComponent={ListHeader}
         renderItem={renderItem}
+        ItemSeparatorComponent={() => <LineBreak space={3} />}
+        contentContainerStyle={styles.listContainer}
+        showsVerticalScrollIndicator={false}
       />
-      </ScrollView>
     </ScreenWrapper>
   );
 };
 
 const styles = StyleSheet.create({
+  listContainer: {
+    paddingBottom: responsiveHeight(5),
+  },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',

@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {
   View,
   FlatList,
@@ -32,25 +32,78 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const CATEGORIES = [
-  {id: '1', name: 'Restaurants', type: 'restaurant', icon: 'restaurant'},
+  {
+    id: '1',
+    name: 'Restaurants',
+    icon: 'restaurant-outline',
+    type: 'restaurant',
+    keyword: 'restaurant eat food dining eat-out takeaway delivery',
+    library: 'Ionicons',
+  },
   {
     id: '2',
-    name: 'RV Parks & Recreation',
-    type: 'rv_park',
-    icon: 'rv-truck',
+    name: 'Hotel',
+    icon: 'office-building',
+    type: 'lodging',
+    keyword: 'hotel inn motel accommodation stay overnight lodging',
     library: 'MaterialCommunityIcons',
   },
-  {id: '3', name: 'Gas', type: 'gas_station', icon: 'local-gas-station'},
-  {id: '4', name: 'Hotels', type: 'lodging', icon: 'hotel'},
+  {
+    id: '3',
+    name: 'Cafes',
+    icon: 'cafe-outline',
+    type: 'cafe',
+    keyword: 'cafe coffee shop tea lounge',
+    library: 'Ionicons',
+  },
+  {
+    id: '4',
+    name: 'RV Parks & Recreation',
+    icon: 'rv-truck',
+    type: 'rv_park',
+    keyword: 'rv park recreation rv-park camping campground campsite',
+    library: 'MaterialCommunityIcons',
+  },
   {
     id: '5',
     name: 'To do Near Me',
+    icon: 'map-outline',
     type: '',
     keyword: 'zoo museum science center art show',
-    icon: 'map-marker-radius',
-    library: 'MaterialCommunityIcons',
+    library: 'Ionicons',
   },
-  {id: '6', name: 'Cafes', type: 'cafe', icon: 'local-cafe'},
+  {
+    id: '6',
+    name: 'Shopping',
+    icon: 'cart-outline',
+    type: '',
+    keyword: 'shopping mall store clothing_store',
+    library: 'Ionicons',
+  },
+  {
+    id: '7',
+    name: 'Bar',
+    icon: 'beer-outline',
+    type: 'bar',
+    keyword:
+      'bar pub nightclub lounge alcoholic drinks cocktails beer wine spirits',
+    library: 'Ionicons',
+  },
+  {
+    id: '8',
+    name: 'Gym',
+    icon: 'fitness-outline',
+    type: 'gym',
+    keyword: 'gym fitness workout health exercise sports equipment training',
+    library: 'Ionicons',
+  },
+  {
+    id: '9',
+    name: 'Other',
+    icon: 'storefront-outline',
+    type: 'establishment',
+    library: 'Ionicons',
+  },
 ];
 
 const AnimatedCard = ({item, index, navigation, selectedCategory}) => {
@@ -280,26 +333,25 @@ const TopRated = ({navigation}) => {
                   onPress={() => setSelectedCategory(category)}
                   activeOpacity={0.7}>
                   <View style={styles.tabContent}>
-                    {category.library === 'MaterialCommunityIcons' ? (
-                      <MaterialCommunityIcons
+                    {category.library === 'Ionicons' ? (
+                      <Ionicons
                         name={category.icon}
-                        size={responsiveFontSize(2)}
-                        color={isActive ? AppColors.WHITE : AppColors.GRAY}
-                        style={{marginRight: 6}}
+                        size={15}
+                        color={isActive ? '#FFF' : '#47082E'}
                       />
                     ) : (
-                      <MaterialIcons
+                      <MaterialCommunityIcons
                         name={category.icon}
-                        size={responsiveFontSize(2)}
-                        color={isActive ? AppColors.WHITE : AppColors.GRAY}
-                        style={{marginRight: 6}}
+                        size={15}
+                        color={isActive ? '#FFF' : '#47082E'}
                       />
                     )}
                     <AppText
                       title={category.name}
-                      textColor={isActive ? AppColors.WHITE : AppColors.GRAY}
+                      textColor={isActive ? '#FFF' : '#47082E'}
                       textSize={1.5}
                       textFontWeight={isActive}
+                      paddingLeft={1}
                     />
                   </View>
                   {isActive && (

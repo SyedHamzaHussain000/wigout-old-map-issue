@@ -36,6 +36,15 @@ const veryIntensiveTask = async taskDataArguments => {
   const {delay} = taskDataArguments;
 
   while (BackgroundService.isRunning()) {
+    const state = store.getState();
+    const settings = state?.user?.notificationSettings;
+
+    if (!settings?.backgroundLocation) {
+      console.log('Background Location disabled in settings, stopping task.');
+      await BackgroundService.stop();
+      break;
+    }
+
     console.log('Background Service pulse...');
 
     try {
@@ -100,35 +109,44 @@ const checkProximityAndNotify = async token => {
         // Filter out places without coordinates
         const trackablePlaces = allPlaces.filter(p => p.lat && p.lng);
 
-        // Get notified history to prevent spam
-        const notifiedRaw = await AsyncStorage.getItem('notified_places');
-        const notifiedHistory = notifiedRaw ? JSON.parse(notifiedRaw) : {};
-        const now = Date.now();
+        const state = store.getState();
+        const settings = state?.user?.notificationSettings;
+        if (settings?.recommendations) {
+          const notifiedRaw = await AsyncStorage.getItem('notified_places');
+          const notifiedHistory = notifiedRaw ? JSON.parse(notifiedRaw) : {};
+          const now = Date.now();
 
-        for (const place of trackablePlaces) {
-          if (isWithinRadius(latitude, longitude, place.lat, place.lng, 200)) {
-            // Check if notified in last 24 hours
-            const lastNotified = notifiedHistory[place.id] || 0;
-            if (now - lastNotified > 24 * 60 * 60 * 1000) {
-              await triggerLocalNotification(place);
-              notifiedHistory[place.id] = now;
+          for (const place of trackablePlaces) {
+            if (
+              isWithinRadius(latitude, longitude, place.lat, place.lng, 200)
+            ) {
+              // Check if notified in last 24 hours
+              const lastNotified = notifiedHistory[place.id] || 0;
+              if (now - lastNotified > 24 * 60 * 60 * 1000) {
+                await triggerLocalNotification(place);
+                notifiedHistory[place.id] = now;
+              }
             }
           }
+
+          await AsyncStorage.setItem(
+            'notified_places',
+            JSON.stringify(notifiedHistory),
+          );
+
+          // 3. First-Time Visit Detection
+          await checkFirstTimeVisit(
+            latitude,
+            longitude,
+            reviews,
+            wishlist,
+            notifiedHistory,
+          );
+        } else {
+          console.log(
+            'Recommendations disabled in settings, skipping local notifications.',
+          );
         }
-
-        await AsyncStorage.setItem(
-          'notified_places',
-          JSON.stringify(notifiedHistory),
-        );
-
-        // 3. First-Time Visit Detection
-        await checkFirstTimeVisit(
-          latitude,
-          longitude,
-          reviews,
-          wishlist,
-          notifiedHistory,
-        );
       } catch (err) {
         console.error('Geofencing logic error:', err);
       }

@@ -56,4 +56,5 @@ export default AppImages = {
   userPH: require('./userPH.png'),
   imageBG2: require('./imageBG2.png'),
   wigOut: require('./wigOut.png'),
+  fingerDown: require('./fingerDown.png'),
 };

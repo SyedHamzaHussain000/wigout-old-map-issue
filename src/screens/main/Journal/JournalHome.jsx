@@ -49,7 +49,7 @@ import {GetReviews} from '../../../ApiCalls/Main/Reviews/ReviewsApiCall';
 import {GetWishList} from '../../../ApiCalls/Main/WishList_API/WishListAPI';
 import {useIsFocused} from '@react-navigation/native';
 import {requestLocationPermission} from '../../../utils/Permissions';
-import {startBackgroundService} from '../../../services/BackgroundLocationService';
+import {startBackgroundService, stopBackgroundService} from '../../../services/BackgroundLocationService';
 
 const JournalHome = ({navigation}) => {
   const {navigateToRoute} = useCustomNavigation();
@@ -166,9 +166,14 @@ const JournalHome = ({navigation}) => {
   );
 
   // Handle Background Location Service initialization
+  const settings = useSelector(state => state.user.notificationSettings);
+
   useEffect(() => {
     const initBackgroundService = async () => {
-      if (!token) return;
+      if (!token || !settings?.backgroundLocation) {
+        await stopBackgroundService();
+        return;
+      }
 
       const hasPermission = await requestLocationPermission();
       if (hasPermission) {
@@ -180,7 +185,7 @@ const JournalHome = ({navigation}) => {
     };
 
     initBackgroundService();
-  }, [token]);
+  }, [token, settings?.backgroundLocation]);
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', fetchData);

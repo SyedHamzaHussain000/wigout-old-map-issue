@@ -102,7 +102,6 @@ const Notifications = ({navigation}) => {
   return (
     <ScreenWrapper>
       <View style={{flex: 1}}>
-        <LineBreak space={3} />
         <AppHeader onBackPress={true} heading={'Notification'} />
         <LineBreak space={3} />
 

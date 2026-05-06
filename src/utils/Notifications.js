@@ -10,6 +10,7 @@ import {getApp} from '@react-native-firebase/app';
 import notifee, {AndroidImportance, EventType} from '@notifee/react-native';
 import {Platform} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {store} from '../redux/Store';
 
 // -------------------- Permissions --------------------
 export async function requestUserPermission() {
@@ -49,6 +50,9 @@ export async function displayNotification(remoteMessage) {
     JSON.stringify(remoteMessage, null, 2),
   );
   try {
+    const state = store.getState();
+    const {soundVibrate} = state.user.notificationSettings;
+
     const channelId = await ensureAndroidChannel();
     // Use messageId to prevent duplicate notifications
     await notifee.displayNotification({
@@ -66,8 +70,8 @@ export async function displayNotification(remoteMessage) {
           id: 'default',
           launchActivity: 'default',
         },
-        sound: 'default',
-        vibrationPattern: [300, 500],
+        sound: soundVibrate ? 'default' : undefined,
+        vibrationPattern: soundVibrate ? [300, 500] : undefined,
       },
       data: remoteMessage.data,
     });
@@ -81,6 +85,9 @@ export async function displayNotification(remoteMessage) {
 export async function triggerRateNotification(place) {
   console.log('Triggering Rate Prompt for:', place.name);
   try {
+    const state = store.getState();
+    const {soundVibrate} = state.user.notificationSettings;
+
     const channelId = await ensureAndroidChannel();
     await notifee.requestPermission();
     
@@ -95,6 +102,7 @@ export async function triggerRateNotification(place) {
           id: 'default',
           launchActivity: 'default',
         },
+        sound: soundVibrate ? 'default' : undefined,
       },
       data: {
         // We pass the whole place object for HomeDetails
@@ -108,12 +116,15 @@ export async function triggerRateNotification(place) {
 
 async function ensureAndroidChannel() {
   console.log('Ensuring Android Channel...');
+  const state = store.getState();
+  const {soundVibrate} = state.user.notificationSettings;
+
   const channelId = await notifee.createChannel({
-    id: 'wigout_high_priority', // New ID to force fresh settings
-    name: 'WigOut High Priority',
-    importance: AndroidImportance.MAX, // Upgraded to MAX
-    sound: 'default',
-    vibration: true,
+    id: soundVibrate ? 'wigout_high_priority' : 'wigout_silent',
+    name: soundVibrate ? 'WigOut High Priority' : 'WigOut Silent',
+    importance: AndroidImportance.MAX,
+    sound: soundVibrate ? 'default' : undefined,
+    vibration: soundVibrate,
   });
   console.log('Channel created/verified:', channelId);
   return channelId;

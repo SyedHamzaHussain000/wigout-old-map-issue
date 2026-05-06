@@ -128,7 +128,7 @@ const Profile = () => {
       // },
       {
         id: 8,
-        title: 'Notification',
+        title: 'Notification Settings',
         navTo: 'NotificationsSettings',
         icon: (
           <AntDesign
