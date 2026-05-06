@@ -49,7 +49,10 @@ import {GetReviews} from '../../../ApiCalls/Main/Reviews/ReviewsApiCall';
 import {GetWishList} from '../../../ApiCalls/Main/WishList_API/WishListAPI';
 import {useIsFocused} from '@react-navigation/native';
 import {requestLocationPermission} from '../../../utils/Permissions';
-import {startBackgroundService, stopBackgroundService} from '../../../services/BackgroundLocationService';
+import {
+  startBackgroundService,
+  stopBackgroundService,
+} from '../../../services/BackgroundLocationService';
 
 const JournalHome = ({navigation}) => {
   const {navigateToRoute} = useCustomNavigation();
@@ -372,6 +375,7 @@ const JournalHome = ({navigation}) => {
                   data={combinedItems}
                   onSpinEnd={handleSpinEnd}
                   size={responsiveWidth(70)}
+                  fingerPointer={true}
                 />
               </View>
               <LineBreak space={2} />

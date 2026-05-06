@@ -1,7 +1,15 @@
 import React, {useRef, useImperativeHandle, forwardRef, useState} from 'react';
-import {View, StyleSheet, Animated, Easing, Dimensions} from 'react-native';
+import {
+  View,
+  StyleSheet,
+  Animated,
+  Easing,
+  Dimensions,
+  Image,
+} from 'react-native';
 import Svg, {Path, G, Text as SvgText} from 'react-native-svg';
 import AppColors from '../utils/AppColors';
+import AppImages from '../assets/images/AppImages';
 
 const {width} = Dimensions.get('window');
 
@@ -16,6 +24,7 @@ interface WheelSpinnerProps {
   onSpinEnd: (winner: Option) => void;
   size?: number;
   duration?: number;
+  fingerPointer?: boolean;
 }
 
 export interface WheelRef {
@@ -41,7 +50,16 @@ export const SPINNER_COLORS = [
 ];
 
 const WheelSpinner = forwardRef<WheelRef, WheelSpinnerProps>(
-  ({data, onSpinEnd, size = width * 0.8, duration = 5000}, ref) => {
+  (
+    {
+      data,
+      onSpinEnd,
+      size = width * 0.8,
+      duration = 5000,
+      fingerPointer = false,
+    },
+    ref,
+  ) => {
     const spinValue = useRef(new Animated.Value(0)).current;
     const [isSpinning, setIsSpinning] = useState(false);
     const radius = size / 2;
@@ -90,7 +108,7 @@ const WheelSpinner = forwardRef<WheelRef, WheelSpinnerProps>(
       // index = (360 - (normalizedAngle + 90)) % 360 / segmentAngle
 
       const indexAtPointer = Math.floor(
-        ((360 - normalizedAngle + 270) % 360) / segmentAngle,
+        ((360 - (normalizedAngle % 360)) % 360) / segmentAngle,
       );
 
       const winningOption = data[indexAtPointer % numberOfSegments];
@@ -201,9 +219,20 @@ const WheelSpinner = forwardRef<WheelRef, WheelSpinnerProps>(
             </G>
           </Svg>
         </Animated.View>
-        <View
-          style={[styles.pointer, {borderBottomColor: AppColors.BTNCOLOURS}]}
-        />
+        {fingerPointer ? (
+          <Image
+            source={AppImages.fingerDown}
+            style={styles.fingerPointer}
+            resizeMode="contain"
+          />
+        ) : (
+          <View
+            style={[
+              styles.normalPointer,
+              {borderBottomColor: AppColors.BTNCOLOURS},
+            ]}
+          />
+        )}
       </View>
     );
   },
@@ -215,7 +244,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     position: 'relative',
   },
-  pointer: {
+  fingerPointer: {
+    position: 'absolute',
+    top: -30,
+    width: 50,
+    height: 50,
+    zIndex: 10,
+    // tintColor: AppColors.BTNCOLOURS,
+  },
+  normalPointer: {
     position: 'absolute',
     top: -15,
     width: 0,
@@ -229,7 +266,6 @@ const styles = StyleSheet.create({
     borderRightColor: 'transparent',
     transform: [{rotate: '180deg'}],
     zIndex: 10,
-    elevation: 10,
   },
 });
 
