@@ -18,10 +18,12 @@ import AppText from '../../../components/AppTextComps/AppText';
 import LineBreak from '../../../components/LineBreak';
 import AppButton from '../../../components/AppButton';
 import SVGXml from '../../../components/SVGXML';
+import CasinoSpinningWheel from '../../../components/CasinoSpinningWheel';
 import WheelSpinner, {
   SPINNER_COLORS,
   WheelRef,
 } from '../../../components/WheelSpinner';
+
 import {
   responsiveFontSize,
   responsiveHeight,
@@ -53,6 +55,7 @@ import {
   startBackgroundService,
   stopBackgroundService,
 } from '../../../services/BackgroundLocationService';
+import JackpotSpinner from '../../../components/JackpotSpinner';
 
 const JournalHome = ({navigation}) => {
   const {navigateToRoute} = useCustomNavigation();
@@ -199,6 +202,57 @@ const JournalHome = ({navigation}) => {
     setRefreshing(true);
     await fetchData(false);
     setRefreshing(false);
+  };
+
+  const ConfettiParticle = ({index}) => {
+    const translateY = useSharedValue(-20);
+    const translateX = useSharedValue(Math.random() * width);
+    const rotate = useSharedValue(Math.random() * 360);
+    const opacity = useSharedValue(1);
+
+    const color = SPINNER_COLORS[index % SPINNER_COLORS.length];
+
+    useEffect(() => {
+      const delay = Math.random() * 800;
+      const duration = 1500 + Math.random() * 1000;
+
+      translateY.value = withDelay(
+        delay,
+        withTiming(responsiveHeight(100), {duration}),
+      );
+      rotate.value = withDelay(
+        delay,
+        withTiming(rotate.value + 720, {duration}),
+      );
+      opacity.value = withDelay(
+        delay + duration - 500,
+        withTiming(0, {duration: 500}),
+      );
+    }, []);
+
+    const animatedStyle = useAnimatedStyle(() => ({
+      transform: [
+        {translateY: translateY.value},
+        {translateX: translateX.value},
+        {rotate: `${rotate.value}deg`},
+      ],
+      opacity: opacity.value,
+    }));
+
+    return (
+      <AnimatedReanimated.View
+        style={[
+          {
+            position: 'absolute',
+            width: 8 + Math.random() * 6,
+            height: 8 + Math.random() * 6,
+            backgroundColor: color,
+            borderRadius: index % 2 === 0 ? 0 : 5,
+          },
+          animatedStyle,
+        ]}
+      />
+    );
   };
 
   return (
@@ -370,7 +424,21 @@ const JournalHome = ({navigation}) => {
               />
               <LineBreak space={2} />
               <View style={styles.wheelWrapper}>
-                <WheelSpinner
+                {/* <WheelSpinner
+                  ref={wheelRef}
+                  data={combinedItems}
+                  onSpinEnd={handleSpinEnd}
+                  size={responsiveWidth(70)}
+                  fingerPointer={false}
+                /> */}
+                {/* <CasinoSpinningWheel
+                  ref={wheelRef}
+                  data={combinedItems}
+                  onSpinEnd={handleSpinEnd}
+                  size={responsiveWidth(70)}
+                  fingerPointer={true}
+                /> */}
+                <JackpotSpinner
                   ref={wheelRef}
                   data={combinedItems}
                   onSpinEnd={handleSpinEnd}
@@ -468,54 +536,6 @@ const JournalHome = ({navigation}) => {
   );
 };
 
-const ConfettiParticle = ({index}) => {
-  const translateY = useSharedValue(-20);
-  const translateX = useSharedValue(Math.random() * width);
-  const rotate = useSharedValue(Math.random() * 360);
-  const opacity = useSharedValue(1);
-
-  const color = SPINNER_COLORS[index % SPINNER_COLORS.length];
-
-  useEffect(() => {
-    const delay = Math.random() * 800;
-    const duration = 1500 + Math.random() * 1000;
-
-    translateY.value = withDelay(
-      delay,
-      withTiming(responsiveHeight(100), {duration}),
-    );
-    rotate.value = withDelay(delay, withTiming(rotate.value + 720, {duration}));
-    opacity.value = withDelay(
-      delay + duration - 500,
-      withTiming(0, {duration: 500}),
-    );
-  }, []);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      {translateY: translateY.value},
-      {translateX: translateX.value},
-      {rotate: `${rotate.value}deg`},
-    ],
-    opacity: opacity.value,
-  }));
-
-  return (
-    <AnimatedReanimated.View
-      style={[
-        {
-          position: 'absolute',
-          width: 8 + Math.random() * 6,
-          height: 8 + Math.random() * 6,
-          backgroundColor: color,
-          borderRadius: index % 2 === 0 ? 0 : 5,
-        },
-        animatedStyle,
-      ]}
-    />
-  );
-};
-
 export default JournalHome;
 
 const styles = StyleSheet.create({
@@ -604,13 +624,8 @@ const styles = StyleSheet.create({
   },
   wheelWrapper: {
     padding: 10,
-    backgroundColor: AppColors.WHITE,
+    backgroundColor: 'transparent',
     borderRadius: responsiveWidth(40),
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
   },
   winnerCard: {
     alignItems: 'center',

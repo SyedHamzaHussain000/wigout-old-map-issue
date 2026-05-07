@@ -61,8 +61,8 @@ export const UserLogin = createAsyncThunk<LoginResponse, AxiosRequestConfig>(
   async (config, {rejectWithValue}) => {
     try {
       const response = await axios.request<LoginResponse>(config);
-      console.log('response===>>>', JSON.stringify(response.data));
-      console.log('response===>>>', response.data.token);
+      console.log('response in UserLogin:-', JSON.stringify(response.data));
+
       if (response.data.success) {
         ShowToast('success', 'Login Successful');
         return response?.data;

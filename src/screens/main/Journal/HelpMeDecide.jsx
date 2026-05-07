@@ -41,6 +41,34 @@ const HelpMeDecide = () => {
   const [loading, setLoading] = useState(false);
   const [selectedOptions, setSelectedOptions] = useState([]);
 
+  const getImageSource = item => {
+    if (item.image && typeof item.image === 'string') {
+      const cleanImage = item.image.replace(/\s/g, '');
+      if (cleanImage.startsWith('http')) {
+        return {uri: cleanImage};
+      }
+      let imageUrl = `${Google_Places_Images}${encodeURIComponent(cleanImage)}`;
+      return {uri: imageUrl};
+    }
+
+    const photo =
+      item.photos?.[0] ||
+      item.photo ||
+      item.photo_reference ||
+      item.photoReference;
+
+    if (photo && typeof photo === 'string' && photo.length > 5) {
+      const cleanPhoto = photo.replace(/\s/g, '');
+      if (cleanPhoto.startsWith('http')) {
+        return {uri: cleanPhoto};
+      }
+      let imageUrl = `${Google_Places_Images}${encodeURIComponent(cleanPhoto)}`;
+      return {uri: imageUrl};
+    }
+
+    return AppImages.resturant;
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -75,17 +103,12 @@ const HelpMeDecide = () => {
     if (selectedOptions.some(option => option.id === item._id)) {
       return;
     }
+
     const newOption = {
       id: item._id,
       name: item.name || item.restaurantName,
       category: type,
-      image: item.image
-        ? {uri: `${Google_Places_Images}${item.image}`}
-        : item.photos?.[0]
-        ? item.photos[0].startsWith('http')
-          ? {uri: item.photos[0]}
-          : {uri: `${Google_Places_Images}${item.photos[0]}`}
-        : AppImages.resturant,
+      image: getImageSource(item),
       fullData: item,
     };
     setSelectedOptions([...selectedOptions, newOption]);
@@ -124,13 +147,7 @@ const HelpMeDecide = () => {
       category: wishlistItems.some(w => w._id === item._id)
         ? 'Saved Place'
         : 'Liked Place',
-      image: item.image
-        ? {uri: `${Google_Places_Images}${item.image}`}
-        : item.photos?.[0]
-        ? item.photos[0].startsWith('http')
-          ? {uri: item.photos[0]}
-          : {uri: `${Google_Places_Images}${item.photos[0]}`}
-        : AppImages.resturant,
+      image: getImageSource(item),
       fullData: item,
     }));
 
@@ -303,15 +320,7 @@ const HelpMeDecide = () => {
                         gap: 12,
                       }}>
                       <Image
-                        source={
-                          item.image
-                            ? {uri: `${Google_Places_Images}${item.image}`}
-                            : item.photos?.[0]
-                            ? item.photos[0].startsWith('http')
-                              ? {uri: item.photos[0]}
-                              : {uri: `${Google_Places_Images}${item.photos[0]}`}
-                            : AppImages.resturant
-                        }
+                        source={getImageSource(item)}
                         style={styles.placeImage}
                       />
                       <View>
@@ -377,13 +386,7 @@ const HelpMeDecide = () => {
                         gap: 12,
                       }}>
                       <Image
-                        source={
-                          item.photos?.[0]
-                            ? item.photos[0].startsWith('http')
-                              ? {uri: item.photos[0]}
-                              : {uri: `${Google_Places_Images}${item.photos[0]}`}
-                            : AppImages.resturant
-                        }
+                        source={getImageSource(item)}
                         style={styles.placeImage}
                       />
                       <View>
@@ -467,7 +470,7 @@ const styles = StyleSheet.create({
     marginTop: responsiveHeight(2),
   },
   customOptionSection: {
-    backgroundColor: '#FAFAFA',
+    backgroundColor: AppColors.menuBg,
     padding: 15,
     borderRadius: 20,
     borderWidth: 1,
@@ -481,7 +484,7 @@ const styles = StyleSheet.create({
   customInput: {
     flex: 1,
     height: 45,
-    backgroundColor: AppColors.WHITE,
+    backgroundColor: AppColors.menuBg,
     borderRadius: 10,
     paddingHorizontal: 15,
     color: AppColors.BLACK,
