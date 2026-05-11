@@ -42,6 +42,7 @@ import {
   RemoveWishList,
 } from '../../../ApiCalls/Main/WishList_API/WishListAPI';
 import {Google_Places_Images} from '../../../utils/api_content';
+import ScreenWrapper from '../../../components/ScreenWrapper';
 
 const BrowseCategories = ({navigation}) => {
   const {navigateToRoute, goBack} = useCustomNavigation();
@@ -536,7 +537,7 @@ const BrowseCategories = ({navigation}) => {
   );
 
   return (
-    <BackgroundScreen>
+    <ScreenWrapper>
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={goBack} style={styles.backBtn}>
@@ -605,7 +606,7 @@ const BrowseCategories = ({navigation}) => {
           </TouchableOpacity>
         </View>
       </SafeAreaView>
-    </BackgroundScreen>
+    </ScreenWrapper>
   );
 };
 

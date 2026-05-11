@@ -10,16 +10,12 @@ import {
   TextInput,
   ActivityIndicator,
   Alert,
+  StatusBar,
 } from 'react-native';
 import ScreenWrapper from '../../../components/ScreenWrapper';
 import AppColors from '../../../utils/AppColors';
 import AppText from '../../../components/AppTextComps/AppText';
 import LineBreak from '../../../components/LineBreak';
-import {
-  responsiveFontSize,
-  responsiveHeight,
-  responsiveWidth,
-} from '../../../utils/Responsive_Dimensions';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {useCustomNavigation} from '../../../utils/Hooks';
@@ -29,41 +25,53 @@ import AppButton from '../../../components/AppButton';
 import {useSelector} from 'react-redux';
 import {GetReviews} from '../../../ApiCalls/Main/Reviews/ReviewsApiCall';
 import {GetWishList} from '../../../ApiCalls/Main/WishList_API/WishListAPI';
-import {Google_Places_Images} from '../../../utils/api_content';
+import {
+  Google_Places_Images,
+  Google_Base_Url,
+  Google_API_KEY,
+} from '../../../utils/api_content';
 
 const HelpMeDecide = () => {
-  const {goBack} = useCustomNavigation();
-  const {navigateToRoute} = useCustomNavigation();
+  const {goBack, navigateToRoute} = useCustomNavigation();
   const token = useSelector(state => state.user.token);
   const [customOption, setCustomOption] = useState('');
   const [wishlistItems, setWishlistItems] = useState([]);
   const [goAgainItems, setGoAgainItems] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [selectedOptions, setSelectedOptions] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
 
+  // Reuse your existing logic for image sourcing
   const getImageSource = item => {
-    if (item.image && typeof item.image === 'string') {
-      const cleanImage = item.image.replace(/\s/g, '');
-      if (cleanImage.startsWith('http')) {
-        return {uri: cleanImage};
-      }
-      let imageUrl = `${Google_Places_Images}${encodeURIComponent(cleanImage)}`;
-      return {uri: imageUrl};
+    // 1. Direct image string (can be URL or Reference)
+    const directImage =
+      item.image || item.restaurantImage || item.restaurant_image;
+    if (
+      directImage &&
+      typeof directImage === 'string' &&
+      directImage.length > 5
+    ) {
+      const cleanImage = directImage.replace(/\s/g, '');
+      if (cleanImage.startsWith('http')) return {uri: cleanImage};
+      return {uri: `${Google_Places_Images}${encodeURIComponent(cleanImage)}`};
     }
 
+    // 2. Photos array or photo reference fields
     const photo =
-      item.photos?.[0] ||
+      (typeof item.photos?.[0] === 'string'
+        ? item.photos[0]
+        : item.photos?.[0]?.photo_reference) ||
       item.photo ||
       item.photo_reference ||
-      item.photoReference;
+      item.photoReference ||
+      item.photo_url ||
+      item.photoUrl;
 
     if (photo && typeof photo === 'string' && photo.length > 5) {
       const cleanPhoto = photo.replace(/\s/g, '');
-      if (cleanPhoto.startsWith('http')) {
-        return {uri: cleanPhoto};
-      }
-      let imageUrl = `${Google_Places_Images}${encodeURIComponent(cleanPhoto)}`;
-      return {uri: imageUrl};
+      if (cleanPhoto.startsWith('http')) return {uri: cleanPhoto};
+      return {uri: `${Google_Places_Images}${encodeURIComponent(cleanPhoto)}`};
     }
 
     return AppImages.resturant;
@@ -73,6 +81,14 @@ const HelpMeDecide = () => {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      if (customOption.trim().length > 2) handleSearch();
+      else setSuggestions([]);
+    }, 500);
+    return () => clearTimeout(delayDebounceFn);
+  }, [customOption]);
+
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -80,115 +96,90 @@ const HelpMeDecide = () => {
         GetWishList(token),
         GetReviews(token),
       ]);
-
-      if (wishlistRes?.success) {
-        setWishlistItems(wishlistRes.wishLists || []);
-      }
-
+      if (wishlistRes?.success) setWishlistItems(wishlistRes.wishLists || []);
       if (reviewsRes?.reviews) {
-        const likes = reviewsRes.reviews.filter(
-          res => res.actionType === 'Go Again',
+        setGoAgainItems(
+          reviewsRes.reviews.filter(res => res.actionType === 'Go Again'),
         );
-        setGoAgainItems(likes);
       }
     } catch (error) {
-      console.log('Error fetching data in HelpMeDecide:', error);
+      console.log('Error fetching data:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const addToSpinner = (item, type = 'Saved Place') => {
-    // Check if already selected
-    if (selectedOptions.some(option => option.id === item._id)) {
-      return;
-    }
-
+  const addToSpinner = (item, type) => {
+    if (selectedOptions.some(option => option.id === item._id)) return;
     const newOption = {
       id: item._id,
       name: item.name || item.restaurantName,
       category: type,
       image: getImageSource(item),
-      fullData: item,
     };
     setSelectedOptions([...selectedOptions, newOption]);
   };
 
-  const addCustomOption = () => {
-    if (!customOption.trim()) return;
-    const newOption = {
-      id: Date.now().toString(),
-      name: customOption,
-      category: 'Custom',
-      image: AppImages.resturant,
-    };
-    setSelectedOptions([...selectedOptions, newOption]);
-    setCustomOption('');
+  const handleSearch = async () => {
+    setSearchLoading(true);
+    try {
+      const url = `${Google_Base_Url}place/textsearch/json?query=${encodeURIComponent(
+        customOption,
+      )}&key=${Google_API_KEY}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      setSuggestions(data.results?.slice(0, 3) || []);
+    } catch (error) {
+      setSuggestions([]);
+    } finally {
+      setSearchLoading(false);
+    }
   };
 
-  const handleDecideForMe = () => {
-    const combinedAll = [...wishlistItems, ...goAgainItems];
-    if (combinedAll.length < 2) {
-      Alert.alert(
-        'Info',
-        'You need at least 2 saved or liked places to use "Decide for me".',
-      );
+  const selectSuggestion = place => {
+    if (selectedOptions.some(option => option.id === place.place_id)) {
+      Alert.alert('Info', 'This place is already added.');
       return;
     }
-
-    // Pick random items (2 to 6)
-    const shuffled = [...combinedAll].sort(() => 0.5 - Math.random());
-    const count = Math.min(shuffled.length, 6);
-    const randomPick = shuffled.slice(0, count);
-
-    const options = randomPick.map(item => ({
-      id: item._id,
-      name: item.name || item.restaurantName,
-      category: wishlistItems.some(w => w._id === item._id)
-        ? 'Saved Place'
-        : 'Liked Place',
-      image: getImageSource(item),
-      fullData: item,
-    }));
-
-    navigateToRoute('SpinTheWheel', {options});
+    setSelectedOptions([
+      ...selectedOptions,
+      {
+        id: place.place_id,
+        name: place.name,
+        category: place?.types?.[0] || 'Found Place',
+        image: getImageSource(place),
+      },
+    ]);
+    setCustomOption('');
+    setSuggestions([]);
   };
 
-  const removeOption = id => {
-    setSelectedOptions(selectedOptions.filter(item => item.id !== id));
-  };
-
-  const renderItem = ({item}) => (
-    <View style={styles.placeItem}>
-      <View style={{flexDirection: 'row', alignItems: 'center', gap: 12}}>
-        <Image source={item.image} style={styles.placeImage} />
-        <View>
-          <AppText
-            title={item.name}
-            textColor={AppColors.BLACK}
-            textSize={1.6}
-            textFontWeight
-          />
-          <AppText
-            title={item.category}
-            textColor={AppColors.GRAY}
-            textSize={1.2}
-          />
-        </View>
-      </View>
-      <TouchableOpacity
-        style={styles.deleteBtn}
-        onPress={() => removeOption(item.id)}>
-        <MaterialIcons name="delete-outline" size={20} color="#F44336" />
-      </TouchableOpacity>
-    </View>
-  );
+  // const handleDecideForMe = () => {
+  //   const combinedAll = [...wishlistItems, ...goAgainItems];
+  //   if (combinedAll.length < 2) {
+  //     Alert.alert('Info', 'You need at least 2 places to use auto-decide.');
+  //     return;
+  //   }
+  //   const shuffled = [...combinedAll].sort(() => 0.5 - Math.random());
+  //   const options = shuffled
+  //     .slice(0, Math.min(shuffled.length, 6))
+  //     .map(item => ({
+  //       id: item._id,
+  //       name: item.name || item.restaurantName,
+  //       category: wishlistItems.some(w => w._id === item._id)
+  //         ? 'Saved Place'
+  //         : 'Liked Place',
+  //       image: getImageSource(item),
+  //     }));
+  //   navigateToRoute('SpinTheWheel', {options});
+  // };
 
   return (
     <ScreenWrapper>
+      <StatusBar barStyle="dark-content" />
       <SafeAreaView style={{flex: 1}}>
         <View style={styles.container}>
-          {/* Header */}
+          {/* Header Section */}
           <View style={styles.header}>
             <BackIcon
               onBackPress={() => goBack()}
@@ -200,95 +191,151 @@ const HelpMeDecide = () => {
               textSize={2.5}
               textFontWeight
             />
-            <TouchableOpacity
-              onPress={handleDecideForMe}
-              style={styles.decideForMeHeaderBtn}>
-              <Ionicons
-                name="sparkles"
-                size={22}
-                color={AppColors.BTNCOLOURS}
-              />
-            </TouchableOpacity>
+            <View style={{width: 32}} />
           </View>
 
-          <LineBreak space={2} />
           <AppText
             title={'Select places from your likes or add custom options'}
-            textColor={AppColors.GRAY}
+            textColor={AppColors.blackOpacity}
             textSize={1.4}
             paddingHorizontal={7}
           />
 
-          <LineBreak space={3} />
+          <LineBreak space={2} />
 
           <ScrollView
-            contentContainerStyle={{paddingHorizontal: 20, paddingBottom: 100}}
+            contentContainerStyle={styles.scrollBody}
             showsVerticalScrollIndicator={false}>
-            {/* Add Custom Option */}
-            <View style={styles.customOptionSection}>
+            {/* Custom Input Card */}
+            <View style={styles.inputCard}>
               <AppText
                 title={'Add custom option:'}
                 textColor={AppColors.BLACK}
                 textSize={1.6}
                 textFontWeight
               />
-              <LineBreak space={1} />
-              <View style={styles.inputRow}>
+              <View style={styles.inputWrapper}>
                 <TextInput
-                  style={styles.customInput}
+                  style={styles.textInput}
                   placeholder="Enter option name"
                   placeholderTextColor={AppColors.GRAY}
                   value={customOption}
                   onChangeText={setCustomOption}
                 />
-                <TouchableOpacity
-                  style={styles.addBtn}
-                  onPress={addCustomOption}>
-                  <Ionicons name="add" size={24} color={AppColors.WHITE} />
-                  <AppText
-                    title={'Add'}
-                    textColor={AppColors.WHITE}
-                    textSize={1.6}
-                  />
-                </TouchableOpacity>
+                {customOption.length > 0 && (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setCustomOption('');
+                      setSuggestions([]);
+                    }}>
+                    <Ionicons
+                      name="close-circle"
+                      size={20}
+                      color={AppColors.GRAY}
+                    />
+                  </TouchableOpacity>
+                )}
               </View>
+
+              {/* Suggestions Overlay */}
+              {(customOption.trim().length > 2 || searchLoading) && (
+                <View style={styles.suggestionBox}>
+                  {searchLoading ? (
+                    <ActivityIndicator
+                      size="small"
+                      color={AppColors.BTNCOLOURS}
+                      style={{padding: 15}}
+                    />
+                  ) : (
+                    <>
+                      {suggestions.length > 0 ? (
+                        suggestions.map(item => (
+                          <TouchableOpacity
+                            key={item.place_id}
+                            style={styles.suggestionRow}
+                            onPress={() => selectSuggestion(item)}>
+                            <Image
+                              source={getImageSource(item)}
+                              style={styles.miniImg}
+                            />
+                            <View style={{flex: 1}}>
+                              <AppText
+                                title={item.name}
+                                textColor={AppColors.BLACK}
+                                textSize={1.3}
+                                textFontWeight
+                              />
+                              <AppText
+                                title={item?.types?.[0] || 'Place'}
+                                textColor={AppColors.GRAY}
+                                textSize={1.1}
+                                textTransform="capitalize"
+                              />
+                            </View>
+                            <Ionicons
+                              name="add-circle"
+                              size={22}
+                              color={AppColors.BTNCOLOURS}
+                            />
+                          </TouchableOpacity>
+                        ))
+                      ) : (
+                        <View style={{padding: 15, alignItems: 'center'}}>
+                          <AppText
+                            title="No results found"
+                            textColor={AppColors.blackOpacity}
+                            textSize={1.3}
+                          />
+                        </View>
+                      )}
+                    </>
+                  )}
+                </View>
+              )}
             </View>
 
-            <LineBreak space={3} />
-
+            <LineBreak space={2} />
             <AppText
               title={`Your selected options (${selectedOptions.length}):`}
               textColor={AppColors.BLACK}
               textSize={1.6}
               textFontWeight
             />
-            <LineBreak space={2} />
+            {selectedOptions.length === 0 && (
+              <AppText
+                title="No options selected yet."
+                textColor={AppColors.blackOpacity}
+                textSize={1.4}
+                style={{marginTop: 5}}
+              />
+            )}
 
             {selectedOptions.map(item => (
-              <View key={item.id} style={styles.placeItem}>
-                <View
-                  style={{flexDirection: 'row', alignItems: 'center', gap: 12}}>
-                  <Image source={item.image} style={styles.placeImage} />
-                  <View>
-                    <AppText
-                      title={item.name}
-                      textColor={AppColors.BLACK}
-                      textSize={1.6}
-                      textFontWeight
-                    />
-                    <AppText
-                      title={item.category}
-                      textColor={AppColors.GRAY}
-                      textSize={1.2}
-                    />
-                  </View>
+              <View key={item.id} style={styles.listItem}>
+                <Image source={item.image} style={styles.listImg} />
+                <View style={{flex: 1}}>
+                  <AppText
+                    title={item.name}
+                    textColor={AppColors.BLACK}
+                    textSize={1.6}
+                    textFontWeight
+                  />
+                  <AppText
+                    title={item.category}
+                    textColor={AppColors.blackOpacity}
+                    textSize={1.2}
+                    textTransform={'capitalize'}
+                  />
                 </View>
                 <TouchableOpacity
-                  style={styles.deleteBtn}
-                  onPress={() => removeOption(item.id)}>
+                  onPress={() =>
+                    setSelectedOptions(
+                      selectedOptions.filter(o => o.id !== item.id),
+                    )
+                  }>
                   <MaterialIcons
                     name="delete-outline"
-                    size={20}
+                    size={22}
                     color="#F44336"
                   />
                 </TouchableOpacity>
@@ -297,33 +344,38 @@ const HelpMeDecide = () => {
 
             <LineBreak space={3} />
             <AppText
-              title={'Choose from your Wishlist:'}
+              title="Choose from your Wishlist:"
               textColor={AppColors.BLACK}
               textSize={1.6}
               textFontWeight
             />
-            <LineBreak space={2} />
-
+            <LineBreak space={1} />
             {loading ? (
-              <ActivityIndicator size="small" color={AppColors.BTNCOLOURS} />
-            ) : wishlistItems.length > 0 ? (
-              wishlistItems.map(item => {
-                const isSelected = selectedOptions.some(
-                  opt => opt.id === item._id,
-                );
-                return (
-                  <View key={item._id} style={styles.placeItem}>
-                    <View
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: 12,
-                      }}>
+              <ActivityIndicator
+                size="large"
+                color={AppColors.BTNCOLOURS}
+                style={{marginTop: 30}}
+              />
+            ) : (
+              <>
+                {wishlistItems.length === 0 && (
+                  <AppText
+                    title="No items in wishlist yet."
+                    textColor={AppColors.blackOpacity}
+                    textSize={1.4}
+                  />
+                )}
+                {wishlistItems.map(item => {
+                  const isSelected = selectedOptions.some(
+                    opt => opt.id === item._id,
+                  );
+                  return (
+                    <View key={item._id} style={styles.listItem}>
                       <Image
                         source={getImageSource(item)}
-                        style={styles.placeImage}
+                        style={styles.listImg}
                       />
-                      <View>
+                      <View style={{flex: 1}}>
                         <AppText
                           title={item.name || item.restaurantName}
                           textColor={AppColors.BLACK}
@@ -331,65 +383,54 @@ const HelpMeDecide = () => {
                           textFontWeight
                         />
                         <AppText
-                          title={'Saved Place'}
-                          textColor={AppColors.GRAY}
+                          title="Saved Place"
+                          textColor={AppColors.blackOpacity}
                           textSize={1.2}
                         />
                       </View>
+                      <TouchableOpacity
+                        style={[
+                          styles.addBtn,
+                          isSelected && {backgroundColor: AppColors.GRAY},
+                        ]}
+                        disabled={isSelected}
+                        onPress={() => addToSpinner(item, 'Saved Place')}>
+                        <AppText
+                          title={isSelected ? 'Added' : 'Add'}
+                          textColor={AppColors.WHITE}
+                          textSize={1.3}
+                        />
+                      </TouchableOpacity>
                     </View>
-                    <TouchableOpacity
-                      style={[
-                        styles.addBtnSmall,
-                        isSelected && {backgroundColor: AppColors.GRAY},
-                      ]}
-                      disabled={isSelected}
-                      onPress={() => addToSpinner(item, 'Saved Place')}>
-                      <AppText
-                        title={isSelected ? 'Added' : 'Add'}
-                        textColor={AppColors.WHITE}
-                        textSize={1.4}
-                      />
-                    </TouchableOpacity>
-                  </View>
-                );
-              })
-            ) : (
-              <AppText
-                title={'No items in wishlist yet.'}
-                textColor={AppColors.GRAY}
-                textSize={1.4}
-              />
-            )}
+                  );
+                })}
 
-            <LineBreak space={3} />
-            <AppText
-              title={'Choose from your Go Again list:'}
-              textColor={AppColors.BLACK}
-              textSize={1.6}
-              textFontWeight
-            />
-            <LineBreak space={2} />
-
-            {loading ? (
-              <ActivityIndicator size="small" color={AppColors.BTNCOLOURS} />
-            ) : goAgainItems.length > 0 ? (
-              goAgainItems.map(item => {
-                const isSelected = selectedOptions.some(
-                  opt => opt.id === item._id,
-                );
-                return (
-                  <View key={item._id} style={styles.placeItem}>
-                    <View
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: 12,
-                      }}>
+                <LineBreak space={3} />
+                <AppText
+                  title="Choose from your Go Again list:"
+                  textColor={AppColors.BLACK}
+                  textSize={1.6}
+                  textFontWeight
+                />
+                <LineBreak space={1} />
+                {goAgainItems.length === 0 && (
+                  <AppText
+                    title="No liked places yet."
+                    textColor={AppColors.blackOpacity}
+                    textSize={1.4}
+                  />
+                )}
+                {goAgainItems.map(item => {
+                  const isSelected = selectedOptions.some(
+                    opt => opt.id === item._id,
+                  );
+                  return (
+                    <View key={item._id} style={styles.listItem}>
                       <Image
                         source={getImageSource(item)}
-                        style={styles.placeImage}
+                        style={styles.listImg}
                       />
-                      <View>
+                      <View style={{flex: 1}}>
                         <AppText
                           title={item.restaurantName || item.name}
                           textColor={AppColors.BLACK}
@@ -397,55 +438,46 @@ const HelpMeDecide = () => {
                           textFontWeight
                         />
                         <AppText
-                          title={'Liked Place'}
-                          textColor={AppColors.GRAY}
+                          title="Liked Place"
+                          textColor={AppColors.blackOpacity}
                           textSize={1.2}
                         />
                       </View>
+                      <TouchableOpacity
+                        style={[
+                          styles.addBtn,
+                          isSelected && {backgroundColor: AppColors.GRAY},
+                        ]}
+                        disabled={isSelected}
+                        onPress={() => addToSpinner(item, 'Liked Place')}>
+                        <AppText
+                          title={isSelected ? 'Added' : 'Add'}
+                          textColor={AppColors.WHITE}
+                          textSize={1.3}
+                        />
+                      </TouchableOpacity>
                     </View>
-                    <TouchableOpacity
-                      style={[
-                        styles.addBtnSmall,
-                        isSelected && {backgroundColor: AppColors.GRAY},
-                      ]}
-                      disabled={isSelected}
-                      onPress={() => addToSpinner(item, 'Liked Place')}>
-                      <AppText
-                        title={isSelected ? 'Added' : 'Add'}
-                        textColor={AppColors.WHITE}
-                        textSize={1.4}
-                      />
-                    </TouchableOpacity>
-                  </View>
-                );
-              })
-            ) : (
-              <AppText
-                title={'No liked places yet.'}
-                textColor={AppColors.GRAY}
-                textSize={1.4}
-              />
+                  );
+                })}
+              </>
             )}
+            <View style={{height: 120}} />
           </ScrollView>
 
-          {/* Bottom Button */}
-          <View style={styles.bottomButtonContainer}>
+          <View style={styles.footer}>
             <AppButton
               title={'Spin the Wheel!'}
               handlePress={() => {
-                if (selectedOptions.length < 2) {
-                  Alert.alert('Info', 'Please select at least 2 options.');
-                  return;
-                }
+                if (selectedOptions.length < 2)
+                  return Alert.alert('Info', 'Select at least 2 options.');
                 navigateToRoute('SpinTheWheel', {options: selectedOptions});
               }}
-              // disabled={selectedOptions.length < 2}
               btnBackgroundColor={AppColors.BTNCOLOURS}
               btnWidth={90}
               leftIcon={
                 <Ionicons
-                  name="aperture-outline"
-                  size={24}
+                  name="aperture"
+                  size={22}
                   color={AppColors.WHITE}
                   style={{marginRight: 10}}
                 />
@@ -459,91 +491,85 @@ const HelpMeDecide = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: {flex: 1},
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    marginTop: responsiveHeight(2),
+    marginVertical: 15,
   },
-  customOptionSection: {
-    backgroundColor: AppColors.menuBg,
-    padding: 15,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#EEEEEE',
-  },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  customInput: {
-    flex: 1,
-    height: 45,
-    backgroundColor: AppColors.menuBg,
-    borderRadius: 10,
-    paddingHorizontal: 15,
-    color: AppColors.BLACK,
-    borderWidth: 1,
-    borderColor: '#EEEEEE',
-  },
-  addBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: AppColors.BTNCOLOURS,
-    paddingHorizontal: 15,
-    height: 45,
-    borderRadius: 10,
-    gap: 5,
-  },
-  placeItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F5F5F5',
-  },
-  placeImage: {
-    width: 45,
-    height: 45,
-    borderRadius: 8,
-    resizeMode: 'cover',
-    backgroundColor: AppColors.graysh,
-  },
-  deleteBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#FFF5F5',
+  sparkleBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: AppColors.WHITE,
     justifyContent: 'center',
     alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
   },
-  bottomButtonContainer: {
+  scrollBody: {paddingHorizontal: 20, paddingBottom: 20},
+  inputCard: {
+    backgroundColor: AppColors.menuBg,
+    padding: 15,
+    borderRadius: 15,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: AppColors.menuBg,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    marginTop: 8,
+    height: 45,
+  },
+  textInput: {flex: 1, color: AppColors.BLACK, fontSize: 14},
+  suggestionBox: {
+    marginTop: 10,
+    backgroundColor: AppColors.menuBg,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#EEE',
+    overflow: 'hidden',
+  },
+  suggestionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: AppColors.inputBorder,
+  },
+  miniImg: {width: 32, height: 32, borderRadius: 6, marginRight: 10},
+  listItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: AppColors.inputBorder,
+  },
+  listImg: {
+    width: 50,
+    height: 50,
+    borderRadius: 10,
+    marginRight: 12,
+    backgroundColor: '#EEE',
+  },
+  addBtn: {
+    backgroundColor: AppColors.BTNCOLOURS,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  footer: {
     position: 'absolute',
-    bottom: 20,
+    bottom: 25,
     left: 0,
     right: 0,
     alignItems: 'center',
     paddingHorizontal: 20,
-  },
-  addBtnSmall: {
-    backgroundColor: AppColors.BTNCOLOURS,
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  decideForMeHeaderBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F5F5F5',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 });
 

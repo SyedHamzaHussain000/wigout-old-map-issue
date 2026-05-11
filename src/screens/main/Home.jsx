@@ -731,7 +731,7 @@ const Home = () => {
 
   // console.log('fetchedLocations:-', fetchedLocations);
   // console.log('recommendedLocations:-', recommendedLocations);
-  console.log('placesRecommended:-', placesRecommended);
+  // console.log('placesRecommended:-', placesRecommended);
   return (
     <ScreenWrapper>
       {isLoading ? (

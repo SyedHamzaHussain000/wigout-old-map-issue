@@ -37,6 +37,7 @@ import {
   RemoveWishList,
 } from '../../../ApiCalls/Main/WishList_API/WishListAPI';
 import {Google_Places_Images} from '../../../utils/api_content';
+import ScreenWrapper from '../../../components/ScreenWrapper';
 
 const SearchForPlaces = ({navigation}) => {
   const {navigateToRoute, goBack} = useCustomNavigation();
@@ -411,7 +412,7 @@ const SearchForPlaces = ({navigation}) => {
   );
 
   return (
-    <BackgroundScreen>
+    <ScreenWrapper>
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={goBack} style={{padding: 5}}>
@@ -478,7 +479,7 @@ const SearchForPlaces = ({navigation}) => {
           </TouchableOpacity>
         </View>
       </SafeAreaView>
-    </BackgroundScreen>
+    </ScreenWrapper>
   );
 };
 

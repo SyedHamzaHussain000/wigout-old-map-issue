@@ -18,6 +18,7 @@ import {useCustomNavigation} from '../../../utils/Hooks';
 import BackgroundScreen from '../../../components/AppTextComps/BackgroundScreen';
 import {setIsListBuilt} from '../../../redux/Slices';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import ScreenWrapper from '../../../components/ScreenWrapper';
 
 const {width} = Dimensions.get('window');
 
@@ -74,7 +75,7 @@ const BuildYourList = ({navigation, route}) => {
   );
 
   return (
-    <BackgroundScreen>
+    <ScreenWrapper>
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           {/* <TouchableOpacity onPress={() => goBack()}>
@@ -138,7 +139,7 @@ const BuildYourList = ({navigation, route}) => {
           </View>
         </View>
       </SafeAreaView>
-    </BackgroundScreen>
+    </ScreenWrapper>
   );
 };
 
