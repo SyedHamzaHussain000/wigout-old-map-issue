@@ -9,7 +9,9 @@ type props = {
 };
 
 const SVGXml = ({icon, width = 24, height = 33, style}: props) => {
-  if (!icon) return null;
+  if (!icon) {
+    return null;
+  }
   return <SvgXml xml={icon} height={height} width={width} style={style} />;
 };
 

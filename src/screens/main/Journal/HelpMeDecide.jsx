@@ -112,6 +112,7 @@ const HelpMeDecide = () => {
   const addToSpinner = (item, type) => {
     if (selectedOptions.some(option => option.id === item._id)) return;
     const newOption = {
+      ...item,
       id: item._id,
       name: item.name || item.restaurantName,
       category: type,
@@ -141,15 +142,15 @@ const HelpMeDecide = () => {
       Alert.alert('Info', 'This place is already added.');
       return;
     }
-    setSelectedOptions([
-      ...selectedOptions,
-      {
-        id: place.place_id,
-        name: place.name,
-        category: place?.types?.[0] || 'Found Place',
-        image: getImageSource(place),
-      },
-    ]);
+    const normalized = {
+      ...place,
+      id: place.place_id,
+      name: place.name,
+      category: place?.types?.[0] || 'Found Place',
+      image: getImageSource(place),
+      address: place.formatted_address || place.vicinity,
+    };
+    setSelectedOptions([...selectedOptions, normalized]);
     setCustomOption('');
     setSuggestions([]);
   };

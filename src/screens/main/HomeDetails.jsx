@@ -696,10 +696,10 @@ const HomeDetails = ({route}) => {
                     longitude: morePlaceDetails?.geometry?.location?.lng || 0,
                   }}
                   title={morePlaceDetails?.name || 'Location'}>
-                  <Image
+                  {/* <Image
                     source={AppImages.LOCATION_MARK}
-                    style={{height: 40, width: 40}}
-                  />
+                    style={{height: 30, width: 30}}
+                  /> */}
                 </Marker>
               </MapView>
             </TouchableOpacity>

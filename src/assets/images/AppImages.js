@@ -57,4 +57,6 @@ export default AppImages = {
   imageBG2: require('./imageBG2.png'),
   wigOut: require('./wigOut.png'),
   fingerDown: require('./fingerDown.png'),
+  bell: require('../icons/bell.png'),
+  bellWithDot: require('../icons/bellWithDot.png'),
 };

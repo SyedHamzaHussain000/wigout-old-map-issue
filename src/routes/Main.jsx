@@ -44,6 +44,8 @@ import SearchForPlaces from '../screens/auth/AccountSetup/SearchForPlaces';
 import Visited from '../screens/main/Journal/Visited';
 import Reminder from '../screens/main/Profile/Reminder';
 import CreateReminder from '../screens/main/Profile/CreateReminder';
+import PremiumUsers from '../screens/main/Profile/PremiumUsers';
+import SharedList from '../screens/main/SharedList';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -56,11 +58,6 @@ const TAB_CONFIG = {
     focused: 'home',
     unfocused: 'home-outline',
   },
-  // Discover: {
-  //   lib: MaterialIcons,
-  //   focused: 'explore',
-  //   unfocused: 'explore',
-  // },
   'Build List': {
     lib: MaterialIcons,
     focused: 'list-alt',
@@ -94,6 +91,7 @@ const MyTabs = () => {
           height: responsiveHeight(10),
           paddingTop: responsiveHeight(1.5),
           backgroundColor: AppColors.BTNCOLOURS,
+          marginTop: -responsiveHeight(2.4),
         },
         tabBarIcon: ({focused, color, size}) => {
           const config = TAB_CONFIG[route.name];
@@ -159,6 +157,8 @@ const Main = () => {
       <Stack.Screen name="Visited" component={Visited} />
       <Stack.Screen name="Reminder" component={Reminder} />
       <Stack.Screen name="CreateReminder" component={CreateReminder} />
+      <Stack.Screen name="PremiumUsers" component={PremiumUsers} />
+      <Stack.Screen name="SharedList" component={SharedList} />
     </Stack.Navigator>
   );
 };

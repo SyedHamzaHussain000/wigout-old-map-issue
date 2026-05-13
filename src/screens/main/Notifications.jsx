@@ -49,6 +49,7 @@ const Notifications = ({navigation}) => {
       try {
         const response = await getAllNotifications(token);
         if (response?.success) {
+          console.log('Notifications API Response:-', response);
           // Ensure we always have an array
           setNotifications(Array.isArray(response.data) ? response.data : []);
         } else {
@@ -90,14 +91,18 @@ const Notifications = ({navigation}) => {
       <LineBreak space={1} />
       <AppText
         title={'You have no notifications yet.'}
-        textColor={AppColors.GRAY}
+        textColor={AppColors.blackOpacity}
         textSize={1.8}
         textAlignment={'center'}
       />
     </View>
   );
 
-  console.log('notifications:-', notifications);
+  const handleNavigation = item => {
+    navigation.navigate('SharedList', {data: item});
+  };
+
+  console.log('notificationsRead:-', notifications);
 
   return (
     <ScreenWrapper>
@@ -115,7 +120,7 @@ const Notifications = ({navigation}) => {
             keyExtractor={(item, index) =>
               item?.id?.toString() || index.toString()
             }
-            ItemSeparatorComponent={() => <LineBreak space={2} />}
+            ItemSeparatorComponent={() => <LineBreak space={0.5} />}
             ListEmptyComponent={renderEmptyComponent}
             contentContainerStyle={
               notifications.length === 0 ? {flex: 1} : {paddingBottom: 20}
@@ -129,7 +134,9 @@ const Notifications = ({navigation}) => {
               />
             }
             renderItem={({item}) => (
-              <View style={styles.notificationItem}>
+              <TouchableOpacity
+                onPress={() => handleNavigation(item)}
+                style={styles.notificationItem(item?.read)}>
                 <View style={styles.row}>
                   {renderNotificationIcon()}
                   <View style={styles.textContainer}>
@@ -147,7 +154,7 @@ const Notifications = ({navigation}) => {
                             )
                           : moment().format('DD MMM, YYYY | hh:mm A')
                       }
-                      textColor={AppColors.GRAY}
+                      textColor={AppColors.blackOpacity}
                       textSize={1.4}
                     />
                   </View>
@@ -155,11 +162,11 @@ const Notifications = ({navigation}) => {
                 <LineBreak space={1} />
                 <AppText
                   title={item.message || item.description || ''}
-                  textColor={AppColors.GRAY}
+                  textColor={AppColors.BLACK}
                   textSize={1.6}
                   lineHeight={2.2}
                 />
-              </View>
+              </TouchableOpacity>
             )}
           />
         )}
@@ -183,13 +190,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: responsiveWidth(20),
   },
-  notificationItem: {
-    marginHorizontal: responsiveWidth(5),
-    // backgroundColor: AppColors.appBgColor,
-    // borderRadius: 10,
+  notificationItem: read => ({
+    paddingHorizontal: responsiveWidth(5),
+    paddingVertical: responsiveWidth(1),
     borderBottomWidth: 1,
-    borderBottomColor: AppColors.GRAY,
-  },
+    borderBottomColor: AppColors.blackOpacity,
+    backgroundColor: read ? 'transparent' : AppColors.menuBg,
+  }),
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -198,7 +205,7 @@ const styles = StyleSheet.create({
   iconContainer: {
     backgroundColor: '#f2f1fe',
     padding: responsiveWidth(3.5),
-    borderRadius: 100,
+    borderRadius: 30,
   },
   textContainer: {
     flex: 1,

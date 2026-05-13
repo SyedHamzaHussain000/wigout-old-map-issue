@@ -9,6 +9,7 @@ import {
   ScrollView,
   TextInput,
   RefreshControl,
+  Image,
 } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import {useDispatch, useSelector} from 'react-redux';
@@ -16,8 +17,6 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import AppColors from '../../utils/AppColors';
 import LineBreak from '../../components/LineBreak';
 import AppText from '../../components/AppTextComps/AppText';
-import {AppIcons} from '../../assets/icons';
-import SVGXml from '../../components/SVGXML';
 import {useCustomNavigation, useDebounce} from '../../utils/Hooks';
 import {
   responsiveFontSize,
@@ -30,7 +29,6 @@ import {baseUrl} from '../../utils/api_content';
 import HomeCard from '../../components/HomeCard';
 import ScreenWrapper from '../../components/ScreenWrapper';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import FetchNearbyPlaces from '../../ApiCalls/Main/FetchNearbyPlaces';
 import {GetReviews} from '../../ApiCalls/Main/Reviews/ReviewsApiCall';
@@ -136,6 +134,7 @@ const Home = () => {
   );
   const currentLocation = useSelector(state => state.user.current_location);
   const token = useSelector(state => state.user.token);
+  console.log('token in home', token);
 
   const [isLoading, setIsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -539,7 +538,7 @@ const Home = () => {
           <TouchableOpacity
             onPress={() => navigateToRoute('Notifications')}
             style={styles.notificationBtn}>
-            <SVGXml width="22" height="22" icon={AppIcons.notification_black} />
+            <Image source={AppImages.bell} style={styles.notificationIcon} />
           </TouchableOpacity>
         </View>
       </Animated.View>
@@ -827,7 +826,7 @@ const styles = StyleSheet.create({
   },
   notificationBtn: {
     borderWidth: 1,
-    borderColor: AppColors.WHITE,
+    borderColor: AppColors.menuBg,
     // padding: responsiveWidth(2),
     height: 40,
     width: 40,
@@ -922,6 +921,10 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     gap: 6,
     elevation: 2,
+  },
+  notificationIcon: {
+    width: 22,
+    height: 22,
   },
 });
 

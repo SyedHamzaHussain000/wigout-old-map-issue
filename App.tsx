@@ -21,6 +21,7 @@ import {navigationRef, navigate} from './src/utils/NavigationService';
 import {EventType} from '@notifee/react-native';
 import {notifyUserForNearbyReviewedPlaces} from './src/GlobalFunctions/main';
 import notifee from '@notifee/react-native';
+import {StatusBar} from 'react-native';
 
 const latitude = '37.4191213';
 const longitude = '-122.0932968';
@@ -70,7 +71,10 @@ const App = () => {
       const unsubscribeNotifeeForeground = notifee.onForegroundEvent(
         async ({type, detail}) => {
           if (type === EventType.PRESS) {
-            console.log('Notification pressed in Foreground!', detail.notification);
+            console.log(
+              'Notification pressed in Foreground!',
+              detail.notification,
+            );
             const placeDetails = detail.notification?.data?.placeDetails;
             console.log('Place Details from notification:', placeDetails);
             if (placeDetails) {
@@ -78,7 +82,10 @@ const App = () => {
                 typeof placeDetails === 'string'
                   ? JSON.parse(placeDetails)
                   : placeDetails;
-              console.log('Navigating to HomeDetails with:', parsedDetails.name);
+              console.log(
+                'Navigating to HomeDetails with:',
+                parsedDetails.name,
+              );
               navigate('HomeDetails', {placeDetails: parsedDetails});
             }
           }
@@ -107,7 +114,10 @@ const App = () => {
             typeof placeDetails === 'string'
               ? JSON.parse(placeDetails)
               : placeDetails;
-          console.log('Navigating (Initial) to HomeDetails with:', parsedDetails.name);
+          console.log(
+            'Navigating (Initial) to HomeDetails with:',
+            parsedDetails.name,
+          );
           navigate('HomeDetails', {placeDetails: parsedDetails});
         }
       }
@@ -126,6 +136,7 @@ const App = () => {
       <PersistGate loading={null} persistor={persistor}>
         <NavigationContainer ref={navigationRef}>
           <BackgroundManager />
+          {/* <StatusBar barStyle={'dark-content'} hidden /> */}
           <Routes />
         </NavigationContainer>
       </PersistGate>

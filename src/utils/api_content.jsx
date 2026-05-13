@@ -26,6 +26,9 @@ export const endPoints = {
   getAllNotifications: '/api/user/getNotifications',
   notifyUser: '/api/user/notifyUserForNearbyReviewedPlaces',
   deleteAccount: '/api/user/deleteAccount',
+  getAllSubscribedUsers: '/api/getAllSubscribedUsers',
+  shareMyListing: '/api/shareMyListing',
+  getSharedListingsDetails: '/api/getSharedListingsDetails',
 };
 
 export const ShowToast = (type: 'success' | 'error' | 'info', message) => {

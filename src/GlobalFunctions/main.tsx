@@ -106,3 +106,102 @@ export const notifyUserForNearbyReviewedPlaces = async (
     };
   }
 };
+
+export const getAllSubscribedUsers = async (
+  token: string,
+  page: number = 1,
+  limit: number = 10,
+) => {
+  try {
+    const data = await axios.get(
+      `${baseUrl}${endPoints.getAllSubscribedUsers}?page=${page}&limit=${limit}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+    return data?.data;
+  } catch (error) {
+    return {
+      success: false,
+      message: error?.response?.data?.message || error.message,
+    };
+  }
+};
+
+export const shareListing = async (
+  token: string,
+  recipientId: string,
+  params: {
+    isAll?: boolean;
+    isWishlist?: boolean;
+    isAvoid?: boolean;
+    isGoAgain?: boolean;
+  },
+) => {
+  try {
+    const {isAll, isWishlist, isAvoid, isGoAgain} = params;
+    let url = `${baseUrl}${endPoints.shareMyListing}?`;
+
+    if (isAll) {
+      url += `isAll=${isAll}&`;
+    }
+    if (isWishlist) {
+      url += `isWishlist=${isWishlist}&`;
+    }
+    if (isAvoid) {
+      url += `isAvoid=${isAvoid}&`;
+    }
+    if (isGoAgain) {
+      url += `isGoAgain=${isGoAgain}&`;
+    }
+
+    // Remove trailing & or ?
+    if (url.endsWith('&') || url.endsWith('?')) {
+      url = url.slice(0, -1);
+    }
+
+    const data = {recipientId};
+
+    const response = await axios.post(url, data, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response?.data;
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error?.response?.data?.message || error.message,
+    };
+  }
+};
+
+export const GetSharedList = async (
+  token: string,
+  ids: {
+    wishlistIds: string[];
+    avoidIds: string[];
+    goAgainIds: string[];
+  },
+) => {
+  try {
+    const response = await axios.post(
+      `${baseUrl}${endPoints.getSharedListingsDetails}`,
+      ids,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+    return response?.data;
+  } catch (error) {
+    return {
+      success: false,
+      message: error?.response?.data?.message || error.message,
+    };
+  }
+};

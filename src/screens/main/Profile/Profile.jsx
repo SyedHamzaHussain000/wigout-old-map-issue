@@ -114,18 +114,18 @@ const Profile = () => {
           />
         ),
       },
-      // {
-      //   id: 7,
-      //   title: 'Invite Friends',
-      //   navTo: 'InviteFriends',
-      //   icon: (
-      //     <Ionicons
-      //       name="people-outline"
-      //       size={iconSize}
-      //       color={AppColors.BTNCOLOURS}
-      //     />
-      //   ),
-      // },
+      {
+        id: 7,
+        title: 'Premium Users',
+        navTo: 'PremiumUsers',
+        icon: (
+          <Ionicons
+            name="people-outline"
+            size={iconSize}
+            color={AppColors.BTNCOLOURS}
+          />
+        ),
+      },
       {
         id: 8,
         title: 'Notification Settings',
@@ -186,7 +186,7 @@ const Profile = () => {
       ShowToast('error', res?.message || 'Failed to delete account.');
     }
   };
-
+  console.log('userData:-', userData?.subscription?.plan);
   return (
     <ScreenWrapper>
       <ScrollView
@@ -214,8 +214,17 @@ const Profile = () => {
           {userData?.nickName && (
             <AppText
               title={`@${userData.nickName}`}
-              textColor={AppColors.GRAY}
-              textSize={1.6}
+              textColor={AppColors.blackOpacity}
+              textSize={1.5}
+            />
+          )}
+
+          {userData?.subscription?.plan && (
+            <AppText
+              title={`Plan: ${userData?.subscription?.plan?.toUpperCase()}`}
+              textColor={AppColors.BLACK}
+              textSize={1.7}
+              textTransform={'capitalize'}
             />
           )}
         </View>

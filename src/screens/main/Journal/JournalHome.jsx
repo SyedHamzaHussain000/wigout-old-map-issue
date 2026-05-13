@@ -312,11 +312,7 @@ const JournalHome = ({navigation}) => {
             <TouchableOpacity
               onPress={() => navigateToRoute('Notifications')}
               style={styles.notificationBtn}>
-              <SVGXml
-                width="22"
-                height="22"
-                icon={AppIcons.notification_black}
-              />
+              <Image source={AppImages.bell} style={styles.notificationIcon} />
             </TouchableOpacity>
           </View>
 
@@ -565,7 +561,7 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 30,
     borderWidth: 1,
-    borderColor: AppColors.WHITE, // Matching the Explore style (white border on transparent)
+    borderColor: AppColors.menuBg, // Matching the Explore style (white border on transparent)
     backgroundColor: 'transparent',
   },
   locationContainer: {
@@ -641,5 +637,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     // backgroundColor: 'red',
+  },
+  notificationIcon: {
+    width: 22,
+    height: 22,
   },
 });

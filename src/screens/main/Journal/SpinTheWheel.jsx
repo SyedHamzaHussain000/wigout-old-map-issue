@@ -74,13 +74,71 @@ const SpinTheWheel = ({route}) => {
     setCelebrating(true);
     // Let confetti run for a bit before navigating
     setTimeout(() => {
-      if (winner?.fullData) {
-        navigateToRoute('HomeDetails', {placeDetails: winner.fullData});
+      if (winner) {
+        navigateToRoute('HomeDetails', {placeDetails: winner});
       } else {
         Alert.alert('Info', 'This is a custom option with no details.');
       }
       setCelebrating(false);
     }, 2500);
+  };
+
+  const ConfettiParticle = ({index}) => {
+    const translateY = useSharedValue(-20);
+    const translateX = useSharedValue(Math.random() * width);
+    const rotate = useSharedValue(Math.random() * 360);
+    const opacity = useSharedValue(1);
+
+    const colors = [
+      AppColors.BTNCOLOURS,
+      AppColors.Yellow,
+      AppColors.hotPink,
+      AppColors.royalBlue,
+      AppColors.THEME_COLOR,
+    ];
+    const color = colors[index % colors.length];
+
+    useEffect(() => {
+      const delay = Math.random() * 1000;
+      const duration = 1500 + Math.random() * 1000;
+
+      translateY.value = withDelay(
+        delay,
+        withTiming(responsiveHeight(100), {duration}),
+      );
+      rotate.value = withDelay(
+        delay,
+        withTiming(rotate.value + 720, {duration}),
+      );
+      opacity.value = withDelay(
+        delay + duration - 500,
+        withTiming(0, {duration: 500}),
+      );
+    }, []);
+
+    const animatedStyle = useAnimatedStyle(() => ({
+      transform: [
+        {translateY: translateY.value},
+        {translateX: translateX.value},
+        {rotate: `${rotate.value}deg`},
+      ],
+      opacity: opacity.value,
+    }));
+
+    return (
+      <AnimatedReanimated.View
+        style={[
+          {
+            position: 'absolute',
+            width: 8 + Math.random() * 6,
+            height: 8 + Math.random() * 6,
+            backgroundColor: color,
+            borderRadius: index % 2 === 0 ? 0 : 5,
+          },
+          animatedStyle,
+        ]}
+      />
+    );
   };
 
   return (
@@ -172,61 +230,6 @@ const SpinTheWheel = ({route}) => {
         )}
       </SafeAreaView>
     </ScreenWrapper>
-  );
-};
-
-const ConfettiParticle = ({index}) => {
-  const translateY = useSharedValue(-20);
-  const translateX = useSharedValue(Math.random() * width);
-  const rotate = useSharedValue(Math.random() * 360);
-  const opacity = useSharedValue(1);
-
-  const colors = [
-    AppColors.BTNCOLOURS,
-    AppColors.Yellow,
-    AppColors.hotPink,
-    AppColors.royalBlue,
-    AppColors.THEME_COLOR,
-  ];
-  const color = colors[index % colors.length];
-
-  useEffect(() => {
-    const delay = Math.random() * 1000;
-    const duration = 1500 + Math.random() * 1000;
-
-    translateY.value = withDelay(
-      delay,
-      withTiming(responsiveHeight(100), {duration}),
-    );
-    rotate.value = withDelay(delay, withTiming(rotate.value + 720, {duration}));
-    opacity.value = withDelay(
-      delay + duration - 500,
-      withTiming(0, {duration: 500}),
-    );
-  }, []);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      {translateY: translateY.value},
-      {translateX: translateX.value},
-      {rotate: `${rotate.value}deg`},
-    ],
-    opacity: opacity.value,
-  }));
-
-  return (
-    <AnimatedReanimated.View
-      style={[
-        {
-          position: 'absolute',
-          width: 8 + Math.random() * 6,
-          height: 8 + Math.random() * 6,
-          backgroundColor: color,
-          borderRadius: index % 2 === 0 ? 0 : 5,
-        },
-        animatedStyle,
-      ]}
-    />
   );
 };
 

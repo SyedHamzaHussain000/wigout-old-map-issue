@@ -26,7 +26,7 @@ export const signIn = async ({email, password, fcmToken}: any) => {
       password: password.toString(),
       FCMToken: fcmToken,
     });
-    console.log('DATA in signIn:-', data);
+    console.log('DATA in signIn:-', data?.data);
     return data?.data;
   } catch (error) {
     return {
@@ -180,4 +180,3 @@ export const deleteAccount = async ({token}: any) => {
     };
   }
 };
-
