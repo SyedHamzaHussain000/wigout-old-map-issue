@@ -56,6 +56,7 @@ import {
   stopBackgroundService,
 } from '../../../services/BackgroundLocationService';
 import JackpotSpinner from '../../../components/JackpotSpinner';
+import {getAllNotifications, getGreeting} from '../../../GlobalFunctions/main';
 
 const JournalHome = ({navigation}) => {
   const {navigateToRoute} = useCustomNavigation();
@@ -70,6 +71,7 @@ const JournalHome = ({navigation}) => {
   const [refreshing, setRefreshing] = useState(false);
   const [winner, setWinner] = useState(null);
   const [celebrating, setCelebrating] = useState(false);
+  const [isRead, setIsRead] = useState(true);
   const wheelRef = useRef(null);
   const isFocused = useIsFocused();
   const currentLocation = useSelector(state => state.user.current_location);
@@ -107,12 +109,16 @@ const JournalHome = ({navigation}) => {
     return combined;
   }, [likesData, wishlistItems]);
 
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
+  const fetchNotifications = async () => {
+    try {
+      const res = await getAllNotifications(token);
+      const unreadNotifications = res?.data.filter(item => !item.read);
+      setIsRead(unreadNotifications?.length > 0 ? false : true);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
   };
+
 
   const handleSpinEnd = selectedWinner => {
     setWinner(selectedWinner);
@@ -197,6 +203,10 @@ const JournalHome = ({navigation}) => {
     const unsubscribe = navigation.addListener('focus', fetchData);
     return unsubscribe;
   }, [navigation, fetchData]);
+
+  useEffect(() => {
+    fetchNotifications();
+  }, [isFocused]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -312,7 +322,10 @@ const JournalHome = ({navigation}) => {
             <TouchableOpacity
               onPress={() => navigateToRoute('Notifications')}
               style={styles.notificationBtn}>
-              <Image source={AppImages.bell} style={styles.notificationIcon} />
+              <Image
+                source={isRead ? AppImages.bell : AppImages.bellWithDot}
+                style={styles.notificationIcon}
+              />
             </TouchableOpacity>
           </View>
 

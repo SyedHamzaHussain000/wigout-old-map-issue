@@ -40,6 +40,7 @@ import {
   startBackgroundService,
   stopBackgroundService,
 } from '../../services/BackgroundLocationService';
+import {getAllNotifications, getGreeting} from '../../GlobalFunctions/main';
 
 const CATEGORIES = [
   {
@@ -143,6 +144,7 @@ const Home = () => {
   const [likedItems, setLikedItems] = useState([]);
   const [avoidItems, setAvoidItems] = useState([]);
   const [wishlistItems, setWishlistItems] = useState([]);
+  const [isRead, setIsRead] = useState(true);
 
   const debouncedSearch = useDebounce(search, 500);
 
@@ -166,11 +168,9 @@ const Home = () => {
     fetchData();
   }, [currentLocation, selectedCategory]);
 
-  // Fetch logic for recommendations (location only, independent of category)
-  // DEPRECATED: Combined into focus listener to ensure data synchronization
-  // useEffect(() => {
-  //   fetchRecommendedData();
-  // }, [currentLocation, isFocussed]);
+  useEffect(() => {
+    fetchNotifications();
+  }, [isFocussed]);
 
   const getDisplayCategory = item => {
     const types = item?.types || [];
@@ -366,6 +366,16 @@ const Home = () => {
     setRefreshing(false);
   };
 
+  const fetchNotifications = async () => {
+    try {
+      const res = await getAllNotifications(token);
+      const unreadNotifications = res?.data.filter(item => !item.read);
+      setIsRead(unreadNotifications?.length > 0 ? false : true);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
+
   useEffect(() => {
     const refreshAllData = async () => {
       if (!token) return;
@@ -442,12 +452,6 @@ const Home = () => {
     }
   }, [debouncedSearch]);
 
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
-  };
 
   const handleSearch = async query => {
     const loc =
@@ -538,7 +542,10 @@ const Home = () => {
           <TouchableOpacity
             onPress={() => navigateToRoute('Notifications')}
             style={styles.notificationBtn}>
-            <Image source={AppImages.bell} style={styles.notificationIcon} />
+            <Image
+              source={isRead ? AppImages.bell : AppImages.bellWithDot}
+              style={styles.notificationIcon}
+            />
           </TouchableOpacity>
         </View>
       </Animated.View>

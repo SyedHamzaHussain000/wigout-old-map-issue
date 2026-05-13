@@ -99,10 +99,10 @@ const Notifications = ({navigation}) => {
   );
 
   const handleNavigation = item => {
-    navigation.navigate('SharedList', {data: item});
+    if (item?.metadata?.type === 'shared_listing') {
+      navigation.navigate('SharedList', {data: item});
+    }
   };
-
-  console.log('notificationsRead:-', notifications);
 
   return (
     <ScreenWrapper>
@@ -120,7 +120,7 @@ const Notifications = ({navigation}) => {
             keyExtractor={(item, index) =>
               item?.id?.toString() || index.toString()
             }
-            ItemSeparatorComponent={() => <LineBreak space={0.5} />}
+            // ItemSeparatorComponent={() => <LineBreak space={0.5} />}
             ListEmptyComponent={renderEmptyComponent}
             contentContainerStyle={
               notifications.length === 0 ? {flex: 1} : {paddingBottom: 20}
@@ -136,7 +136,7 @@ const Notifications = ({navigation}) => {
             renderItem={({item}) => (
               <TouchableOpacity
                 onPress={() => handleNavigation(item)}
-                style={styles.notificationItem(item?.read)}>
+                style={styles.notificationItem(!item?.read)}>
                 <View style={styles.row}>
                   {renderNotificationIcon()}
                   <View style={styles.textContainer}>
@@ -192,9 +192,9 @@ const styles = StyleSheet.create({
   },
   notificationItem: read => ({
     paddingHorizontal: responsiveWidth(5),
-    paddingVertical: responsiveWidth(1),
-    borderBottomWidth: 1,
-    borderBottomColor: AppColors.blackOpacity,
+    paddingVertical: responsiveWidth(1.5),
+    borderBottomWidth: 0.6,
+    borderBottomColor: '#f2f1fe',
     backgroundColor: read ? 'transparent' : AppColors.menuBg,
   }),
   row: {
