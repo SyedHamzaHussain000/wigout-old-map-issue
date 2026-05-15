@@ -39,6 +39,7 @@ import {Google_Places_Images} from '../../utils/api_content';
 import ScreenWrapper from '../../components/ScreenWrapper';
 import AppHeader from '../../components/AppHeader';
 import {GetSharedList} from '../../GlobalFunctions/main';
+import {getCategory} from '../../utils/functions';
 
 const SharedList = ({navigation, route}) => {
   let data = route?.params?.data;
@@ -48,7 +49,7 @@ const SharedList = ({navigation, route}) => {
   let wishlistIds = data?.metadata?.wishlistIds || [];
 
   const {navigateToRoute} = useCustomNavigation();
-  const {token} = useSelector(state => state.user);
+  const {token, current_location} = useSelector(state => state.user);
 
   const [loading, setLoading] = useState(false);
 
@@ -182,7 +183,7 @@ const SharedList = ({navigation, route}) => {
         reviewText: 'Added from Shared List',
         actionType: 'Go Again',
         photos: imageUrlForPayload ? [imageUrlForPayload] : [],
-        category: item.category || 'Shared List',
+        category: getCategory(item) || 'Shared List',
         latitude: item.latitude || item.geometry?.location?.lat,
         longitude: item.longitude || item.geometry?.location?.lng,
       };
@@ -206,19 +207,65 @@ const SharedList = ({navigation, route}) => {
   // 4. Avoid Logic
   const handleAvoid = async item => {
     if (actionLoading) return;
-    setActionLoading(true);
-    try {
-      const existing = avoidItems.find(a => a.placeId === item.place_id);
 
-      if (existing) {
+    const existing = avoidItems.find(a => a.placeId === item.place_id);
+
+    if (existing) {
+      setActionLoading(true);
+      try {
         const res = await RemoveReview({reviewId: existing._id}, token);
         if (res?.success) {
           setAvoidItems(prev => prev.filter(a => a._id !== existing._id));
           ShowError('Removed from Avoid');
         }
-        return;
+      } catch (e) {
+        console.log('Remove avoid error:', e);
+        ShowError('Something went wrong');
+      } finally {
+        setActionLoading(false);
+      }
+      return;
+    }
+
+    setActionLoading(true);
+
+    const processSingleAvoid = async place => {
+      const photosArr = place.photos || [];
+      let imageUrlForPayload = null;
+      if (photosArr.length > 0) {
+        const photo = photosArr[0];
+        if (typeof photo === 'string' && photo.startsWith('http')) {
+          imageUrlForPayload = photo;
+        } else if (photo?.photo_reference) {
+          imageUrlForPayload = `${Google_Places_Images}${photo.photo_reference}`;
+        }
+      } else if (place.image) {
+        imageUrlForPayload = place.image.startsWith('http')
+          ? place.image
+          : `${Google_Places_Images}${place.image}`;
       }
 
+      const data = {
+        placeId: place.place_id || place.placeId,
+        restaurantName: place.restaurantName || place.name,
+        address: place.address || place.vicinity || place.formatted_address,
+        actionType: 'Avoid',
+        photos: imageUrlForPayload ? [imageUrlForPayload] : [],
+        category: getCategory(item) || 'Shared List',
+        latitude: place.latitude || place.geometry?.location?.lat,
+        longitude: place.longitude || place.geometry?.location?.lng,
+      };
+
+      try {
+        const res = await AddReviews(token, data);
+        return res;
+      } catch (e) {
+        console.log('Error avoiding place:', place.name, e);
+        return {success: false};
+      }
+    };
+
+    try {
       const inLiked = likedItems.find(l => l.placeId === item.place_id);
       if (inLiked) {
         const resLiked = await RemoveReview({reviewId: inLiked._id}, token);
@@ -238,33 +285,7 @@ const SharedList = ({navigation, route}) => {
         }
       }
 
-      const photosArr = item.photos || [];
-      let imageUrlForPayload = null;
-      if (photosArr.length > 0) {
-        const photo = photosArr[0];
-        if (typeof photo === 'string' && photo.startsWith('http')) {
-          imageUrlForPayload = photo;
-        } else if (photo?.photo_reference) {
-          imageUrlForPayload = `${Google_Places_Images}${photo.photo_reference}`;
-        }
-      } else if (item.image) {
-        imageUrlForPayload = item.image.startsWith('http')
-          ? item.image
-          : `${Google_Places_Images}${item.image}`;
-      }
-
-      const data = {
-        placeId: item.place_id,
-        restaurantName: item.restaurantName || item.name,
-        address: item.address || item.vicinity || item.formatted_address,
-        actionType: 'Avoid',
-        photos: imageUrlForPayload ? [imageUrlForPayload] : [],
-        category: item.category || 'Shared List',
-        latitude: item.latitude || item.geometry?.location?.lat,
-        longitude: item.longitude || item.geometry?.location?.lng,
-      };
-
-      const res = await AddReviews(token, data);
+      const res = await processSingleAvoid(item);
       if (res?.success) {
         setAvoidItems(prev => [
           ...prev,
@@ -323,7 +344,7 @@ const SharedList = ({navigation, route}) => {
         image: item.image || item.photos?.[0]?.photo_reference || '',
         rating: item.rating || 0,
         userRatingsTotal: item.userRatingsTotal || item.user_ratings_total || 0,
-        category: item.category || 'Shared List',
+        category: getCategory(item),
         latitude: item.latitude || item.geometry?.location?.lat,
         longitude: item.longitude || item.geometry?.location?.lng,
         notes: '',
@@ -389,10 +410,16 @@ const SharedList = ({navigation, route}) => {
             numberOfLines={1}
           />
           <AppText
-            title={item.category || 'Establishment'}
+            title={getCategory(item) || 'Establishment'}
             textSize={1.3}
             textColor="#666"
             numberOfLines={1}
+          />
+          <AppText
+            title={item.vicinity || item.address || item.formattedAddress}
+            textSize={1.1}
+            textColor="#666"
+            numberOfLines={2}
           />
         </View>
 
@@ -498,7 +525,8 @@ const SharedList = ({navigation, route}) => {
     sharedPlaces.avoid.length > 0 ||
     sharedPlaces.wishlist.length > 0;
 
-  console.log('sharedPlaces:-', sharedPlaces);
+  // console.log('sharedPlaces:-', sharedPlaces);
+
   return (
     <ScreenWrapper>
       <SafeAreaView style={styles.container}>

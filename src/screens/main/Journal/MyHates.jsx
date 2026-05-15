@@ -222,7 +222,13 @@ const MyHates = ({navigation, route}) => {
       const response = await GetReviews(token);
       if (response?.reviews) {
         const hatedPlaces = response.reviews.filter(
-          res => res.actionType === 'Avoid',
+          res =>
+            res.actionType === 'Avoid' &&
+            !(
+              res.exceptions &&
+              Array.isArray(res.exceptions) &&
+              res.exceptions.includes(res.placeId)
+            ),
         );
         setMyHates(hatedPlaces);
       }

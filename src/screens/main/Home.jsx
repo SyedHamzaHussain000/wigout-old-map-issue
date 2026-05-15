@@ -160,6 +160,7 @@ const Home = () => {
   const {recommendedLocations} = useUserPreferences(
     likedItems,
     wishlistItems,
+    avoidItems,
     placesRecommended,
   );
 

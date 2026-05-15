@@ -40,6 +40,7 @@ import {ShowToast} from '../../utils/api_content';
 import {setToken, setUserData} from '../../redux/Slices';
 import {store} from '../../redux/Store';
 import {getFcmToken} from '../../GlobalFunctions/other/Firebase';
+import SuspensionModal from '../../components/SuspensionModal';
 
 const STORAGE_KEYS = {
   EMAIL: '@rememberedEmail',
@@ -59,6 +60,12 @@ const Login = () => {
   const [gLoading, setGLoading] = useState(false);
   const [fcmToken, setFcmToken] = useState('');
   const [focusedField, setFocusedField] = useState(null);
+  const [suspensionData, setSuspensionData] = useState({
+    isVisible: false,
+    message: '',
+    reason: '',
+    until: '',
+  });
 
   // Initialize
   useEffect(() => {
@@ -111,6 +118,13 @@ const Login = () => {
         store.dispatch(setToken(res?.accessToken));
         store.dispatch(setUserData(res?.data));
         ShowToast('success', 'Login Successful');
+      } else if (res?.isSuspended) {
+        setSuspensionData({
+          isVisible: true,
+          message: res?.msg || 'Your account has been suspended.',
+          reason: res?.suspensionReason,
+          until: res?.suspendedUntil,
+        });
       } else {
         ShowToast('error', res?.msg || 'Authentication Failed');
       }
@@ -142,6 +156,13 @@ const Login = () => {
         store.dispatch(setToken(res?.token));
         store.dispatch(setUserData(res?.data));
         ShowToast('success', 'Login Successful');
+      } else if (res?.suspensionReason) {
+        setSuspensionData({
+          isVisible: true,
+          message: res?.msg || 'Your account has been suspended.',
+          reason: res?.suspensionReason,
+          until: res?.suspendedUntil,
+        });
       } else {
         ShowToast('error', res?.msg || 'Social Login Failed');
       }
@@ -333,6 +354,13 @@ const Login = () => {
           </View>
         </ScrollView>
       </ScreenWrapper>
+      <SuspensionModal
+        isVisible={suspensionData.isVisible}
+        message={suspensionData.message}
+        reason={suspensionData.reason}
+        suspendedUntil={suspensionData.until}
+        onClose={() => setSuspensionData(prev => ({...prev, isVisible: false}))}
+      />
     </KeyboardAvoidingView>
   );
 };

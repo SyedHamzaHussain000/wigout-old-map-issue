@@ -11,6 +11,7 @@ import {useMemo} from 'react';
 export const useUserPreferences = (
   likedItems,
   wishlistItems,
+  avoidItems,
   fetchedLocations,
 ) => {
   // Analyze user interests from Go Again and Wishlist items
@@ -43,6 +44,25 @@ export const useUserPreferences = (
     const totalHistoryCount = [...likedItems, ...wishlistItems].length;
 
     return [...fetchedLocations]
+      .filter(item => {
+        const itemId = item.place_id || item.placeId;
+        const itemName = item.name || item.restaurantName;
+        const brandName = itemName?.split(' ')[0]?.toLowerCase();
+
+        // Check if this item is avoided
+        const isAvoided = avoidItems.some(avoid => {
+          const isDirectMatch = avoid.placeId === itemId;
+          const isBrandMatch =
+            avoid.avoidAllBranches &&
+            itemName?.toLowerCase().startsWith(avoid.restaurantName?.split(' ')[0]?.toLowerCase());
+          
+          const isException = avoid.exceptions && Array.isArray(avoid.exceptions) && avoid.exceptions.includes(itemId);
+
+          return (isDirectMatch || isBrandMatch) && !isException;
+        });
+
+        return !isAvoided;
+      })
       .filter(item => item?.rating >= 4) // Quality gate
       .map(item => {
         let preferenceScore = 0;

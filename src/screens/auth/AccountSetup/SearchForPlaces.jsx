@@ -38,6 +38,7 @@ import {
 } from '../../../ApiCalls/Main/WishList_API/WishListAPI';
 import {Google_Places_Images} from '../../../utils/api_content';
 import ScreenWrapper from '../../../components/ScreenWrapper';
+import {getCategory} from '../../../utils/functions';
 
 const SearchForPlaces = ({navigation}) => {
   const {navigateToRoute, goBack} = useCustomNavigation();
@@ -53,6 +54,7 @@ const SearchForPlaces = ({navigation}) => {
   const [likedItems, setLikedItems] = useState([]);
   const [avoidItems, setAvoidItems] = useState([]);
   const [wishlistItems, setWishlistItems] = useState([]);
+  const [actionLoading, setActionLoading] = useState(false);
 
   const debouncedSearch = useDebounce(search, 600);
 
@@ -136,7 +138,7 @@ const SearchForPlaces = ({navigation}) => {
       photos: item.photos?.[0]?.photo_reference
         ? [`${Google_Places_Images}${item.photos[0].photo_reference}`]
         : [],
-      category: 'Search Result',
+      category: getCategory(item) || 'Search For Places',
       latitude: item.geometry?.location?.lat,
       longitude: item.geometry?.location?.lng,
     };
@@ -153,54 +155,86 @@ const SearchForPlaces = ({navigation}) => {
 
   // 4. Avoid Logic
   const handleAvoid = async item => {
+    if (actionLoading) return;
+
     const existing = avoidItems.find(a => a.placeId === item.place_id);
 
     if (existing) {
-      const res = await RemoveReview({reviewId: existing._id}, token);
-      if (res?.success) {
-        setAvoidItems(prev => prev.filter(a => a._id !== existing._id));
-        ShowError('Removed from Avoid');
+      setActionLoading(true);
+      try {
+        const res = await RemoveReview({reviewId: existing._id}, token);
+        if (res?.success) {
+          setAvoidItems(prev => prev.filter(a => a._id !== existing._id));
+          ShowError('Removed from Avoid');
+        }
+      } catch (e) {
+        console.log('Remove avoid error:', e);
+        ShowError('Something went wrong');
+      } finally {
+        setActionLoading(false);
       }
       return;
     }
 
-    const inLiked = likedItems.find(l => l.placeId === item.place_id);
-    if (inLiked) {
-      const resLiked = await RemoveReview({reviewId: inLiked._id}, token);
-      if (resLiked?.success) {
-        setLikedItems(prev => prev.filter(l => l._id !== inLiked._id));
-      }
-    }
+    setActionLoading(true);
 
-    // Exclusivity: Remove from Wishlist first
-    const inWish = wishlistItems.find(w => w.placeId === item.place_id);
-    if (inWish) {
-      const wishRes = await RemoveWishList(token, {placeId: item.place_id});
-      if (wishRes?.success) {
-        setWishlistItems(prev => prev.filter(w => w.placeId !== item.place_id));
-      }
-    }
+    const processSingleAvoid = async place => {
+      const data = {
+        placeId: place.place_id,
+        restaurantName: place.name,
+        address: place.vicinity || place.formatted_address,
+        actionType: 'Avoid',
+        photos: place.photos?.[0]?.photo_reference
+          ? [`${Google_Places_Images}${place.photos[0].photo_reference}`]
+          : [],
+        category: getCategory(place) || 'Search For Places',
+        reviewText: 'Added from Search',
+        latitude: place.geometry?.location?.lat,
+        longitude: place.geometry?.location?.lng,
+      };
 
-    const data = {
-      placeId: item.place_id,
-      restaurantName: item.name,
-      address: item.vicinity || item.formatted_address,
-      actionType: 'Avoid',
-      photos: item.photos?.[0]?.photo_reference
-        ? [`${Google_Places_Images}${item.photos[0].photo_reference}`]
-        : [],
-      category: 'Search Result',
-      latitude: item.geometry?.location?.lat,
-      longitude: item.geometry?.location?.lng,
+      try {
+        const res = await AddReviews(token, data);
+        return res;
+      } catch (e) {
+        console.log('Error avoiding place:', e);
+        return {success: false};
+      }
     };
 
-    const res = await AddReviews(token, data);
-    if (res?.success) {
-      setAvoidItems(prev => [
-        ...prev,
-        {_id: res.review?._id, placeId: item.place_id},
-      ]);
-      ShowError('Added to Avoid');
+    try {
+      const inLiked = likedItems.find(l => l.placeId === item.place_id);
+      if (inLiked) {
+        const resLiked = await RemoveReview({reviewId: inLiked._id}, token);
+        if (resLiked?.success) {
+          setLikedItems(prev => prev.filter(l => l._id !== inLiked._id));
+        }
+      }
+
+      // Exclusivity: Remove from Wishlist first
+      const inWish = wishlistItems.find(w => w.placeId === item.place_id);
+      if (inWish) {
+        const wishRes = await RemoveWishList(token, {placeId: item.place_id});
+        if (wishRes?.success) {
+          setWishlistItems(prev =>
+            prev.filter(w => w.placeId !== item.place_id),
+          );
+        }
+      }
+
+      const res = await processSingleAvoid(item);
+      if (res?.success) {
+        setAvoidItems(prev => [
+          ...prev,
+          {_id: res.review?._id, placeId: item.place_id},
+        ]);
+        ShowError('Added to Avoid');
+      }
+    } catch (e) {
+      console.log('Avoid error:', e);
+      ShowError('Something went wrong');
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -245,7 +279,7 @@ const SearchForPlaces = ({navigation}) => {
         image: item.photos?.[0]?.photo_reference || '',
         rating: item.rating || 0,
         userRatingsTotal: item.user_ratings_total || 0,
-        category: 'Search Result',
+        category: getCategory(item) || 'Search For Places',
         notes: '',
         isVisited: false,
       };
@@ -293,6 +327,12 @@ const SearchForPlaces = ({navigation}) => {
             textSize={1.7}
             textFontWeight
             textColor="#47082E"
+            numberOfLines={1}
+          />
+          <AppText
+            title={getCategory(item) || 'Nearby'}
+            textSize={1.3}
+            textColor="#666"
             numberOfLines={1}
           />
           <AppText

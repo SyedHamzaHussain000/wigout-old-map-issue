@@ -35,6 +35,7 @@ import {
   GetReviews,
   RemoveReview,
   AddReviews,
+  updateReviews,
 } from '../../../ApiCalls/Main/Reviews/ReviewsApiCall';
 import {
   AddWishList,
@@ -43,6 +44,8 @@ import {
 } from '../../../ApiCalls/Main/WishList_API/WishListAPI';
 import {Google_Places_Images} from '../../../utils/api_content';
 import ScreenWrapper from '../../../components/ScreenWrapper';
+import RemoveReviewModal from '../../../components/RemoveReviewModal';
+import {getCategory} from '../../../utils/functions';
 
 const BrowseCategories = ({navigation}) => {
   const {navigateToRoute, goBack} = useCustomNavigation();
@@ -62,6 +65,7 @@ const BrowseCategories = ({navigation}) => {
   const [avoidItems, setAvoidItems] = useState([]);
   const [wishlistItems, setWishlistItems] = useState([]);
   const [wishlistCount, setWishlistCount] = useState(0);
+  const [actionLoading, setActionLoading] = useState(false);
 
   const debouncedSearch = useDebounce(customPlace, 600);
 
@@ -189,89 +193,115 @@ const BrowseCategories = ({navigation}) => {
 
   // 3. Action Handlers (Go Again / Avoid / Wish List — mutually exclusive)
   const handleAction = async (item, actionType) => {
+    if (actionLoading) return;
     const isGoAgain = actionType === 'Go Again';
+    const isAvoid = actionType === 'Avoid';
 
-    // Toggle off if already in this list
-    const targetList = isGoAgain ? likedItems : avoidItems;
-    const existing = targetList.find(i => i.placeId === item.place_id);
-    if (existing) {
-      const res = await RemoveReview({reviewId: existing._id}, token);
-      if (res?.success) {
-        if (isGoAgain) {
-          setLikesCount(p => p - 1);
-          setLikedItems(p => p.filter(l => l._id !== existing._id));
-        } else {
-          setHatesCount(p => p - 1);
-          setAvoidItems(p => p.filter(a => a._id !== existing._id));
-        }
-        ShowError(`Removed from ${actionType} list`);
+    setActionLoading(true);
+
+    const processSingleAction = async place => {
+      const data = {
+        placeId: place.place_id || place.placeId,
+        restaurantName: place.name || place.restaurantName,
+        address: place.vicinity || place.formatted_address || place.address,
+        rating: place.rating || 0,
+        reviewText: 'Added from browsing',
+        actionType: actionType,
+        photos: place.photos?.[0]?.photo_reference
+          ? [`${Google_Places_Images}${place.photos[0].photo_reference}`]
+          : place.photos || [],
+        category: getCategory(place) || 'Browse Categories',
+        latitude: place.geometry?.location?.lat || place.latitude,
+        longitude: place.geometry?.location?.lng || place.longitude,
+        avoidAllBranches: false,
+      };
+
+      console.log('data:-', data);
+      try {
+        const res = await AddReviews(token, data);
+        return res;
+      } catch (e) {
+        console.log('Error in processSingleAction:', e);
+        return {success: false};
       }
-      return;
-    }
-
-    // Mutual exclusivity: remove from opposite review list
-    const oppositeList = isGoAgain ? avoidItems : likedItems;
-    const existingOpposite = oppositeList.find(
-      i => i.placeId === item.place_id,
-    );
-    if (existingOpposite) {
-      const remRes = await RemoveReview(
-        {reviewId: existingOpposite._id},
-        token,
-      );
-      if (remRes?.success) {
-        if (isGoAgain) {
-          setHatesCount(p => p - 1);
-          setAvoidItems(p => p.filter(a => a._id !== existingOpposite._id));
-        } else {
-          setLikesCount(p => p - 1);
-          setLikedItems(p => p.filter(l => l._id !== existingOpposite._id));
-        }
-      }
-    }
-
-    // Mutual exclusivity: remove from wish list if present
-    const existingWish = wishlistItems.find(w => w.placeId === item.place_id);
-    if (existingWish) {
-      const remRes = await RemoveWishList(token, {placeId: item.place_id});
-      if (remRes?.success) {
-        setWishlistCount(p => p - 1);
-        setWishlistItems(p => p.filter(w => w.placeId !== item.place_id));
-      }
-    }
-
-    // Add to target list
-    const data = {
-      placeId: item.place_id,
-      restaurantName: item.name,
-      address: item.vicinity || item.formatted_address,
-      rating: item.rating || 0,
-      reviewText: 'Added from browsing',
-      actionType: actionType,
-      photos: item.photos?.[0]?.photo_reference
-        ? [`${Google_Places_Images}${item.photos[0].photo_reference}`]
-        : [],
-      category: selectedCategory,
-      latitude: item.geometry?.location?.lat,
-      longitude: item.geometry?.location?.lng,
     };
 
-    const res = await AddReviews(token, data);
-    if (res?.success) {
-      if (isGoAgain) {
-        setLikesCount(p => p + 1);
-        setLikedItems(p => [
-          ...p,
-          {_id: res.review?._id, placeId: item.place_id},
-        ]);
+    try {
+      // Toggle off if already in this list
+      const targetList = isGoAgain ? likedItems : avoidItems;
+      const existing = targetList.find(i => i.placeId === item.place_id);
+      if (existing) {
+        if (isAvoid && existing.avoidAllBranches) {
+          setActionLoading(false);
+          return;
+        }
+        const res = await RemoveReview({reviewId: existing._id}, token);
+        if (res?.success) {
+          if (isGoAgain) {
+            setLikesCount(p => p - 1);
+            setLikedItems(p => p.filter(l => l._id !== existing._id));
+          } else {
+            setHatesCount(p => p - 1);
+            setAvoidItems(p => p.filter(a => a._id !== existing._id));
+          }
+          ShowError(`Removed from ${actionType} list`);
+        }
       } else {
-        setHatesCount(p => p + 1);
-        setAvoidItems(p => [
-          ...p,
-          {_id: res.review?._id, placeId: item.place_id},
-        ]);
+        // Mutual exclusivity logic
+        const oppositeList = isGoAgain ? avoidItems : likedItems;
+        const existingOpposite = oppositeList.find(
+          i => i.placeId === item.place_id,
+        );
+        if (existingOpposite) {
+          const remRes = await RemoveReview(
+            {reviewId: existingOpposite._id},
+            token,
+          );
+          if (remRes?.success) {
+            if (isGoAgain) {
+              setHatesCount(p => p - 1);
+              setAvoidItems(p => p.filter(a => a._id !== existingOpposite._id));
+            } else {
+              setLikesCount(p => p - 1);
+              setLikedItems(p => p.filter(l => l._id !== existingOpposite._id));
+            }
+          }
+        }
+
+        const existingWish = wishlistItems.find(
+          w => w.placeId === item.place_id,
+        );
+        if (existingWish) {
+          const remRes = await RemoveWishList(token, {placeId: item.place_id});
+          if (remRes?.success) {
+            setWishlistCount(p => p - 1);
+            setWishlistItems(p => p.filter(w => w.placeId !== item.place_id));
+          }
+        }
+
+        const res = await processSingleAction(item);
+        if (res?.success) {
+          if (isGoAgain) {
+            setLikesCount(p => p + 1);
+            setLikedItems(p => [
+              ...p,
+              {_id: res.review?._id, placeId: item.place_id},
+            ]);
+          } else {
+            setHatesCount(p => p + 1);
+            setAvoidItems(p => [
+              ...p,
+              {_id: res.review?._id, placeId: item.place_id},
+            ]);
+          }
+          ShowError(`Added to ${actionType} list`);
+        }
       }
-      ShowError(`Added to ${actionType} list`);
+    } catch (e) {
+      console.log('Action error:', e);
+      ShowError('Something went wrong');
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -322,7 +352,7 @@ const BrowseCategories = ({navigation}) => {
         image: item.photos?.[0]?.photo_reference || '',
         rating: item.rating || 0,
         userRatingsTotal: item.user_ratings_total || 0,
-        category: selectedCategory,
+        category: getCategory(item) || 'Browse Categories',
         notes: '',
         isVisited: false,
       };

@@ -60,12 +60,17 @@ import {RemoveReview} from '../../ApiCalls/Main/Reviews/ReviewsApiCall';
 import ShowError from '../../utils/ShowError';
 import ScreenWrapper from '../../components/ScreenWrapper';
 import moment from 'moment';
+import FetchNearbyPlaces from '../../ApiCalls/Main/FetchNearbyPlaces';
 import StarRating from 'react-native-star-rating-widget';
+import AvoidModal from '../../components/AvoidModal';
+import RemoveReviewModal from '../../components/RemoveReviewModal';
+import {getCategory} from '../../utils/functions';
 
 const HomeDetails = ({route}) => {
   const {placeDetails} = route.params;
   const token = useSelector(state => state.user.token);
   const userData = useSelector(state => state.user.userData);
+  const currentLocation = useSelector(state => state.user.current_location);
   const dispatch = useDispatch();
 
   const [morePlaceDetails, setMoreInfoDetail] = useState(null);
@@ -79,11 +84,16 @@ const HomeDetails = ({route}) => {
   const [personalReviews, setPersonalReviews] = useState([]);
   const [wishlistLoader, setWishlistLoader] = useState(false);
   const [removeReviewLoader, setRemoveReviewLoader] = useState(false);
+  const [removeSpecificLoader, setRemoveSpecificLoader] = useState(false);
   const [rating, setRating] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
   const [updateLoader, setUpdateLoader] = useState(false);
   const [inAppSummary, setInAppSummary] = useState(null);
   const [inAppBreakdown, setInAppBreakdown] = useState(null);
+  const [showAvoidModal, setShowAvoidModal] = useState(false);
+  const [avoidAllBranchesLoader, setAvoidAllBranchesLoader] = useState(false);
+  const [showRemoveModal, setShowRemoveModal] = useState(false);
+  const [isBrandBlocked, setIsBrandBlocked] = useState(false);
 
   // Sound refs with mounting guard
   const celebrationSound = useRef(null);
@@ -175,6 +185,13 @@ const HomeDetails = ({route}) => {
     }
   }, [placeDetails, token]);
 
+  useEffect(() => {
+    const id = placeDetails?.placeId || placeDetails?.place_id;
+    if (id) {
+      syncUserStatus(id);
+    }
+  }, [morePlaceDetails]);
+
   const syncUserStatus = async id => {
     try {
       const [wishRes, revRes, inAppRes] = await Promise.all([
@@ -191,10 +208,43 @@ const HomeDetails = ({route}) => {
 
       // Sync Personal Reviews
       if (revRes?.reviews && Array.isArray(revRes.reviews)) {
+        const getNamePrefix = name => {
+          if (!name) return '';
+          const parts = name.trim().split(' ');
+          if (parts[0].toLowerCase() === 'the' && parts.length > 1) {
+            return (parts[0] + ' ' + parts[1]).toLowerCase();
+          }
+          return parts[0].toLowerCase();
+        };
+
+        const brandName = getNamePrefix(
+          morePlaceDetails?.name || placeDetails?.name,
+        );
+
         const matching = revRes.reviews
-          .filter(r => r.placeId === id)
+          .filter(r => {
+            const isDirectMatch = r.placeId === id;
+            const isException =
+              r.exceptions &&
+              Array.isArray(r.exceptions) &&
+              r.exceptions.includes(id);
+
+            let isBrandMatch = false;
+            if (brandName && r.avoidAllBranches) {
+              const reviewBrandName = getNamePrefix(r.restaurantName);
+              isBrandMatch = reviewBrandName === brandName && !isException;
+            }
+
+            return isDirectMatch || isBrandMatch;
+          })
           .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
         setPersonalReviews(matching);
+
+        const activeReview = matching[0];
+        const isDirect = activeReview?.placeId === id;
+        const brandBlocked = !!(activeReview?.avoidAllBranches && !isDirect);
+        setIsBrandBlocked(brandBlocked);
       }
 
       // Sync In-App Ratings Summary
@@ -263,26 +313,26 @@ const HomeDetails = ({route}) => {
     : '0';
   const totalReviews = inAppSummary?.totalReviews || 0;
 
-  const getCategory = () => {
-    const types = morePlaceDetails?.types || placeDetails?.types || [];
-    if (types.length === 0) return 'Place';
-    const filterTypes = [
-      'point_of_interest',
-      'establishment',
-      'food',
-      'natural_feature',
-      'street_address',
-      'route',
-    ];
-    const meaningfulType =
-      types.find(t => !filterTypes.includes(t)) || types[0];
-    return meaningfulType
-      .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  };
+  // const getCategory = () => {
+  //   const types = morePlaceDetails?.types || placeDetails?.types || [];
+  //   if (types.length === 0) return 'Place';
+  //   const filterTypes = [
+  //     'point_of_interest',
+  //     'establishment',
+  //     'food',
+  //     'natural_feature',
+  //     'street_address',
+  //     'route',
+  //   ];
+  //   const meaningfulType =
+  //     types.find(t => !filterTypes.includes(t)) || types[0];
+  //   return meaningfulType
+  //     .split('_')
+  //     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+  //     .join(' ');
+  // };
 
-  const createReview = async type => {
+  const createReview = async (type, options = {}) => {
     if (!morePlaceDetails) {
       ShowError('Please wait, details are loading...', 2000);
       return;
@@ -293,65 +343,143 @@ const HomeDetails = ({route}) => {
       return;
     }
 
-    if (type === 'Avoid') setAvoidLoader(true);
-    if (type === 'Go Again') setGoAgainLoader(true);
-    if (type === 'Review') setReviewLoader(true);
-
-    // If item is in wishlist, remove it first
-    if (isWishList) {
-      try {
-        const placeId = placeDetails?.placeId;
-        const res = await RemoveWishList(token, {placeId});
-        if (res?.success) {
-          setIsWishList(false);
-        }
-      } catch (error) {
-        console.log('Error removing from wishlist before review:', error);
-      }
+    // If type is Avoid and modal not shown yet, show it
+    if (type === 'Avoid' && !options.confirmed) {
+      setShowAvoidModal(true);
+      return;
     }
 
-    const data = {
-      placeId: morePlaceDetails?.place_id,
-      restaurantName: morePlaceDetails?.name,
-      address: morePlaceDetails?.formatted_address,
-      rating: rating,
-      reviewText: typeReview,
-      actionType: type,
-      photos: images,
-      category: getCategory(),
-      latitude: morePlaceDetails?.geometry?.location?.lat,
-      longitude: morePlaceDetails?.geometry?.location?.lng,
+    if (options.avoidAllBranches) {
+      setAvoidAllBranchesLoader(true);
+    } else {
+      if (type === 'Avoid') setAvoidLoader(true);
+      if (type === 'Go Again') setGoAgainLoader(true);
+      if (type === 'Review') setReviewLoader(true);
+    }
+
+    const processSingleReview = async (place, isChain = false) => {
+      const data = {
+        placeId: place?.place_id || place?.placeId,
+        restaurantName: place?.name || place?.restaurantName,
+        address: place?.formatted_address || place?.address || place?.vicinity,
+        rating: rating,
+        reviewText: isChain
+          ? typeReview
+            ? `I have avoided all branches of ${place?.name}, ${typeReview}`
+            : `I have avoided all branches of ${place?.name}`
+          : typeReview,
+        actionType: type,
+        photos: place?.photos?.[0]?.photo_reference
+          ? [`${Google_Places_Images}${place.photos[0].photo_reference}`]
+          : place?.photos || [],
+        category: getCategory(morePlaceDetails),
+        latitude: place?.geometry?.location?.lat || place?.latitude,
+        longitude: place?.geometry?.location?.lng || place?.longitude,
+        avoidAllBranches: isChain,
+      };
+
+      try {
+        const res = await AddReviews(token, data);
+        return res;
+      } catch (err) {
+        console.log('Error adding review for place:', place?.name, err);
+        return {success: false};
+      }
     };
-    // console.log('review payload:-', JSON.stringify(data, null, 2));
 
     try {
-      const res = await AddReviews(token, data);
-      console.log('res in createReview:-', res);
-      if (res.success) {
-        if (type === 'Go Again') {
-          setShowCelebration(true);
-          setTimeout(() => setShowCelebration(false), 4000);
+      if (options.avoidAllBranches) {
+        const res = await processSingleReview(morePlaceDetails, true);
+        if (res.success) {
+          ShowError('Avoided all branches successfully', 2000);
+          setTypeReview('');
+          setRating(0);
+          syncUserStatus(morePlaceDetails?.place_id);
+        } else {
+          ShowError(res.message || 'Failed to avoid branches', 2000);
         }
-        setTypeReview('');
-        // Sync status to show the new review immediately
-        syncUserStatus(morePlaceDetails?.place_id);
-      }
-      if (!(res.success && type === 'Go Again')) {
-        ShowError(res.msg || 'Review processed', 2000);
+      } else {
+        const res = await processSingleReview(morePlaceDetails);
+        if (res.success) {
+          if (type === 'Go Again') {
+            setShowCelebration(true);
+            setTimeout(() => setShowCelebration(false), 4000);
+          }
+          setTypeReview('');
+          setRating(0);
+          syncUserStatus(morePlaceDetails?.place_id);
+        }
+        if (!(res.success && type === 'Go Again')) {
+          ShowError(res.msg || 'Review processed', 2000);
+        }
       }
     } catch (err) {
-      ShowError('Failed to add review', 2000);
+      ShowError('Failed to process request', 2000);
     } finally {
       setAvoidLoader(false);
       setGoAgainLoader(false);
       setReviewLoader(false);
+      setAvoidAllBranchesLoader(false);
+      setShowAvoidModal(false);
     }
   };
-
+  console.log('personalReviews:-', personalReviews?.[0]);
   const handleRemoveReview = async () => {
     if (personalReviews.length === 0) return;
 
-    const reviewId = personalReviews[0]._id || personalReviews[0].id;
+    const review = personalReviews[0];
+    if (review.avoidAllBranches) {
+      setShowRemoveModal(true);
+    } else {
+      performRemoveReview(review._id || review.id);
+    }
+  };
+
+  const handleRemoveSpecific = async () => {
+    if (personalReviews.length === 0) return;
+
+    const review = personalReviews[0];
+    const reviewId = review._id || review.id;
+    const currentPlaceId = placeDetails?.placeId || placeDetails?.place_id;
+
+    // If it's a direct block, just delete it
+    if (review.placeId === currentPlaceId) {
+      performRemoveReview(reviewId);
+      return;
+    }
+
+    // If it's a brand block, we add the current placeId to exceptions
+    const exceptions = review.exceptions || [];
+    if (!exceptions.includes(currentPlaceId)) {
+      exceptions.push(currentPlaceId);
+    }
+
+    setRemoveSpecificLoader(true);
+    try {
+      const res = await updateReviews(token, {
+        reviewId,
+        exceptions: exceptions,
+        // Preserve other data to avoid wiping them
+        rating: review.rating,
+        reviewText: review.reviewText,
+        actionType: review.actionType,
+      });
+      if (res?.success) {
+        ShowError('Unblocked this specific location', 2000);
+        syncUserStatus(currentPlaceId);
+      } else {
+        ShowError(res?.message || 'Failed to unblock location', 2000);
+      }
+    } catch (error) {
+      console.log('Error unblocking specific location:', error);
+      ShowError('Something went wrong', 2000);
+    } finally {
+      setRemoveSpecificLoader(false);
+      setShowRemoveModal(false);
+    }
+  };
+
+  const performRemoveReview = async reviewId => {
     if (!reviewId) {
       ShowError('Review ID not found', 2000);
       return;
@@ -362,7 +490,7 @@ const HomeDetails = ({route}) => {
       const res = await RemoveReview({reviewId}, token);
       if (res?.success) {
         ShowError(res.msg || 'Review removed successfully', 2000);
-        const id = placeDetails?.placeId;
+        const id = placeDetails?.placeId || placeDetails?.place_id;
         syncUserStatus(id);
       } else {
         ShowError(res?.message || 'Failed to remove review', 2000);
@@ -372,6 +500,7 @@ const HomeDetails = ({route}) => {
       ShowError('Something went wrong', 2000);
     } finally {
       setRemoveReviewLoader(false);
+      setShowRemoveModal(false);
     }
   };
 
@@ -406,7 +535,7 @@ const HomeDetails = ({route}) => {
       restaurantName: morePlaceDetails?.name,
       address: morePlaceDetails?.formatted_address,
       photos: images,
-      category: getCategory(),
+      category: getCategory(morePlaceDetails),
       latitude: morePlaceDetails?.geometry?.location?.lat,
       longitude: morePlaceDetails?.geometry?.location?.lng,
     };
@@ -465,7 +594,7 @@ const HomeDetails = ({route}) => {
             morePlaceDetails?.user_ratings_total ||
             placeDetails?.user_ratings_total ||
             0,
-          category: getCategory(),
+          category: getCategory(morePlaceDetails),
           latitude:
             morePlaceDetails?.geometry?.location?.lat ||
             placeDetails?.geometry?.location?.lat,
@@ -534,7 +663,7 @@ const HomeDetails = ({route}) => {
 
   // console.log('personalReview:-', personalReview);
   // console.log('placeId:-', placeDetails?.placeId);
-  console.log('placeDetails:-', placeDetails);
+  // console.log('placeDetails:-', placeDetails);
   // console.log('ratingData:-', ratingData);
   return (
     <ScreenWrapper>
@@ -782,15 +911,17 @@ const HomeDetails = ({route}) => {
                           lineHeight={2}
                         />
 
-                        <TouchableOpacity
-                          style={styles.editButton}
-                          onPress={handleEditPress}>
-                          <AntDesign
-                            name="edit"
-                            size={12}
-                            color={AppColors.WHITE}
-                          />
-                        </TouchableOpacity>
+                        {!isBrandBlocked && (
+                          <TouchableOpacity
+                            style={styles.editButton}
+                            onPress={handleEditPress}>
+                            <AntDesign
+                              name="edit"
+                              size={12}
+                              color={AppColors.WHITE}
+                            />
+                          </TouchableOpacity>
+                        )}
                       </View>
                       <LineBreak space={2} />
                     </View>
@@ -799,8 +930,32 @@ const HomeDetails = ({route}) => {
             </View>
           )}
 
+          {/* Blocked Message */}
+          {isBrandBlocked && (
+            <View
+              style={{
+                padding: 20,
+                backgroundColor: AppColors.avoid + '20',
+                borderRadius: 15,
+                borderWidth: 1,
+                borderColor: AppColors.avoid,
+                alignItems: 'center',
+                marginTop: 10,
+              }}>
+              <Ionicons name="alert-circle" size={30} color={AppColors.avoid} />
+              <LineBreak space={1} />
+              <AppText
+                title="You have avoided all branches of this place."
+                textColor={AppColors.BLACK}
+                textSize={1.8}
+                textFontWeight
+                textAlignment="center"
+              />
+            </View>
+          )}
+
           {/* Review Input & Action Buttons */}
-          {(personalReviews.length === 0 || isEditing) && (
+          {(personalReviews.length === 0 || isEditing) && !isBrandBlocked && (
             <View
               style={{
                 paddingVertical: responsiveHeight(2),
@@ -907,18 +1062,43 @@ const HomeDetails = ({route}) => {
       {/* Celebration Modal */}
       <Modal
         isVisible={showCelebration}
-        // animationIn="zoomIn"
-        // animationOut="zoomOut"
+        animationIn="zoomIn"
+        animationOut="zoomOut"
         backdropOpacity={0.2}
         style={{margin: 0}}>
         <View style={styles.gifContainer}>
           <FastImage
-            source={require('../../assets/gif/celebration.gif')}
+            // source={require('../../assets/gif/celebration.gif')}
+            source={require('../../assets/gif/goAgainAnimation.gif')}
             style={{height: '100%', width: '100%'}}
             resizeMode={FastImage.resizeMode.contain}
           />
         </View>
       </Modal>
+
+      <AvoidModal
+        isVisible={showAvoidModal}
+        onCancel={() => setShowAvoidModal(false)}
+        onAvoidPlace={() =>
+          createReview('Avoid', {confirmed: true, avoidAllBranches: false})
+        }
+        onAvoidAllBranches={() =>
+          createReview('Avoid', {confirmed: true, avoidAllBranches: true})
+        }
+        avoidPlaceLoading={avoidLoader}
+        avoidAllBranchesLoading={avoidAllBranchesLoader}
+      />
+
+      <RemoveReviewModal
+        isVisible={showRemoveModal}
+        onCancel={() => setShowRemoveModal(false)}
+        onRemoveSpecific={handleRemoveSpecific}
+        onRemoveAllBranches={() => {
+          performRemoveReview(personalReviews[0]._id || personalReviews[0].id);
+        }}
+        loadingSpecific={removeSpecificLoader}
+        loadingAll={removeReviewLoader}
+      />
     </ScreenWrapper>
   );
 };
@@ -988,7 +1168,7 @@ const styles = StyleSheet.create({
     borderRadius: 30,
   },
   gifContainer: {
-    height: responsiveHeight(48),
+    height: responsiveHeight(95), // 48
     width: responsiveWidth(100),
     position: 'absolute',
     left: 0,
