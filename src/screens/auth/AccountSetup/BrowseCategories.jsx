@@ -608,7 +608,7 @@ const BrowseCategories = ({navigation}) => {
             onPress={() => {
               if (isListBuilt) {
                 // Return to main app if already built (e.g. from Profile)
-                navigation.navigate('MainTabs');
+                navigation.navigate('Main');
               } else {
                 // Complete onboarding
                 dispatch(setIsListBuilt(true));

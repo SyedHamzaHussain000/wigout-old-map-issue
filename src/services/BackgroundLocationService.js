@@ -69,8 +69,8 @@ const checkProximityAndNotify = async token => {
     async position => {
       const {latitude, longitude} = position.coords;
       // console.log('Current Background Location:', latitude, longitude);
-      // let latitude = 37.393622; // AVOID
-      // let longitude = -122.078756; // AVOID
+      // let latitude = 37.455756; // AVOID
+      // let longitude = -122.227941; // AVOID
       // let latitude = 37.782386; // GO AGAIN
       // let longitude = -122.402097; // GO AGAIN
       // let latitude = 37.3225578; // NEW
@@ -91,13 +91,15 @@ const checkProximityAndNotify = async token => {
 
         const allPlaces = [
           ...reviews.map(r => ({
-            id: r._id,
+            ...r,
+            id: r.placeId, // USE placeId for geofencing and details
             name: r.restaurantName,
             lat: r.latitude,
             lng: r.longitude,
             type: r.actionType, // 'Go Again' or 'Avoid'
           })),
           ...(Array.isArray(wishlist) ? wishlist : []).map(w => ({
+            ...w,
             id: w.placeId,
             name: w.name,
             lat: w.latitude,
@@ -186,10 +188,23 @@ const triggerLocalNotification = async place => {
     android: {
       channelId,
       smallIcon: 'ic_launcher',
+      importance: AndroidImportance.HIGH,
       pressAction: {
         id: 'default',
         launchActivity: 'default',
       },
+    },
+    data: {
+      placeDetails: JSON.stringify({
+        ...place,
+        placeId: place.id,
+        place_id: place.id, // Add both formats for compatibility
+        name: place.name,
+        latitude: place.lat,
+        longitude: place.lng,
+      }),
+      isFromWelcomeBack: place.type === 'Go Again' ? 'true' : 'false',
+      isFromAvoid: place.type === 'Avoid' ? 'true' : 'false',
     },
   });
 };

@@ -492,7 +492,7 @@ const SearchForPlaces = ({navigation}) => {
             activeOpacity={0.8}
             onPress={() => {
               if (isListBuilt) {
-                navigation.navigate('MainTabs');
+                navigation.navigate('Main');
               } else {
                 dispatch(setIsListBuilt(true));
               }

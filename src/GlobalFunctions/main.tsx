@@ -208,7 +208,7 @@ export const GetSharedList = async (
 
 export const getGreeting = () => {
   const hour = new Date().getHours();
-  console.log('Detected Hour for Greeting:', hour);
+  // console.log('Detected Hour for Greeting:', hour);
   if (hour < 12) {
     return 'Good morning';
   } else if (hour < 17) {

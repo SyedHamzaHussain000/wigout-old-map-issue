@@ -76,6 +76,10 @@ const App = () => {
               detail.notification,
             );
             const placeDetails = detail.notification?.data?.placeDetails;
+            const isFromWelcomeBack =
+              detail.notification?.data?.isFromWelcomeBack === 'true';
+            const isFromAvoid =
+              detail.notification?.data?.isFromAvoid === 'true';
             console.log('Place Details from notification:', placeDetails);
             if (placeDetails) {
               const parsedDetails =
@@ -86,7 +90,11 @@ const App = () => {
                 'Navigating to HomeDetails with:',
                 parsedDetails.name,
               );
-              navigate('HomeDetails', {placeDetails: parsedDetails});
+              navigate('HomeDetails', {
+                placeDetails: parsedDetails,
+                isFromWelcomeBack,
+                isFromAvoid,
+              });
             }
           }
         },
@@ -108,6 +116,10 @@ const App = () => {
         );
         const placeDetails =
           initialNotification.notification?.data?.placeDetails;
+        const isFromWelcomeBack =
+          initialNotification.notification?.data?.isFromWelcomeBack === 'true';
+        const isFromAvoid =
+          initialNotification.notification?.data?.isFromAvoid === 'true';
         console.log('Initial Notification Place Details:', placeDetails);
         if (placeDetails) {
           const parsedDetails =
@@ -118,7 +130,11 @@ const App = () => {
             'Navigating (Initial) to HomeDetails with:',
             parsedDetails.name,
           );
-          navigate('HomeDetails', {placeDetails: parsedDetails});
+          navigate('HomeDetails', {
+            placeDetails: parsedDetails,
+            isFromWelcomeBack,
+            isFromAvoid,
+          });
         }
       }
     };

@@ -177,6 +177,23 @@ const HomeDetails = ({route}) => {
     if (id) {
       getMorePlaceInfo(id);
       syncUserStatus(id);
+
+      // Trigger celebration if from Welcome back notification
+      if (route.params?.isFromWelcomeBack) {
+        // Small delay to ensure the screen is fully ready to show animation
+        setTimeout(() => {
+          setShowCelebration(true);
+          setTimeout(() => setShowCelebration(false), 5000);
+        }, 2000);
+      }
+
+      // Trigger avoid celebration if from Avoid notification
+      if (route.params?.isFromAvoid) {
+        setTimeout(() => {
+          setShowAvoidCelebration(true);
+          setTimeout(() => setShowAvoidCelebration(false), 5000);
+        }, 2000);
+      }
     } else {
       setLoading(false);
     }
@@ -798,15 +815,27 @@ const HomeDetails = ({route}) => {
                 pitchEnabled={false}
                 rotateEnabled={false}
                 region={{
-                  latitude: morePlaceDetails?.geometry?.location?.lat || 0,
-                  longitude: morePlaceDetails?.geometry?.location?.lng || 0,
+                  latitude:
+                    morePlaceDetails?.geometry?.location?.lat ||
+                    placeDetails?.latitude ||
+                    0,
+                  longitude:
+                    morePlaceDetails?.geometry?.location?.lng ||
+                    placeDetails?.longitude ||
+                    0,
                   latitudeDelta: 0.01,
                   longitudeDelta: 0.01,
                 }}>
                 <Marker
                   coordinate={{
-                    latitude: morePlaceDetails?.geometry?.location?.lat || 0,
-                    longitude: morePlaceDetails?.geometry?.location?.lng || 0,
+                    latitude:
+                      morePlaceDetails?.geometry?.location?.lat ||
+                      placeDetails?.latitude ||
+                      0,
+                    longitude:
+                      morePlaceDetails?.geometry?.location?.lng ||
+                      placeDetails?.longitude ||
+                      0,
                   }}
                   title={morePlaceDetails?.name || 'Location'}></Marker>
               </MapView>

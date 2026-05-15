@@ -99,8 +99,28 @@ const Notifications = ({navigation}) => {
   );
 
   const handleNavigation = item => {
+    console.log('item of handleNavigation :->', item);
+
     if (item?.metadata?.type === 'shared_listing') {
       navigation.navigate('SharedList', {data: item});
+      return;
+    }
+
+    // Try to get placeId from different possible fields
+    const placeId =
+      item?.placeId || item?.metadata?.placeId || item?.metadata?.place_id;
+
+    if (placeId) {
+      const isAvoid = item?.reviewId?.actionType === 'Avoid';
+      console.log('isAvoid:-', isAvoid);
+      navigation.navigate('HomeDetails', {
+        placeDetails: {
+          placeId: placeId,
+        },
+        // If it's avoid, trigger avoid animation. If not, trigger go again animation.
+        isFromWelcomeBack: !isAvoid,
+        isFromAvoid: isAvoid,
+      });
     }
   };
 
