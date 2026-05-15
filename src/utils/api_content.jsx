@@ -29,6 +29,7 @@ export const endPoints = {
   getAllSubscribedUsers: '/api/getAllSubscribedUsers',
   shareMyListing: '/api/shareMyListing',
   getSharedListingsDetails: '/api/getSharedListingsDetails',
+  readAllNotifications: '/api/user/readAllNotifications',
 };
 
 export const ShowToast = (type: 'success' | 'error' | 'info', message) => {

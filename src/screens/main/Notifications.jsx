@@ -8,7 +8,10 @@ import {
   StyleSheet,
 } from 'react-native';
 import {useSelector} from 'react-redux';
-import {getAllNotifications} from '../../GlobalFunctions/main';
+import {
+  getAllNotifications,
+  readAllNotifications,
+} from '../../GlobalFunctions/main';
 import LineBreak from '../../components/LineBreak';
 import AppHeader from '../../components/AppHeader';
 import ScreenWrapper from '../../components/ScreenWrapper';
@@ -17,7 +20,6 @@ import {
   responsiveFontSize,
   responsiveWidth,
 } from '../../utils/Responsive_Dimensions';
-import AntDesign from 'react-native-vector-icons/AntDesign';
 import AppText from '../../components/AppTextComps/AppText';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import moment from 'moment';
@@ -34,6 +36,27 @@ const Notifications = ({navigation}) => {
   useEffect(() => {
     fetchNotifications();
   }, []);
+
+  useEffect(() => {
+    if (!loading && !refreshing && notifications?.length > 0) {
+      _readAllNotifications();
+    }
+  }, [notifications]);
+
+  const _readAllNotifications = async () => {
+    if (!token) return;
+
+    try {
+      const response = await readAllNotifications(token);
+      if (response?.success) {
+        console.log('Read All Notifications API Response:-', response);
+      } else {
+        console.error('Failed to read all notifications:', response?.message);
+      }
+    } catch (error) {
+      console.error('Error reading all notifications:', error);
+    }
+  };
 
   // Memoized fetch function to prevent unnecessary re-creations
   const fetchNotifications = useCallback(

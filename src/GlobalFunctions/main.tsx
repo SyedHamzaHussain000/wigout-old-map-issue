@@ -206,6 +206,26 @@ export const GetSharedList = async (
   }
 };
 
+export const readAllNotifications = async (token: string) => {
+  try {
+    const data = await axios.put(
+      `${baseUrl}${endPoints.readAllNotifications}`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+    return data?.data;
+  } catch (error) {
+    return {
+      success: false,
+      message: error?.response?.data?.message || error.message,
+    };
+  }
+};
+
 export const getGreeting = () => {
   const hour = new Date().getHours();
   // console.log('Detected Hour for Greeting:', hour);
