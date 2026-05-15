@@ -6,7 +6,6 @@ import {
   ActivityIndicator,
   FlatList,
   StyleSheet,
-  Image,
   Linking,
   Platform,
 } from 'react-native';
@@ -18,7 +17,6 @@ import FastImage from 'react-native-fast-image';
 import Sound from 'react-native-sound';
 import Entypo from 'react-native-vector-icons/Entypo';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import {useDispatch, useSelector} from 'react-redux';
 
@@ -60,7 +58,6 @@ import {RemoveReview} from '../../ApiCalls/Main/Reviews/ReviewsApiCall';
 import ShowError from '../../utils/ShowError';
 import ScreenWrapper from '../../components/ScreenWrapper';
 import moment from 'moment';
-import FetchNearbyPlaces from '../../ApiCalls/Main/FetchNearbyPlaces';
 import StarRating from 'react-native-star-rating-widget';
 import AvoidModal from '../../components/AvoidModal';
 import RemoveReviewModal from '../../components/RemoveReviewModal';
@@ -70,7 +67,6 @@ const HomeDetails = ({route}) => {
   const {placeDetails} = route.params;
   const token = useSelector(state => state.user.token);
   const userData = useSelector(state => state.user.userData);
-  const currentLocation = useSelector(state => state.user.current_location);
   const dispatch = useDispatch();
 
   const [morePlaceDetails, setMoreInfoDetail] = useState(null);
@@ -80,6 +76,7 @@ const HomeDetails = ({route}) => {
   const [goAgainLoader, setGoAgainLoader] = useState(false);
   const [reviewLoader, setReviewLoader] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [showAvoidCelebration, setShowAvoidCelebration] = useState(false);
   const [isWishList, setIsWishList] = useState(false);
   const [personalReviews, setPersonalReviews] = useState([]);
   const [wishlistLoader, setWishlistLoader] = useState(false);
@@ -176,7 +173,7 @@ const HomeDetails = ({route}) => {
 
   useEffect(() => {
     const id = placeDetails?.placeId || placeDetails?.place_id;
-    console.log('HomeDetails initializing with ID:', id);
+    // console.log('HomeDetails initializing with ID:', id);
     if (id) {
       getMorePlaceInfo(id);
       syncUserStatus(id);
@@ -199,7 +196,7 @@ const HomeDetails = ({route}) => {
         GetReviews(token),
         GetReviewsByPlaceId(token, id),
       ]);
-      console.log('wishRes:-', wishRes);
+      // console.log('wishRes:-', wishRes);
       // Sync Wishlist
       const wishlistData = wishRes?.wishLists || wishRes?.data || wishRes;
       if (wishlistData && Array.isArray(wishlistData)) {
@@ -313,25 +310,6 @@ const HomeDetails = ({route}) => {
     : '0';
   const totalReviews = inAppSummary?.totalReviews || 0;
 
-  // const getCategory = () => {
-  //   const types = morePlaceDetails?.types || placeDetails?.types || [];
-  //   if (types.length === 0) return 'Place';
-  //   const filterTypes = [
-  //     'point_of_interest',
-  //     'establishment',
-  //     'food',
-  //     'natural_feature',
-  //     'street_address',
-  //     'route',
-  //   ];
-  //   const meaningfulType =
-  //     types.find(t => !filterTypes.includes(t)) || types[0];
-  //   return meaningfulType
-  //     .split('_')
-  //     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-  //     .join(' ');
-  // };
-
   const createReview = async (type, options = {}) => {
     if (!morePlaceDetails) {
       ShowError('Please wait, details are loading...', 2000);
@@ -392,6 +370,8 @@ const HomeDetails = ({route}) => {
         const res = await processSingleReview(morePlaceDetails, true);
         if (res.success) {
           ShowError('Avoided all branches successfully', 2000);
+          setShowAvoidCelebration(true);
+          setTimeout(() => setShowAvoidCelebration(false), 5000);
           setTypeReview('');
           setRating(0);
           syncUserStatus(morePlaceDetails?.place_id);
@@ -403,7 +383,11 @@ const HomeDetails = ({route}) => {
         if (res.success) {
           if (type === 'Go Again') {
             setShowCelebration(true);
-            setTimeout(() => setShowCelebration(false), 4000);
+            setTimeout(() => setShowCelebration(false), 5000);
+          }
+          if (type === 'Avoid') {
+            setShowAvoidCelebration(true);
+            setTimeout(() => setShowAvoidCelebration(false), 5000);
           }
           setTypeReview('');
           setRating(0);
@@ -423,7 +407,7 @@ const HomeDetails = ({route}) => {
       setShowAvoidModal(false);
     }
   };
-  console.log('personalReviews:-', personalReviews?.[0]);
+
   const handleRemoveReview = async () => {
     if (personalReviews.length === 0) return;
 
@@ -663,7 +647,7 @@ const HomeDetails = ({route}) => {
 
   // console.log('personalReview:-', personalReview);
   // console.log('placeId:-', placeDetails?.placeId);
-  // console.log('placeDetails:-', placeDetails);
+  console.log('placeDetails:-', placeDetails);
   // console.log('ratingData:-', ratingData);
   return (
     <ScreenWrapper>
@@ -824,12 +808,7 @@ const HomeDetails = ({route}) => {
                     latitude: morePlaceDetails?.geometry?.location?.lat || 0,
                     longitude: morePlaceDetails?.geometry?.location?.lng || 0,
                   }}
-                  title={morePlaceDetails?.name || 'Location'}>
-                  {/* <Image
-                    source={AppImages.LOCATION_MARK}
-                    style={{height: 30, width: 30}}
-                  /> */}
-                </Marker>
+                  title={morePlaceDetails?.name || 'Location'}></Marker>
               </MapView>
             </TouchableOpacity>
           </View>
@@ -1070,6 +1049,22 @@ const HomeDetails = ({route}) => {
           <FastImage
             // source={require('../../assets/gif/celebration.gif')}
             source={require('../../assets/gif/goAgainAnimation.gif')}
+            style={{height: '100%', width: '100%'}}
+            resizeMode={FastImage.resizeMode.contain}
+          />
+        </View>
+      </Modal>
+
+      {/* Avoid Animation Modal */}
+      <Modal
+        isVisible={showAvoidCelebration}
+        animationIn="zoomIn"
+        animationOut="zoomOut"
+        backdropOpacity={0.2}
+        style={{margin: 0}}>
+        <View style={styles.gifContainer}>
+          <FastImage
+            source={require('../../assets/gif/avoidAnimation.gif')}
             style={{height: '100%', width: '100%'}}
             resizeMode={FastImage.resizeMode.contain}
           />

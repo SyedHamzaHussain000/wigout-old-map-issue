@@ -62,7 +62,7 @@ export const GetReviewsByPlaceId = async (token, placeId) => {
       '',
       token,
     );
-    console.log('res in GetReviewsByPlaceId:-', response?.data);
+    // console.log('res in GetReviewsByPlaceId:-', response?.data);
 
     return response.data;
   } catch (error) {

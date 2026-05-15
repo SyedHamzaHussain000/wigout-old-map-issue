@@ -71,8 +71,8 @@ const checkProximityAndNotify = async token => {
       // console.log('Current Background Location:', latitude, longitude);
       // let latitude = 37.393622; // AVOID
       // let longitude = -122.078756; // AVOID
-      // let latitude = 37.4500894; // GO AGAIN
-      // let longitude = -122.117392; // GO AGAIN
+      // let latitude = 37.782386; // GO AGAIN
+      // let longitude = -122.402097; // GO AGAIN
       // let latitude = 37.3225578; // NEW
       // let longitude = -122.0346885; // NEW
 
@@ -210,9 +210,6 @@ const checkFirstTimeVisit = async (
     const reviewedIds = new Set(reviews.map(r => r.placeId));
     const wishlistIds = new Set(wishlist.map(w => w.placeId));
 
-    // console.log('Reviewed place-ids:', [...reviewedIds]);
-    // console.log('Wishlist place-ids:', [...wishlistIds]);
-
     const newNearbyPlaces = nearby.filter(p => {
       const isNew =
         !reviewedIds.has(p.place_id) && !wishlistIds.has(p.place_id);
@@ -236,7 +233,6 @@ const checkFirstTimeVisit = async (
       );
 
       console.log(`Closest Place: ${closest.name}`);
-      console.log(`Checking distance to ${closest.name}...`);
 
       // Check if within 200m "Visit" threshold (increased for debugging)
       if (

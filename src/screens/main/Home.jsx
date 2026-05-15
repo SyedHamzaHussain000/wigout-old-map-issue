@@ -135,7 +135,7 @@ const Home = () => {
   );
   const currentLocation = useSelector(state => state.user.current_location);
   const token = useSelector(state => state.user.token);
-  console.log('token in home', token);
+  // console.log('token in home', token);
 
   const [isLoading, setIsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -452,7 +452,6 @@ const Home = () => {
       handleSearch(debouncedSearch);
     }
   }, [debouncedSearch]);
-
 
   const handleSearch = async query => {
     const loc =
