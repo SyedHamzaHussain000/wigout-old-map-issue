@@ -33,7 +33,7 @@ const BuildYourList = ({navigation, route}) => {
   const handleSkip = () => {
     if (isListBuilt) {
       if (isFromTab) {
-        navigation.goBack();
+        goBack();
       } else {
         // Return to main app if already built (e.g. from Profile)
         navigation.navigate('Main');

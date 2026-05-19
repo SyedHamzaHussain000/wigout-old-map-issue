@@ -163,7 +163,6 @@ const Notifications = ({navigation}) => {
             keyExtractor={(item, index) =>
               item?.id?.toString() || index.toString()
             }
-            // ItemSeparatorComponent={() => <LineBreak space={0.5} />}
             ListEmptyComponent={renderEmptyComponent}
             contentContainerStyle={
               notifications.length === 0 ? {flex: 1} : {paddingBottom: 20}
@@ -179,7 +178,7 @@ const Notifications = ({navigation}) => {
             renderItem={({item}) => (
               <TouchableOpacity
                 onPress={() => handleNavigation(item)}
-                style={styles.notificationItem(!item?.read)}>
+                style={styles.notificationItem(item?.read)}>
                 <View style={styles.row}>
                   {renderNotificationIcon()}
                   <View style={styles.textContainer}>

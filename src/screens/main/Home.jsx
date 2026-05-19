@@ -530,16 +530,6 @@ const Home = () => {
 
         <View style={{flexDirection: 'row', gap: 10, alignItems: 'center'}}>
           <TouchableOpacity
-            onPress={() => navigateToRoute('WishList')}
-            style={styles.notificationBtn}>
-            <FontAwesome
-              name="bookmark"
-              size={18}
-              color={AppColors.BTNCOLOURS}
-            />
-          </TouchableOpacity>
-
-          <TouchableOpacity
             onPress={() => navigateToRoute('Notifications')}
             style={styles.notificationBtn}>
             <Image

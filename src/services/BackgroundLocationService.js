@@ -297,7 +297,7 @@ const checkFirstTimeVisit = async (
       }
     }
   } catch (err) {
-    console.error('Error in checkFirstTimeVisit:', err);
+    console.log('Error in checkFirstTimeVisit:', err);
   }
 };
 

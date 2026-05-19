@@ -119,7 +119,6 @@ const JournalHome = ({navigation}) => {
     }
   };
 
-
   const handleSpinEnd = selectedWinner => {
     setWinner(selectedWinner);
   };
@@ -208,12 +207,6 @@ const JournalHome = ({navigation}) => {
     fetchNotifications();
   }, [isFocused]);
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchData(false);
-    setRefreshing(false);
-  };
-
   const ConfettiParticle = ({index}) => {
     const translateY = useSharedValue(-20);
     const translateX = useSharedValue(Math.random() * width);
@@ -270,15 +263,7 @@ const JournalHome = ({navigation}) => {
       <SafeAreaView style={{flex: 1}}>
         <ScrollView
           style={styles.container}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              colors={[AppColors.BTNCOLOURS]}
-              tintColor={AppColors.BTNCOLOURS}
-            />
-          }>
+          showsVerticalScrollIndicator={false}>
           {/* Redesigned Header to match Explore page */}
           <View style={styles.header}>
             <View style={styles.userInfo}>
@@ -624,7 +609,7 @@ const styles = StyleSheet.create({
   },
   wheelSection: {
     alignItems: 'center',
-    backgroundColor: '#FFF3E0',
+    // backgroundColor: '#FFF3E0',
     borderRadius: 25,
     paddingTop: 20,
     marginBottom: responsiveHeight(2),

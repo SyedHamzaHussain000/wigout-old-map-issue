@@ -664,8 +664,9 @@ const HomeDetails = ({route}) => {
 
   // console.log('personalReview:-', personalReview);
   // console.log('placeId:-', placeDetails?.placeId);
-  console.log('placeDetails:-', placeDetails);
   // console.log('ratingData:-', ratingData);
+  // console.log('isWishList:-', isWishList);
+  console.log('placeDetails:-', placeDetails?.opening_hours?.open_now);
   return (
     <ScreenWrapper>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -675,31 +676,29 @@ const HomeDetails = ({route}) => {
 
         <View style={styles.contentPadding}>
           <View style={styles.titleRow}>
-            <View style={{width: responsiveWidth(90)}}>
+            <View style={{width: responsiveWidth(70)}}>
               <AppText
                 title={
                   morePlaceDetails?.name || placeDetails?.name || 'No Name'
                 }
                 textColor={AppColors.BLACK}
                 textSize={3}
+                numberOfLines={2}
+                ellipsizeMode="tail"
                 textFontWeight
               />
             </View>
 
-            {/* <TouchableOpacity
-              style={styles.wishlistBtn}
-              onPress={toggleWishlist}
-              disabled={wishlistLoader}>
-              {wishlistLoader ? (
-                <ActivityIndicator size="small" color={AppColors.BTNCOLOURS} />
-              ) : (
-                <FontAwesome
-                  name={isWishList ? 'bookmark' : 'bookmark-o'}
-                  size={24}
-                  color={AppColors.BTNCOLOURS}
-                />
-              )}
-            </TouchableOpacity> */}
+            <View style={styles.openClosedBadge}>
+              <AppText
+                title={
+                  placeDetails?.opening_hours?.open_now ? 'Open Now' : 'Closed'
+                }
+                textColor={AppColors.BTNCOLOURS}
+                textSize={1.5}
+                textFontWeight
+              />
+            </View>
           </View>
 
           <LineBreak space={2} />
@@ -963,81 +962,83 @@ const HomeDetails = ({route}) => {
           )}
 
           {/* Review Input & Action Buttons */}
-          {(personalReviews.length === 0 || isEditing) && !isBrandBlocked && (
-            <View
-              style={{
-                paddingVertical: responsiveHeight(2),
-                paddingHorizontal: responsiveWidth(2),
-                borderRadius: 12,
-                backgroundColor: AppColors.whiteOpacity,
-                marginTop: 10,
-              }}>
-              <AppText
-                title={isEditing ? 'Update Review' : 'Add Review'}
-                textColor={AppColors.BLACK}
-                textSize={2}
-                textFontWeight
-              />
-              <LineBreak space={1} />
-
-              {/* Star Rating */}
-              <View style={styles.starContainner}>
-                <StarRating
-                  rating={rating}
-                  onChange={setRating}
-                  starSize={25}
-                  color={AppColors.BTNCOLOURS}
-                  emptyColor={AppColors.GRAY}
+          {(personalReviews.length === 0 || isEditing) &&
+            !isBrandBlocked &&
+            !isWishList && (
+              <View
+                style={{
+                  paddingVertical: responsiveHeight(2),
+                  paddingHorizontal: responsiveWidth(2),
+                  borderRadius: 12,
+                  backgroundColor: AppColors.whiteOpacity,
+                  marginTop: 10,
+                }}>
+                <AppText
+                  title={isEditing ? 'Update Review' : 'Add Review'}
+                  textColor={AppColors.BLACK}
+                  textSize={2}
+                  textFontWeight
                 />
-              </View>
+                <LineBreak space={1} />
 
-              <AppTextInput
-                placeholder="Write your detailed review"
-                textAlignVertical="top"
-                inputHeight={15}
-                multiline
-                value={typeReview}
-                onChangeText={setTypeReview}
-              />
-              <LineBreak space={2} />
-              <View style={styles.buttonRow}>
-                {isEditing ? (
-                  <Fragment>
-                    <AppButton
-                      title="Cancel"
-                      handlePress={handleCancelEdit}
-                      btnWidth={42}
-                      btnBackgroundColor={AppColors.GRAY}
-                    />
-                    <AppButton
-                      title="Update"
-                      handlePress={handleUpdateReview}
-                      btnWidth={42}
-                      btnBackgroundColor={AppColors.BTNCOLOURS}
-                      loading={updateLoader}
-                    />
-                  </Fragment>
-                ) : (
-                  <Fragment>
-                    <AppButton
-                      title="Avoid"
-                      handlePress={() => createReview('Avoid')}
-                      btnWidth={42}
-                      btnBackgroundColor={AppColors.avoid}
-                      loading={avoidLoader}
-                    />
-                    <AppButton
-                      title="Go Again"
-                      handlePress={() => createReview('Go Again')}
-                      btnWidth={42}
-                      btnBackgroundColor={AppColors.goAgain}
-                      loading={goAgainLoader}
-                    />
-                  </Fragment>
-                )}
+                {/* Star Rating */}
+                <View style={styles.starContainner}>
+                  <StarRating
+                    rating={rating}
+                    onChange={setRating}
+                    starSize={25}
+                    color={AppColors.BTNCOLOURS}
+                    emptyColor={AppColors.GRAY}
+                  />
+                </View>
+
+                <AppTextInput
+                  placeholder="Write your detailed review"
+                  textAlignVertical="top"
+                  inputHeight={15}
+                  multiline
+                  value={typeReview}
+                  onChangeText={setTypeReview}
+                />
+                <LineBreak space={2} />
+                <View style={styles.buttonRow}>
+                  {isEditing ? (
+                    <Fragment>
+                      <AppButton
+                        title="Cancel"
+                        handlePress={handleCancelEdit}
+                        btnWidth={42}
+                        btnBackgroundColor={AppColors.GRAY}
+                      />
+                      <AppButton
+                        title="Update"
+                        handlePress={handleUpdateReview}
+                        btnWidth={42}
+                        btnBackgroundColor={AppColors.BTNCOLOURS}
+                        loading={updateLoader}
+                      />
+                    </Fragment>
+                  ) : (
+                    <Fragment>
+                      <AppButton
+                        title="Avoid"
+                        handlePress={() => createReview('Avoid')}
+                        btnWidth={42}
+                        btnBackgroundColor={AppColors.avoid}
+                        loading={avoidLoader}
+                      />
+                      <AppButton
+                        title="Go Again"
+                        handlePress={() => createReview('Go Again')}
+                        btnWidth={42}
+                        btnBackgroundColor={AppColors.goAgain}
+                        loading={goAgainLoader}
+                      />
+                    </Fragment>
+                  )}
+                </View>
               </View>
-            </View>
-          )}
+            )}
 
           {/* Action Buttons (Remaining) */}
           <Fragment>
@@ -1183,12 +1184,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
-  wishlistBtn: {
+  openClosedBadge: {
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: AppColors.WHITE,
+    backgroundColor: AppColors.menuBg,
     height: 40,
-    width: 40,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: AppColors.BTNCOLOURS,
     borderRadius: 30,
   },
   gifContainer: {

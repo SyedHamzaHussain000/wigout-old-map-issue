@@ -10,7 +10,11 @@ export const useCustomNavigation = () => {
   };
 
   const goBack = () => {
-    navigation.goBack();
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.navigate('MainTabs');
+    }
   };
 
   return {

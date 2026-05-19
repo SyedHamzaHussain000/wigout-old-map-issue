@@ -175,6 +175,7 @@ const Login = () => {
     }
   };
 
+  // console.log('fcmToken:-', fcmToken);
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}

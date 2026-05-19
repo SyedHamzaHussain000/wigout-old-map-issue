@@ -4,6 +4,8 @@ import {
   getMessaging,
   getToken,
   requestPermission,
+  registerDeviceForRemoteMessages,
+  isDeviceRegisteredForRemoteMessages,
 } from '@react-native-firebase/messaging';
 import {Platform} from 'react-native';
 
@@ -22,6 +24,14 @@ export async function getFcmToken() {
   if (Platform.OS === 'ios') {
     const granted = await requestUserPermission();
     if (!granted) return null;
+
+    try {
+      if (!isDeviceRegisteredForRemoteMessages(messagingFirebase)) {
+        await registerDeviceForRemoteMessages(messagingFirebase);
+      }
+    } catch (e) {
+      console.log('Error registering device for remote messages', e);
+    }
   }
   return await getToken(messagingFirebase);
 }
