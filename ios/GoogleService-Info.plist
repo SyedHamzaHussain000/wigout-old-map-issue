@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>59552515763-79a1j5ndp317g53o86fs7qk2v25i8lkl.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.59552515763-79a1j5ndp317g53o86fs7qk2v25i8lkl</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>59552515763-c0uktqide325je1lmdq5vo0gftlilgqf.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyBrw20AcgZDjK5sclVnZXHldzcv1oD9uKY</string>
+	<key>GCM_SENDER_ID</key>
+	<string>59552515763</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.wigout.app</string>
+	<key>PROJECT_ID</key>
+	<string>wigout-bb7af</string>
+	<key>STORAGE_BUCKET</key>
+	<string>wigout-bb7af.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:59552515763:ios:2b24eed7eb52fa66f692c6</string>
+</dict>
+</plist>
