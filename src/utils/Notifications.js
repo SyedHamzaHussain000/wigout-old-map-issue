@@ -92,6 +92,7 @@ export async function triggerRateNotification(place) {
     await notifee.requestPermission();
     
     await notifee.displayNotification({
+      id: place.place_id || place.placeId || undefined,
       title: 'How was it?',
       body: `How was your visit to ${place.name}? Rate it now!`,
       android: {

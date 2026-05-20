@@ -22,6 +22,7 @@ import {EventType} from '@notifee/react-native';
 import {notifyUserForNearbyReviewedPlaces} from './src/GlobalFunctions/main';
 import notifee from '@notifee/react-native';
 import {StatusBar} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const latitude = '37.4191213';
 const longitude = '-122.0932968';
@@ -75,12 +76,23 @@ const App = () => {
               'Notification pressed in Foreground!',
               detail.notification,
             );
-            const placeDetails = detail.notification?.data?.placeDetails;
+            let placeDetails = detail.notification?.data?.placeDetails;
+            const placeId =
+              detail.notification?.data?.placeId ||
+              detail.notification?.data?.place_id;
             const isFromWelcomeBack =
-              detail.notification?.data?.isFromWelcomeBack === 'true';
+              detail.notification?.data?.actionType === 'Go Again';
             const isFromAvoid =
-              detail.notification?.data?.isFromAvoid === 'true';
+              detail.notification?.data?.actionType === 'Avoid';
+            const actionType = detail.notification?.data?.actionType;
+            console.log('Action type from notification:', actionType);
             console.log('Place Details from notification:', placeDetails);
+            console.log('Place ID from notification:', placeId);
+
+            if (!placeDetails && placeId) {
+              placeDetails = {placeId};
+            }
+
             if (placeDetails) {
               const parsedDetails =
                 typeof placeDetails === 'string'
@@ -88,7 +100,7 @@ const App = () => {
                   : placeDetails;
               console.log(
                 'Navigating to HomeDetails with:',
-                parsedDetails.name,
+                parsedDetails.name || parsedDetails.placeId,
               );
               navigate('HomeDetails', {
                 placeDetails: parsedDetails,
@@ -114,13 +126,23 @@ const App = () => {
           'App launched from notification:',
           initialNotification.notification,
         );
-        const placeDetails =
-          initialNotification.notification?.data?.placeDetails;
+        let placeDetails = initialNotification.notification?.data?.placeDetails;
+        const placeId =
+          initialNotification.notification?.data?.placeId ||
+          initialNotification.notification?.data?.place_id;
         const isFromWelcomeBack =
-          initialNotification.notification?.data?.isFromWelcomeBack === 'true';
+          initialNotification.notification?.data?.actionType === 'Go Again';
         const isFromAvoid =
-          initialNotification.notification?.data?.isFromAvoid === 'true';
+          initialNotification.notification?.data?.actionType === 'Avoid';
+        const actionType = initialNotification.notification?.data?.actionType;
+        console.log('Action type from initial notification:', actionType);
         console.log('Initial Notification Place Details:', placeDetails);
+        console.log('Initial Notification Place ID:', placeId);
+
+        if (!placeDetails && placeId) {
+          placeDetails = {placeId};
+        }
+
         if (placeDetails) {
           const parsedDetails =
             typeof placeDetails === 'string'
@@ -128,7 +150,7 @@ const App = () => {
               : placeDetails;
           console.log(
             'Navigating (Initial) to HomeDetails with:',
-            parsedDetails.name,
+            parsedDetails.name || parsedDetails.placeId,
           );
           navigate('HomeDetails', {
             placeDetails: parsedDetails,
@@ -139,8 +161,54 @@ const App = () => {
       }
     };
 
+    // Check for notification clicks stored in background
+    const checkAsyncStorageNotification = async () => {
+      try {
+        const lastNotificationStr = await AsyncStorage.getItem(
+          'last_notification_press',
+        );
+        if (lastNotificationStr) {
+          await AsyncStorage.removeItem('last_notification_press');
+          const notification = JSON.parse(lastNotificationStr);
+          console.log(
+            'App resumed/opened from AsyncStorage background press:',
+            notification,
+          );
+          let placeDetails = notification?.data?.placeDetails;
+          const placeId =
+            notification?.data?.placeId || notification?.data?.place_id;
+          const isFromWelcomeBack =
+            notification?.data?.isFromWelcomeBack === 'true';
+          const isFromAvoid = notification?.data?.isFromAvoid === 'true';
+
+          if (!placeDetails && placeId) {
+            placeDetails = {placeId};
+          }
+
+          if (placeDetails) {
+            const parsedDetails =
+              typeof placeDetails === 'string'
+                ? JSON.parse(placeDetails)
+                : placeDetails;
+            console.log(
+              'Navigating (AsyncStorage) to HomeDetails with:',
+              parsedDetails.name || parsedDetails.placeId,
+            );
+            navigate('HomeDetails', {
+              placeDetails: parsedDetails,
+              isFromWelcomeBack,
+              isFromAvoid,
+            });
+          }
+        }
+      } catch (e) {
+        console.error('Error checking AsyncStorage notification:', e);
+      }
+    };
+
     const cleanup = initNotifications();
     checkInitialNotification();
+    checkAsyncStorageNotification();
 
     return () => {
       cleanup.then(unsub => unsub?.());

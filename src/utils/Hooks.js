@@ -13,7 +13,7 @@ export const useCustomNavigation = () => {
     if (navigation.canGoBack()) {
       navigation.goBack();
     } else {
-      navigation.navigate('MainTabs');
+      navigation.navigate('Main');
     }
   };
 

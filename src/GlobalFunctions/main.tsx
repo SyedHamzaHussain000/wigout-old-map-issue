@@ -107,6 +107,34 @@ export const notifyUserForNearbyReviewedPlaces = async (
   }
 };
 
+export const notifyForNewPlace = async (
+  token: string,
+  placeId: string,
+  placeName: string,
+) => {
+  const data = {
+    placeId: placeId,
+    placeName: placeName,
+  };
+  try {
+    const response = await axios.post(
+      `${baseUrl}${endPoints.notifyForNewPlace}`,
+      data,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+    console.log('res in notifyForNewPlace:-', response?.data);
+    return response?.data;
+  } catch (error: any) {
+    console.log('Error in notifyForNewPlace:-', error);
+    return error;
+  }
+};
+
 export const getAllSubscribedUsers = async (
   token: string,
   page: number = 1,

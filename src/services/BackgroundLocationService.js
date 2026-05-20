@@ -1,16 +1,19 @@
 import BackgroundService from 'react-native-background-actions';
 import Geolocation from 'react-native-geolocation-service';
-import {notifyUserForNearbyReviewedPlaces} from '../GlobalFunctions/main';
+import {
+  notifyForNewPlace,
+  notifyUserForNearbyReviewedPlaces,
+} from '../GlobalFunctions/main';
 import {store} from '../redux/Store';
+import AppColors from '../utils/AppColors';
+import axios from 'axios';
+import {Google_API_KEY, Google_Base_Url} from '../utils/api_content';
+import {getDistance, isWithinRadius} from '../utils/LocationUtils';
 import {Platform} from 'react-native';
 import notifee, {AndroidImportance} from '@notifee/react-native';
 import {GetReviews} from '../ApiCalls/Main/Reviews/ReviewsApiCall';
 import {GetWishList} from '../ApiCalls/Main/WishList_API/WishListAPI';
-import {isWithinRadius} from '../utils/LocationUtils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import AppColors from '../utils/AppColors';
-import axios from 'axios';
-import {Google_API_KEY, Google_Base_Url} from '../utils/api_content';
 import {triggerRateNotification} from '../utils/Notifications';
 
 // Sleep helper
@@ -64,93 +67,82 @@ const veryIntensiveTask = async taskDataArguments => {
   }
 };
 
+// Check and notify for new place if user matches any nearby place from search
+const checkAndNotifyForNewPlace = async (token, latitude, longitude) => {
+  try {
+    const url = `${Google_Base_Url}place/nearbysearch/json?location=${latitude},${longitude}&radius=100&type=restaurant&key=${Google_API_KEY}`;
+    console.log('Hitting nearbysearch for new place checks:', url);
+    const response = await axios.get(url);
+    const results = response.data?.results || [];
+    console.log(`Found ${results.length} nearby places within 100m.`);
+
+    if (results.length > 0) {
+      // Find the closest place
+      const sortedResults = results
+        .map(place => {
+          const placeLat = place.geometry?.location?.lat;
+          const placeLng = place.geometry?.location?.lng;
+          const dist = getDistance(latitude, longitude, placeLat, placeLng);
+          return {...place, distance: dist};
+        })
+        .sort((a, b) => a.distance - b.distance);
+
+      const closest = sortedResults[0];
+      console.log(
+        `Closest place is ${
+          closest.name
+        } at a distance of ${closest.distance.toFixed(1)} meters.`,
+      );
+
+      // If closest is within 100 meters (which is our search radius)
+      if (closest.distance <= 100) {
+        const placeId = closest.place_id;
+        const placeName = closest.name;
+
+        console.log(`Calling notifyForNewPlace for: ${placeName} (${placeId})`);
+        await notifyForNewPlace(token, placeId, placeName);
+
+        return {
+          placeName,
+          placeId,
+        };
+      }
+    }
+  } catch (error) {
+    console.error('Error in checkAndNotifyForNewPlace:', error);
+  }
+  return null;
+};
+
 const checkProximityAndNotify = async token => {
   Geolocation.getCurrentPosition(
     async position => {
       const {latitude, longitude} = position.coords;
       // console.log('Current Background Location:', latitude, longitude);
-      // let latitude = 37.455756; // AVOID
-      // let longitude = -122.227941; // AVOID
-      // let latitude = 37.782386; // GO AGAIN
-      // let longitude = -122.402097; // GO AGAIN
+      // let latitude = 37.425433; // AVOID
+      // let longitude = -122.1452; // AVOID
+      // let latitude = 37.763028; // GO AGAIN
+      // let longitude = -122.424111; // GO AGAIN
       // let latitude = 37.3225578; // NEW
       // let longitude = -122.0346885; // NEW
+      // let latitude = 37.8063737; // WishList
+      // let longitude = -122.2706835; // WishList
 
       // 1. Send to Backend (existing logic)
       notifyUserForNearbyReviewedPlaces(token, latitude, longitude);
 
-      // 2. Local Geofencing Logic
+      // Check and notify backend for new place if user matches any restaurant
       try {
-        const [revRes, wishRes] = await Promise.all([
-          GetReviews(token),
-          GetWishList(token),
-        ]);
-
-        const reviews = revRes?.reviews || [];
-        const wishlist = wishRes?.wishLists || wishRes?.data || wishRes || [];
-
-        const allPlaces = [
-          ...reviews.map(r => ({
-            ...r,
-            id: r.placeId, // USE placeId for geofencing and details
-            name: r.restaurantName,
-            lat: r.latitude,
-            lng: r.longitude,
-            type: r.actionType, // 'Go Again' or 'Avoid'
-          })),
-          ...(Array.isArray(wishlist) ? wishlist : []).map(w => ({
-            ...w,
-            id: w.placeId,
-            name: w.name,
-            lat: w.latitude,
-            lng: w.longitude,
-            type: 'WishList',
-          })),
-        ];
-
-        // Filter out places without coordinates
-        const trackablePlaces = allPlaces.filter(p => p.lat && p.lng);
-
-        const state = store.getState();
-        const settings = state?.user?.notificationSettings;
-        if (settings?.recommendations) {
-          const notifiedRaw = await AsyncStorage.getItem('notified_places');
-          const notifiedHistory = notifiedRaw ? JSON.parse(notifiedRaw) : {};
-          const now = Date.now();
-
-          for (const place of trackablePlaces) {
-            if (
-              isWithinRadius(latitude, longitude, place.lat, place.lng, 200)
-            ) {
-              // Check if notified in last 24 hours
-              const lastNotified = notifiedHistory[place.id] || 0;
-              if (now - lastNotified > 24 * 60 * 60 * 1000) {
-                await triggerLocalNotification(place);
-                notifiedHistory[place.id] = now;
-              }
-            }
-          }
-
-          await AsyncStorage.setItem(
-            'notified_places',
-            JSON.stringify(notifiedHistory),
-          );
-
-          // 3. First-Time Visit Detection
-          await checkFirstTimeVisit(
-            latitude,
-            longitude,
-            reviews,
-            wishlist,
-            notifiedHistory,
-          );
-        } else {
-          console.log(
-            'Recommendations disabled in settings, skipping local notifications.',
-          );
+        const matched = await checkAndNotifyForNewPlace(
+          token,
+          latitude,
+          longitude,
+        );
+        if (matched) {
+          console.log('Matched and notified for new place:', matched);
         }
       } catch (err) {
-        console.error('Geofencing logic error:', err);
+        console.error('Error in notifyForNewPlace flow:', err);
       }
     },
     error => {
@@ -160,146 +152,140 @@ const checkProximityAndNotify = async token => {
   );
 };
 
-const triggerLocalNotification = async place => {
-  let title = 'Check this out!';
-  let body = `You are near ${place.name}.`;
+// const triggerLocalNotification = async place => {
+//   // let title = 'Check this out!';
+//   // let body = `You are near ${place.name}.`;
+//   // if (place.type === 'WishList') {
+//   //   title = 'WishList spot nearby!';
+//   //   body = `${place.name} is on your wishlist. Why not stop by?`;
+//   // }
+//   // if (place.type === 'Go Again') {
+//   //   title = 'Welcome back?';
+//   //   body = `You're near ${place.name}, one of your favorites!`;
+//   // } else if (place.type === 'Avoid') {
+//   //   title = 'Heads up!';
+//   //   body = `You're near ${place.name}, which you've marked to avoid.`;
+//   // } else if (place.type === 'WishList') {
+//   //   title = 'WishList spot nearby!';
+//   //   body = `${place.name} is on your wishlist. Why not stop by?`;
+//   // }
+//   // await notifee.requestPermission();
+//   // const channelId = await notifee.createChannel({
+//   //   id: 'geofencing_notifications',
+//   //   name: 'Nearby Places Alerts',
+//   //   importance: AndroidImportance.HIGH,
+//   // });
+//   // await notifee.displayNotification({
+//   //   id: place.id || place.place_id || undefined,
+//   //   title,
+//   //   body,
+//   //   android: {
+//   //     channelId,
+//   //     smallIcon: 'ic_launcher',
+//   //     importance: AndroidImportance.HIGH,
+//   //     pressAction: {
+//   //       id: 'default',
+//   //       launchActivity: 'default',
+//   //     },
+//   //   },
+//   //   data: {
+//   //     placeDetails: JSON.stringify({
+//   //       ...place,
+//   //       placeId: place.id,
+//   //       place_id: place.id, // Add both formats for compatibility
+//   //       name: place.name,
+//   //       latitude: place.lat,
+//   //       longitude: place.lng,
+//   //     }),
+//   //     isFromWelcomeBack: place.type === 'Go Again' ? 'true' : 'false',
+//   //     isFromAvoid: place.type === 'Avoid' ? 'true' : 'false',
+//   //   },
+//   // });
+// };
 
-  if (place.type === 'Go Again') {
-    title = 'Welcome back?';
-    body = `You're near ${place.name}, one of your favorites!`;
-  } else if (place.type === 'Avoid') {
-    title = 'Heads up!';
-    body = `You're near ${place.name}, which you've marked to avoid.`;
-  } else if (place.type === 'WishList') {
-    title = 'WishList spot nearby!';
-    body = `${place.name} is on your wishlist. Why not stop by?`;
-  }
+// const checkFirstTimeVisit = async (
+//   latitude,
+//   longitude,
+//   reviews,
+//   wishlist,
+//   notifiedHistory,
+// ) => {
+//   try {
+//     const url = `${Google_Base_Url}place/nearbysearch/json?location=${latitude},${longitude}&radius=100&type=restaurant&key=${Google_API_KEY}`;
+//     const response = await axios.get(url);
+//     const nearby = response.data?.results || [];
+//     console.log('resp in checkFirstTimeVisit:-', response?.data?.results);
+//     // Filter out places already in lists
+//     const reviewedIds = new Set(reviews.map(r => r.placeId));
+//     const wishlistIds = new Set(wishlist.map(w => w.placeId));
 
-  await notifee.requestPermission();
-  const channelId = await notifee.createChannel({
-    id: 'geofencing_notifications',
-    name: 'Nearby Places Alerts',
-    importance: AndroidImportance.HIGH,
-  });
+//     const newNearbyPlaces = nearby.filter(p => {
+//       const isNew =
+//         !reviewedIds.has(p.place_id) && !wishlistIds.has(p.place_id);
+//       if (!isNew)
+//         console.log(`Place "${p.name}" filtered out (already in lists)`);
+//       return isNew;
+//     });
 
-  await notifee.displayNotification({
-    title,
-    body,
-    android: {
-      channelId,
-      smallIcon: 'ic_launcher',
-      importance: AndroidImportance.HIGH,
-      pressAction: {
-        id: 'default',
-        launchActivity: 'default',
-      },
-    },
-    data: {
-      placeDetails: JSON.stringify({
-        ...place,
-        placeId: place.id,
-        place_id: place.id, // Add both formats for compatibility
-        name: place.name,
-        latitude: place.lat,
-        longitude: place.lng,
-      }),
-      isFromWelcomeBack: place.type === 'Go Again' ? 'true' : 'false',
-      isFromAvoid: place.type === 'Avoid' ? 'true' : 'false',
-    },
-  });
-};
+//     console.log('New Nearby Places count:', newNearbyPlaces.length);
 
-const checkFirstTimeVisit = async (
-  latitude,
-  longitude,
-  reviews,
-  wishlist,
-  notifiedHistory,
-) => {
-  try {
-    const url = `${Google_Base_Url}place/nearbysearch/json?location=${latitude},${longitude}&radius=500&type=restaurant&key=${Google_API_KEY}`;
-    const response = await axios.get(url);
-    const nearby = response.data?.results || [];
-    console.log('resp in checkFirstTimeVisit:-', response?.data?.results);
-    // Filter out places already in lists
-    const reviewedIds = new Set(reviews.map(r => r.placeId));
-    const wishlistIds = new Set(wishlist.map(w => w.placeId));
+//     if (newNearbyPlaces.length > 0) {
+//       // Find the closest one
+//       const closest = newNearbyPlaces[0];
 
-    const newNearbyPlaces = nearby.filter(p => {
-      const isNew =
-        !reviewedIds.has(p.place_id) && !wishlistIds.has(p.place_id);
-      if (!isNew)
-        console.log(`Place "${p.name}" filtered out (already in lists)`);
-      return isNew;
-    });
+//       console.log(`Closest Place: ${closest.name}`);
 
-    console.log('New Nearby Places count:', newNearbyPlaces.length);
+//       // Check if within 200m "Visit" threshold (increased for debugging)
+//       if (
+//         isWithinRadius(
+//           latitude,
+//           longitude,
+//           closest.geometry.location.lat,
+//           closest.geometry.location.lng,
+//           200,
+//         )
+//       ) {
+//         console.log(`User IS within 200m of ${closest.name}`);
+//         const now = Date.now();
+//         const lastNotified = notifiedHistory[closest.place_id] || 0;
 
-    if (newNearbyPlaces.length > 0) {
-      // Find the closest one
-      const closest = newNearbyPlaces[0];
+//         console.log(
+//           `Last notified for ${closest.name}: ${new Date(
+//             lastNotified,
+//           ).toLocaleString()}`,
+//         );
 
-      const distance = isWithinRadius(
-        latitude,
-        longitude,
-        closest.geometry.location.lat,
-        closest.geometry.location.lng,
-        1000, // Check distance within 1km for logging
-      );
+//         // Throttle set to 24 hours
+//         if (now - lastNotified > 24 * 60 * 60 * 1000) {
+//           console.log(`Triggering rate prompt for ${closest.name}`);
+//           await triggerRateNotification({
+//             place_id: closest.place_id,
+//             name: closest.name,
+//             address: closest.vicinity,
+//             rating: closest.rating,
+//             user_ratings_total: closest.user_ratings_total,
+//             geometry: closest.geometry,
+//             photos: closest.photos,
+//           });
 
-      console.log(`Closest Place: ${closest.name}`);
-
-      // Check if within 200m "Visit" threshold (increased for debugging)
-      if (
-        isWithinRadius(
-          latitude,
-          longitude,
-          closest.geometry.location.lat,
-          closest.geometry.location.lng,
-          200,
-        )
-      ) {
-        console.log(`User IS within 200m of ${closest.name}`);
-        const now = Date.now();
-        const lastNotified = notifiedHistory[closest.place_id] || 0;
-
-        console.log(
-          `Last notified for ${closest.name}: ${new Date(
-            lastNotified,
-          ).toLocaleString()}`,
-        );
-
-        // Throttle reduced to 1 minute for testing
-        if (now - lastNotified > 60 * 1000) {
-          console.log(`Triggering rate prompt for ${closest.name}`);
-          await triggerRateNotification({
-            place_id: closest.place_id,
-            name: closest.name,
-            address: closest.vicinity,
-            rating: closest.rating,
-            user_ratings_total: closest.user_ratings_total,
-            geometry: closest.geometry,
-            photos: closest.photos,
-          });
-
-          notifiedHistory[closest.place_id] = now;
-          await AsyncStorage.setItem(
-            'notified_places',
-            JSON.stringify(notifiedHistory),
-          );
-        } else {
-          console.log(
-            `Throttled: Skipping notification for ${closest.name} (notified < 1 min ago)`,
-          );
-        }
-      } else {
-        console.log(`User NOT within 200m of ${closest.name}`);
-      }
-    }
-  } catch (err) {
-    console.log('Error in checkFirstTimeVisit:', err);
-  }
-};
+//           notifiedHistory[closest.place_id] = now;
+//           await AsyncStorage.setItem(
+//             'notified_places',
+//             JSON.stringify(notifiedHistory),
+//           );
+//         } else {
+//           console.log(
+//             `Throttled: Skipping notification for ${closest.name} (notified < 24 hours ago)`,
+//           );
+//         }
+//       } else {
+//         console.log(`User NOT within 200m of ${closest.name}`);
+//       }
+//     }
+//   } catch (err) {
+//     console.log('Error in checkFirstTimeVisit:', err);
+//   }
+// };
 
 export const startBackgroundService = async () => {
   try {

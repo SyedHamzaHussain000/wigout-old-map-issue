@@ -34,6 +34,7 @@ export const endPoints = {
   shareMyListing: '/api/shareMyListing',
   getSharedListingsDetails: '/api/getSharedListingsDetails',
   readAllNotifications: '/api/user/readAllNotifications',
+  notifyForNewPlace: '/api/user/notifyForNewPlace',
 };
 
 export const ShowToast = (type: 'success' | 'error' | 'info', message) => {

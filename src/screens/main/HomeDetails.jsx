@@ -666,7 +666,7 @@ const HomeDetails = ({route}) => {
   // console.log('placeId:-', placeDetails?.placeId);
   // console.log('ratingData:-', ratingData);
   // console.log('isWishList:-', isWishList);
-  console.log('placeDetails:-', placeDetails?.opening_hours?.open_now);
+  console.log('placeDetails:-', placeDetails);
   return (
     <ScreenWrapper>
       <ScrollView showsVerticalScrollIndicator={false}>

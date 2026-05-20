@@ -9,6 +9,9 @@ export function navigate(name, params) {
   if (navigationRef.isReady()) {
     navigationRef.navigate(name, params);
   } else {
-    console.log('NavigationRef not ready');
+    console.log('NavigationRef not ready, retrying in 500ms...');
+    setTimeout(() => {
+      navigate(name, params);
+    }, 500);
   }
 }

@@ -410,7 +410,8 @@ const SharedList = ({navigation, route}) => {
             numberOfLines={1}
           />
           <AppText
-            title={getCategory(item) || 'Establishment'}
+            // title={getCategory(item) || 'Establishment'}
+            title={item?.category || 'Establishment'}
             textSize={1.3}
             textColor="#666"
             numberOfLines={1}
@@ -592,9 +593,7 @@ const SharedList = ({navigation, route}) => {
         <View style={styles.footer}>
           <TouchableOpacity
             activeOpacity={0.8}
-            onPress={() => {
-              navigation.navigate('MainTabs');
-            }}
+            onPress={() => navigation.navigate('Main')}
             style={styles.continueButton}>
             <Svg
               height="58"

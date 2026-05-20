@@ -129,22 +129,54 @@ const Notifications = ({navigation}) => {
       return;
     }
 
-    // Try to get placeId from different possible fields
-    const placeId =
-      item?.placeId || item?.metadata?.placeId || item?.metadata?.place_id;
-
-    if (placeId) {
-      const isAvoid = item?.reviewId?.actionType === 'Avoid';
-      console.log('isAvoid:-', isAvoid);
+    if (item?.metadata?.type === 'NewPlace') {
       navigation.navigate('HomeDetails', {
         placeDetails: {
-          placeId: placeId,
+          placeId: item?.placeId,
         },
-        // If it's avoid, trigger avoid animation. If not, trigger go again animation.
-        isFromWelcomeBack: !isAvoid,
-        isFromAvoid: isAvoid,
+        isFromWelcomeBack: false,
+        isFromAvoid: false,
       });
+      return;
     }
+    if (item?.metadata?.type === 'Go Again') {
+      navigation.navigate('HomeDetails', {
+        placeDetails: {
+          placeId: item?.placeId,
+        },
+        isFromWelcomeBack: true,
+        isFromAvoid: false,
+      });
+      return;
+    }
+
+    if (item?.metadata?.type === 'Avoid') {
+      navigation.navigate('HomeDetails', {
+        placeDetails: {
+          placeId: item?.placeId,
+        },
+        isFromWelcomeBack: false,
+        isFromAvoid: true,
+      });
+      return;
+    }
+
+    // Try to get placeId from different possible fields
+    // const placeId =
+    //   item?.placeId || item?.metadata?.placeId || item?.metadata?.place_id;
+
+    // if (placeId) {
+    //   const isAvoid = item?.reviewId?.actionType === 'Avoid';
+    //   console.log('isAvoid:-', isAvoid);
+    //   navigation.navigate('HomeDetails', {
+    //     placeDetails: {
+    //       placeId: placeId,
+    //     },
+    //     // If it's avoid, trigger avoid animation. If not, trigger go again animation.
+    //     isFromWelcomeBack: !isAvoid,
+    //     isFromAvoid: isAvoid,
+    //   });
+    // }
   };
 
   return (
