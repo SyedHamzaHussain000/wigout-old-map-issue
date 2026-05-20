@@ -9,6 +9,8 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import ScreenWrapper from '../../../components/ScreenWrapper';
+import Modal from 'react-native-modal';
+import FastImage from 'react-native-fast-image';
 import AppColors from '../../../utils/AppColors';
 import AppText from '../../../components/AppTextComps/AppText';
 import {useCustomNavigation} from '../../../utils/Hooks';
@@ -80,65 +82,7 @@ const SpinTheWheel = ({route}) => {
         Alert.alert('Info', 'This is a custom option with no details.');
       }
       setCelebrating(false);
-    }, 2500);
-  };
-
-  const ConfettiParticle = ({index}) => {
-    const translateY = useSharedValue(-20);
-    const translateX = useSharedValue(Math.random() * width);
-    const rotate = useSharedValue(Math.random() * 360);
-    const opacity = useSharedValue(1);
-
-    const colors = [
-      AppColors.BTNCOLOURS,
-      AppColors.Yellow,
-      AppColors.hotPink,
-      AppColors.royalBlue,
-      AppColors.THEME_COLOR,
-    ];
-    const color = colors[index % colors.length];
-
-    useEffect(() => {
-      const delay = Math.random() * 1000;
-      const duration = 1500 + Math.random() * 1000;
-
-      translateY.value = withDelay(
-        delay,
-        withTiming(responsiveHeight(100), {duration}),
-      );
-      rotate.value = withDelay(
-        delay,
-        withTiming(rotate.value + 720, {duration}),
-      );
-      opacity.value = withDelay(
-        delay + duration - 500,
-        withTiming(0, {duration: 500}),
-      );
-    }, []);
-
-    const animatedStyle = useAnimatedStyle(() => ({
-      transform: [
-        {translateY: translateY.value},
-        {translateX: translateX.value},
-        {rotate: `${rotate.value}deg`},
-      ],
-      opacity: opacity.value,
-    }));
-
-    return (
-      <AnimatedReanimated.View
-        style={[
-          {
-            position: 'absolute',
-            width: 8 + Math.random() * 6,
-            height: 8 + Math.random() * 6,
-            backgroundColor: color,
-            borderRadius: index % 2 === 0 ? 0 : 5,
-          },
-          animatedStyle,
-        ]}
-      />
-    );
+    }, 5000);
   };
 
   return (
@@ -220,14 +164,21 @@ const SpinTheWheel = ({route}) => {
           </View>
         </View>
 
-        {/* Confetti Overlay */}
-        {celebrating && (
-          <View style={StyleSheet.absoluteFill} pointerEvents="none">
-            {Array.from({length: 30}).map((_, i) => (
-              <ConfettiParticle key={i} index={i} />
-            ))}
+        {/* Celebration Modal */}
+        <Modal
+          isVisible={celebrating}
+          animationIn="zoomIn"
+          animationOut="zoomOut"
+          backdropOpacity={0.2}
+          style={{margin: 0}}>
+          <View style={styles.gifContainer}>
+            <FastImage
+              source={require('../../../assets/gif/goAgainAnimation.gif')}
+              style={{height: '100%', width: '100%'}}
+              resizeMode={FastImage.resizeMode.contain}
+            />
           </View>
-        )}
+        </Modal>
       </SafeAreaView>
     </ScreenWrapper>
   );
@@ -279,6 +230,15 @@ const styles = StyleSheet.create({
   },
   spinAgainBtn: {
     paddingVertical: 10,
+  },
+  gifContainer: {
+    height: responsiveHeight(95),
+    width: responsiveWidth(100),
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 999,
   },
 });
 

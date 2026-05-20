@@ -6,12 +6,7 @@ import {Provider, useSelector} from 'react-redux';
 import {PersistGate} from 'redux-persist/integration/react';
 import {GoogleSignin} from '@react-native-google-signin/google-signin';
 import {webClientId} from './src/utils/api_content';
-import {
-  listenForForegroundMessages,
-  registerNotifeeForegroundHandler,
-  requestUserPermission,
-  displayNotification, // ✅ Added proper import
-} from './src/utils/Notifications';
+import {listenForForegroundMessages} from './src/utils/Notifications';
 import {
   startBackgroundService,
   stopBackgroundService,
@@ -19,30 +14,15 @@ import {
 import {requestLocationPermission} from './src/utils/Permissions';
 import {navigationRef, navigate} from './src/utils/NavigationService';
 import {EventType} from '@notifee/react-native';
-import {notifyUserForNearbyReviewedPlaces} from './src/GlobalFunctions/main';
 import notifee from '@notifee/react-native';
 import {StatusBar} from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const latitude = '37.4191213';
-const longitude = '-122.0932968';
 
 const BackgroundManager = () => {
   const token = useSelector((state: any) => state?.user?.token);
-  const location = useSelector((state: any) => state?.user?.current_location);
 
   useEffect(() => {
     const startService = async () => {
       if (token) {
-        // ✅ Immediate hit when active/on login
-        // if (location?.latitude) {
-        //   notifyUserForNearbyReviewedPlaces(
-        //     token,
-        //     location?.latitude,
-        //     location?.longitude,
-        //   );
-        // }
-
         const permissionGranted = await requestLocationPermission();
         if (permissionGranted) {
           startBackgroundService();
@@ -85,9 +65,9 @@ const App = () => {
             const isFromAvoid =
               detail.notification?.data?.actionType === 'Avoid';
             const actionType = detail.notification?.data?.actionType;
-            console.log('Action type from notification:', actionType);
-            console.log('Place Details from notification:', placeDetails);
-            console.log('Place ID from notification:', placeId);
+            // console.log('Action type from notification:', actionType);
+            // console.log('Place Details from notification:', placeDetails);
+            // console.log('Place ID from notification:', placeId);
 
             if (!placeDetails && placeId) {
               placeDetails = {placeId};
@@ -161,54 +141,8 @@ const App = () => {
       }
     };
 
-    // Check for notification clicks stored in background
-    const checkAsyncStorageNotification = async () => {
-      try {
-        const lastNotificationStr = await AsyncStorage.getItem(
-          'last_notification_press',
-        );
-        if (lastNotificationStr) {
-          await AsyncStorage.removeItem('last_notification_press');
-          const notification = JSON.parse(lastNotificationStr);
-          console.log(
-            'App resumed/opened from AsyncStorage background press:',
-            notification,
-          );
-          let placeDetails = notification?.data?.placeDetails;
-          const placeId =
-            notification?.data?.placeId || notification?.data?.place_id;
-          const isFromWelcomeBack =
-            notification?.data?.isFromWelcomeBack === 'true';
-          const isFromAvoid = notification?.data?.isFromAvoid === 'true';
-
-          if (!placeDetails && placeId) {
-            placeDetails = {placeId};
-          }
-
-          if (placeDetails) {
-            const parsedDetails =
-              typeof placeDetails === 'string'
-                ? JSON.parse(placeDetails)
-                : placeDetails;
-            console.log(
-              'Navigating (AsyncStorage) to HomeDetails with:',
-              parsedDetails.name || parsedDetails.placeId,
-            );
-            navigate('HomeDetails', {
-              placeDetails: parsedDetails,
-              isFromWelcomeBack,
-              isFromAvoid,
-            });
-          }
-        }
-      } catch (e) {
-        console.error('Error checking AsyncStorage notification:', e);
-      }
-    };
-
     const cleanup = initNotifications();
     checkInitialNotification();
-    checkAsyncStorageNotification();
 
     return () => {
       cleanup.then(unsub => unsub?.());

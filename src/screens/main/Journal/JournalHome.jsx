@@ -10,6 +10,8 @@ import {
   RefreshControl,
 } from 'react-native';
 import {useSelector} from 'react-redux';
+import Modal from 'react-native-modal';
+import FastImage from 'react-native-fast-image';
 
 // Components
 import ScreenWrapper from '../../../components/ScreenWrapper';
@@ -32,6 +34,7 @@ import {
 import {baseUrl} from '../../../utils/api_content';
 import {useCustomNavigation} from '../../../utils/Hooks';
 import {AppIcons} from '../../../assets/icons';
+import AppImages from '../../../assets/images/AppImages';
 import AnimatedReanimated, {
   useSharedValue,
   useAnimatedStyle,
@@ -206,57 +209,6 @@ const JournalHome = ({navigation}) => {
   useEffect(() => {
     fetchNotifications();
   }, [isFocused]);
-
-  const ConfettiParticle = ({index}) => {
-    const translateY = useSharedValue(-20);
-    const translateX = useSharedValue(Math.random() * width);
-    const rotate = useSharedValue(Math.random() * 360);
-    const opacity = useSharedValue(1);
-
-    const color = SPINNER_COLORS[index % SPINNER_COLORS.length];
-
-    useEffect(() => {
-      const delay = Math.random() * 800;
-      const duration = 1500 + Math.random() * 1000;
-
-      translateY.value = withDelay(
-        delay,
-        withTiming(responsiveHeight(100), {duration}),
-      );
-      rotate.value = withDelay(
-        delay,
-        withTiming(rotate.value + 720, {duration}),
-      );
-      opacity.value = withDelay(
-        delay + duration - 500,
-        withTiming(0, {duration: 500}),
-      );
-    }, []);
-
-    const animatedStyle = useAnimatedStyle(() => ({
-      transform: [
-        {translateY: translateY.value},
-        {translateX: translateX.value},
-        {rotate: `${rotate.value}deg`},
-      ],
-      opacity: opacity.value,
-    }));
-
-    return (
-      <AnimatedReanimated.View
-        style={[
-          {
-            position: 'absolute',
-            width: 8 + Math.random() * 6,
-            height: 8 + Math.random() * 6,
-            backgroundColor: color,
-            borderRadius: index % 2 === 0 ? 0 : 5,
-          },
-          animatedStyle,
-        ]}
-      />
-    );
-  };
 
   return (
     <ScreenWrapper>
@@ -452,7 +404,7 @@ const JournalHome = ({navigation}) => {
                           placeDetails: winner.fullData,
                         });
                         setCelebrating(false);
-                      }, 2000);
+                      }, 5000);
                     }}>
                     <AppText
                       title={`Winner: ${winner.name}`}
@@ -517,14 +469,21 @@ const JournalHome = ({navigation}) => {
           <LineBreak space={4} />
         </ScrollView>
 
-        {/* Confetti Overlay */}
-        {celebrating && (
-          <View style={StyleSheet.absoluteFill} pointerEvents="none">
-            {Array.from({length: 30}).map((_, i) => (
-              <ConfettiParticle key={i} index={i} />
-            ))}
+        {/* Celebration Modal */}
+        <Modal
+          isVisible={celebrating}
+          animationIn="zoomIn"
+          animationOut="zoomOut"
+          backdropOpacity={0.2}
+          style={{margin: 0}}>
+          <View style={styles.gifContainer}>
+            <FastImage
+              source={require('../../../assets/gif/goAgainAnimation.gif')}
+              style={{height: '100%', width: '100%'}}
+              resizeMode={FastImage.resizeMode.contain}
+            />
           </View>
-        )}
+        </Modal>
       </SafeAreaView>
     </ScreenWrapper>
   );
@@ -639,5 +598,14 @@ const styles = StyleSheet.create({
   notificationIcon: {
     width: 22,
     height: 22,
+  },
+  gifContainer: {
+    height: responsiveHeight(95),
+    width: responsiveWidth(100),
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 999,
   },
 });
