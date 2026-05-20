@@ -302,7 +302,7 @@ const PremiumUsers = ({navigation}) => {
               onPress={() => toggleOption('isAll')}
             />
             <OptionItem
-              label="Wishlist"
+              label="Bucket List"
               selected={options.isWishlist}
               onPress={() => toggleOption('isWishlist')}
             />

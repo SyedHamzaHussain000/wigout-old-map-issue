@@ -312,9 +312,9 @@ const SharedList = ({navigation, route}) => {
           setWishlistItems(prev =>
             prev.filter(w => w.placeId !== item.place_id),
           );
-          ShowError('Removed from Wish List');
+          ShowError('Removed from Bucket List');
         } else {
-          ShowError(res?.message || 'Failed to remove from Wish List');
+          ShowError(res?.message || 'Failed to remove from Bucket List');
         }
         return;
       }
@@ -354,9 +354,9 @@ const SharedList = ({navigation, route}) => {
       const res = await AddWishList(token, data);
       if (res?.success) {
         setWishlistItems(prev => [...prev, {placeId: item.place_id, ...data}]);
-        ShowError('Added to Wish List');
+        ShowError('Added to Bucket List');
       } else {
-        ShowError(res?.message || 'Failed to add to Wish List');
+        ShowError(res?.message || 'Failed to add to Bucket List');
       }
     } catch (e) {
       console.log('Wishlist toggle error:', e);
@@ -502,7 +502,7 @@ const SharedList = ({navigation, route}) => {
           style={styles.statChip}>
           <FontAwesome name="bookmark" size={16} color="#FF9800" />
           <AppText
-            title={`${wishlistItems.length} Wish List`}
+            title={`${wishlistItems.length} Bucket List`}
             textSize={1.3}
             textColor="#FF9800"
             textFontWeight
@@ -571,7 +571,7 @@ const SharedList = ({navigation, route}) => {
           {sharedPlaces?.wishlist?.length > 0 && (
             <View>
               <AppText
-                title="Wish List:"
+                title="Bucket List:"
                 textSize={2}
                 textFontWeight
                 textColor="#47082E"

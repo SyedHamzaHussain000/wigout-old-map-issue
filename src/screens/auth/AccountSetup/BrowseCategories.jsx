@@ -317,9 +317,9 @@ const BrowseCategories = ({navigation}) => {
         if (res?.success) {
           setWishlistCount(p => p - 1);
           setWishlistItems(p => p.filter(w => w.placeId !== item.place_id));
-          ShowError('Removed from Wish List');
+          ShowError('Removed from Bucket List');
         } else {
-          ShowError(res?.message || 'Failed to remove from Wish List');
+          ShowError(res?.message || 'Failed to remove from Bucket List');
         }
         return;
       }
@@ -363,9 +363,9 @@ const BrowseCategories = ({navigation}) => {
       if (res?.success) {
         setWishlistCount(p => p + 1);
         setWishlistItems(p => [...p, {placeId: item.place_id, ...data}]);
-        ShowError('Added to Wish List');
+        ShowError('Added to Bucket List');
       } else {
-        ShowError(res?.message || 'Failed to add to Wish List');
+        ShowError(res?.message || 'Failed to add to Bucket List');
       }
     } catch (error) {
       console.log('handleWishlistToggle error:', error);
@@ -491,7 +491,7 @@ const BrowseCategories = ({navigation}) => {
           style={styles.statChip}>
           <FontAwesome name="bookmark" size={16} color="#FF9800" />
           <AppText
-            title={`${wishlistCount} Wish List`}
+            title={`${wishlistCount} Bucket List`}
             textSize={1.3}
             textColor="#FF9800"
             textFontWeight

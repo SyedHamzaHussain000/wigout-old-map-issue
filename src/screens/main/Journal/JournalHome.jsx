@@ -324,7 +324,7 @@ const JournalHome = ({navigation}) => {
                 />
               </View>
               <AppText
-                title={'Wish List'}
+                title={'Bucket List'}
                 textColor={AppColors.BLACK}
                 textSize={1.8}
                 textFontWeight

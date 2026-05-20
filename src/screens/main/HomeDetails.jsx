@@ -580,9 +580,9 @@ const HomeDetails = ({route}) => {
         console.log('RemoveWishList response in HomeDetails:', res);
         if (res?.success) {
           setIsWishList(false);
-          ShowError(res?.msg || 'Removed from wishlist', 2000);
+          ShowError(res?.msg || 'Removed from Bucket List', 2000);
         } else {
-          ShowError(res?.message || 'Failed to remove from wishlist', 2000);
+          ShowError(res?.message || 'Failed to remove from Bucket List', 2000);
         }
       } else {
         const data = {
@@ -610,9 +610,9 @@ const HomeDetails = ({route}) => {
         console.log('AddWishList response in HomeDetails:-', res);
         if (res?.success) {
           setIsWishList(true);
-          ShowError(res?.msg || 'Added to wishlist', 2000);
+          ShowError(res?.msg || 'Added to Bucket List', 2000);
         } else {
-          ShowError(res?.message || 'Failed to add to wishlist', 2000);
+          ShowError(res?.message || 'Failed to add to Bucket List', 2000);
         }
       }
     } catch (error) {
@@ -1055,7 +1055,9 @@ const HomeDetails = ({route}) => {
 
             {personalReviews.length === 0 && (
               <AppButton
-                title={isWishList ? 'Remove from Wishlist' : 'Add to Wishlist'}
+                title={
+                  isWishList ? 'Remove from Bucket List' : 'Add to Bucket List'
+                }
                 handlePress={toggleWishlist}
                 btnWidth={92}
                 btnBackgroundColor={AppColors.wishlist}

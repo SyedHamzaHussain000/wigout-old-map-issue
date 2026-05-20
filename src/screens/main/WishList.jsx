@@ -41,7 +41,6 @@ const WishList = ({navigation}) => {
   };
 
   const renderItem = ({item}) => {
-    console.log('item in wishlist:-', item);
     return (
       <View style={{marginBottom: responsiveHeight(2)}}>
         <HomeCard
@@ -62,9 +61,9 @@ const WishList = ({navigation}) => {
   return (
     <ScreenWrapper>
       <SafeAreaView style={{flex: 1}}>
-        <AppHeader heading="WishList" onBackPress />
+        <AppHeader heading="Bucket List" onBackPress />
         <AppText
-          title={`${wishlistItems.length} places in your wishlist`}
+          title={`${wishlistItems.length} places in your Bucket List`}
           textColor={AppColors.GRAY}
           textSize={1.6}
           paddingHorizontal={5}
@@ -92,7 +91,7 @@ const WishList = ({navigation}) => {
             <View
               style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
               <AppText
-                title="Your Wishlist is empty"
+                title="Your Bucket List is empty"
                 textColor={AppColors.GRAY}
               />
             </View>

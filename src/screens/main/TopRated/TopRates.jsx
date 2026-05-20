@@ -251,7 +251,7 @@ const TopRated = ({navigation}) => {
   return (
     <ScreenWrapper>
       <SafeAreaView style={{flex: 1}}>
-        <AppHeader heading={`Top Rated ${selectedCategory.name}`} />
+        <AppHeader heading={`Local Faves ${selectedCategory.name}`} />
 
         <View style={styles.statsRow}>
           <TouchableOpacity
@@ -283,7 +283,7 @@ const TopRated = ({navigation}) => {
             style={styles.statChip}>
             <FontAwesome name="bookmark" size={16} color="#FF9800" />
             <AppText
-              title={`${wishlistItems.length} Wish List`}
+              title={`${wishlistItems.length} Bucket List`}
               textSize={1.3}
               textColor="#FF9800"
               textFontWeight
