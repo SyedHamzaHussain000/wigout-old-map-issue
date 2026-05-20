@@ -1,11 +1,6 @@
-import {Platform} from 'react-native';
 import Toast from 'react-native-toast-message';
 
-// export const Google_API_KEY = 'AIzaSyBRedR6LuuBpRcW87u8vrA0KXeC3K56--s';
-export const Google_API_KEY =
-  Platform.OS === 'ios'
-    ? 'AIzaSyC9ivcuNTxfByE1w13AtiD7oKXrY7xcoiM'
-    : 'AIzaSyBRedR6LuuBpRcW87u8vrA0KXeC3K56--s';
+export const Google_API_KEY = 'AIzaSyBRedR6LuuBpRcW87u8vrA0KXeC3K56--s';
 export const Google_Base_Url = 'https://maps.googleapis.com/maps/api/';
 export const Google_Places_Images = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&key=${Google_API_KEY}&photo_reference=`;
 

@@ -11,8 +11,12 @@ export const ApiCall = async (method, endpoint, data, token = null) => {
         'Content-Type': 'application/json',
         ...(token && {Authorization: `Bearer ${token}`}), // add token only if exists
       },
-      data: data ? data : '',
     };
+
+    if (method.toUpperCase() !== 'GET') {
+      config.data = data ? data : '';
+    }
+
     // console.log(`Making ${method} request to: ${config.url}`);
     // console.log(`Payload:`, JSON.stringify(data));
     const res = await axios.request(config); // ✅ Use axios.request for broader compatibility with DELETE bodies
@@ -38,8 +42,11 @@ export const ApiCallWithUserId = async (
         'Content-Type': 'application/json',
         ...(token && {Authorization: `Bearer ${token}`}), // add token only if exists
       },
-      data: data ? data : '',
     };
+
+    if (method.toUpperCase() !== 'GET') {
+      config.data = data ? data : '';
+    }
 
     const res = await axios.request(config);
     return res.data;

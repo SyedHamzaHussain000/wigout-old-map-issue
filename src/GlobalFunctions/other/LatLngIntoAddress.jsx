@@ -1,7 +1,7 @@
 import axios from 'axios';
 import {Google_API_KEY, Google_Base_Url} from '../../utils/api_content';
 
-export default LatLngIntoAddress = async (lat, lng) => {
+const LatLngIntoAddress = async (lat, lng) => {
   try {
     // 1. Coordinates ko safe string mein convert karein aur fix karein (6 decimal places tak)
     // Is se extra long floating numbers clean ho jate hain
@@ -14,7 +14,30 @@ export default LatLngIntoAddress = async (lat, lng) => {
     // 3. Final URL construct karein
     const url = `${Google_Base_Url}geocode/json?latlng=${latLngParam}&key=${Google_API_KEY}`;
 
-    console.log('Requesting Clean iOS URL:-', url);
+    console.log('LatLngIntoAddress URL:-', url);
+
+    // Temporary diagnostic tests
+    try {
+      const testRes = await axios.get('https://httpbin.org/get');
+      console.log('Test Request httpbin Success:', testRes.data ? 'Yes' : 'No');
+    } catch (e) {
+      console.log('Test Request httpbin Failed:', e.message);
+    }
+
+    try {
+      const testRes = await axios.get('https://www.google.com');
+      console.log('Test Request google.com Success:', testRes.status);
+    } catch (e) {
+      console.log('Test Request google.com Failed:', e.message);
+    }
+
+    try {
+      const fetchRes = await fetch(url);
+      const fetchJson = await fetchRes.json();
+      console.log('Test fetch Google API success:', fetchJson ? 'Yes' : 'No');
+    } catch (e) {
+      console.log('Test fetch Google API failed:', e.message);
+    }
 
     const res = await axios.get(url);
     console.log('res in LatLngIntoAddress:-', res?.data);
@@ -26,13 +49,24 @@ export default LatLngIntoAddress = async (lat, lng) => {
 
     return res?.data?.results[0]?.formatted_address || 'Address not found';
   } catch (error) {
-    console.log(
-      'Error in LatLngIntoAddress:-',
-      error?.response?.data || error.message || error,
-    );
+    console.log('Error in LatLngIntoAddress detail:', {
+      message: error.message,
+      code: error.code,
+      config: error.config,
+      request: error.request
+        ? {
+            status: error.request.status,
+            readyState: error.request.readyState,
+            response: error.request.response,
+            _response: error.request._response,
+          }
+        : null,
+    });
     return null;
   }
 };
+
+export default LatLngIntoAddress;
 
 // import axios from 'axios';
 // import {Google_API_KEY, Google_Base_Url} from '../../utils/api_content';

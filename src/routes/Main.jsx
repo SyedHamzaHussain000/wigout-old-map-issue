@@ -1,4 +1,5 @@
 import React from 'react';
+import {Platform} from 'react-native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {createStackNavigator} from '@react-navigation/stack';
 
@@ -49,6 +50,7 @@ import SharedList from '../screens/main/SharedList';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
+const IOS = Platform.OS === 'ios';
 
 /** * Configuration for Tab Icons to keep the component clean
  */
@@ -91,7 +93,7 @@ const MyTabs = () => {
           height: responsiveHeight(10),
           paddingTop: responsiveHeight(1.5),
           backgroundColor: AppColors.BTNCOLOURS,
-          marginTop: -responsiveHeight(2.4),
+          marginTop: -responsiveHeight(IOS ? 4 : 2.4),
         },
         tabBarIcon: ({focused, color, size}) => {
           const config = TAB_CONFIG[route.name];

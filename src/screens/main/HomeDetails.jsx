@@ -807,7 +807,7 @@ const HomeDetails = ({route}) => {
               onPress={handleOpenMap}
               style={styles.mapContainer}>
               <MapView
-                provider={PROVIDER_GOOGLE}
+                provider={Platform.OS === 'ios' ? undefined : PROVIDER_GOOGLE}
                 style={styles.map}
                 scrollEnabled={false}
                 zoomEnabled={false}
@@ -891,7 +891,7 @@ const HomeDetails = ({route}) => {
                             />
 
                             <StarRating
-                              rating={review.rating}
+                              rating={review.rating || 0}
                               onChange={() => {}}
                               starSize={20}
                               color={AppColors.BTNCOLOURS}
