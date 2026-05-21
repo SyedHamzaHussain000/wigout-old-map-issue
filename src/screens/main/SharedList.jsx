@@ -1,5 +1,5 @@
 /* eslint-disable react-native/no-inline-styles */
-import React, {useState, useEffect, useCallback, useMemo} from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -9,8 +9,8 @@ import {
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
-import {useDispatch, useSelector} from 'react-redux';
-import Svg, {Defs, LinearGradient, Stop, Rect} from 'react-native-svg';
+import { useDispatch, useSelector } from 'react-redux';
+import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 
 // Components & Utils
 import AppText from '../../components/AppTextComps/AppText';
@@ -19,7 +19,7 @@ import {
   responsiveWidth,
   responsiveHeight,
 } from '../../utils/Responsive_Dimensions';
-import {useCustomNavigation} from '../../utils/Hooks';
+import { useCustomNavigation } from '../../utils/Hooks';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import ShowError from '../../utils/ShowError';
@@ -35,21 +35,21 @@ import {
   GetWishList,
   RemoveWishList,
 } from '../../ApiCalls/Main/WishList_API/WishListAPI';
-import {Google_Places_Images} from '../../utils/api_content';
+import { Google_Places_Images } from '../../utils/api_content';
 import ScreenWrapper from '../../components/ScreenWrapper';
 import AppHeader from '../../components/AppHeader';
-import {GetSharedList} from '../../GlobalFunctions/main';
-import {getCategory} from '../../utils/functions';
+import { GetSharedList } from '../../GlobalFunctions/main';
+import { getCategory } from '../../utils/functions';
 
-const SharedList = ({navigation, route}) => {
+const SharedList = ({ navigation, route }) => {
   let data = route?.params?.data;
   let name = data?.message?.split(' ')[0];
   let avoidIds = data?.metadata?.avoidIds || [];
   let goAgainIds = data?.metadata?.goAgainIds || [];
   let wishlistIds = data?.metadata?.wishlistIds || [];
 
-  const {navigateToRoute} = useCustomNavigation();
-  const {token, current_location} = useSelector(state => state.user);
+  const { navigateToRoute } = useCustomNavigation();
+  const { token, current_location } = useSelector(state => state.user);
 
   const [loading, setLoading] = useState(false);
 
@@ -133,7 +133,7 @@ const SharedList = ({navigation, route}) => {
       const existing = likedItems.find(l => l.placeId === item.place_id);
 
       if (existing) {
-        const res = await RemoveReview({reviewId: existing._id}, token);
+        const res = await RemoveReview({ reviewId: existing._id }, token);
         if (res?.success) {
           setLikedItems(prev => prev.filter(l => l._id !== existing._id));
           ShowError('Removed from Go Again');
@@ -143,7 +143,7 @@ const SharedList = ({navigation, route}) => {
 
       const inAvoid = avoidItems.find(a => a.placeId === item.place_id);
       if (inAvoid) {
-        const revRes = await RemoveReview({reviewId: inAvoid._id}, token);
+        const revRes = await RemoveReview({ reviewId: inAvoid._id }, token);
         if (revRes?.success) {
           setAvoidItems(prev => prev.filter(a => a._id !== inAvoid._id));
         }
@@ -152,7 +152,7 @@ const SharedList = ({navigation, route}) => {
       // Exclusivity: Remove from Wishlist first
       const inWish = wishlistItems.find(w => w.placeId === item.place_id);
       if (inWish) {
-        const wishRes = await RemoveWishList(token, {placeId: item.place_id});
+        const wishRes = await RemoveWishList(token, { placeId: item.place_id });
         if (wishRes?.success) {
           setWishlistItems(prev =>
             prev.filter(w => w.placeId !== item.place_id),
@@ -192,7 +192,7 @@ const SharedList = ({navigation, route}) => {
       if (res?.success) {
         setLikedItems(prev => [
           ...prev,
-          {_id: res.review?._id, placeId: item.place_id},
+          { _id: res.review?._id, placeId: item.place_id },
         ]);
         ShowError('Added to Go Again');
       }
@@ -213,7 +213,7 @@ const SharedList = ({navigation, route}) => {
     if (existing) {
       setActionLoading(true);
       try {
-        const res = await RemoveReview({reviewId: existing._id}, token);
+        const res = await RemoveReview({ reviewId: existing._id }, token);
         if (res?.success) {
           setAvoidItems(prev => prev.filter(a => a._id !== existing._id));
           ShowError('Removed from Avoid');
@@ -261,14 +261,14 @@ const SharedList = ({navigation, route}) => {
         return res;
       } catch (e) {
         console.log('Error avoiding place:', place.name, e);
-        return {success: false};
+        return { success: false };
       }
     };
 
     try {
       const inLiked = likedItems.find(l => l.placeId === item.place_id);
       if (inLiked) {
-        const resLiked = await RemoveReview({reviewId: inLiked._id}, token);
+        const resLiked = await RemoveReview({ reviewId: inLiked._id }, token);
         if (resLiked?.success) {
           setLikedItems(prev => prev.filter(l => l._id !== inLiked._id));
         }
@@ -277,7 +277,7 @@ const SharedList = ({navigation, route}) => {
       // Exclusivity: Remove from Wishlist first
       const inWish = wishlistItems.find(w => w.placeId === item.place_id);
       if (inWish) {
-        const wishRes = await RemoveWishList(token, {placeId: item.place_id});
+        const wishRes = await RemoveWishList(token, { placeId: item.place_id });
         if (wishRes?.success) {
           setWishlistItems(prev =>
             prev.filter(w => w.placeId !== item.place_id),
@@ -289,7 +289,7 @@ const SharedList = ({navigation, route}) => {
       if (res?.success) {
         setAvoidItems(prev => [
           ...prev,
-          {_id: res.review?._id, placeId: item.place_id},
+          { _id: res.review?._id, placeId: item.place_id },
         ]);
         ShowError('Added to Avoid');
       }
@@ -307,12 +307,12 @@ const SharedList = ({navigation, route}) => {
     try {
       const existing = wishlistItems.find(w => w.placeId === item.place_id);
       if (existing) {
-        const res = await RemoveWishList(token, {placeId: item.place_id});
+        const res = await RemoveWishList(token, { placeId: item.place_id });
         if (res?.success) {
           setWishlistItems(prev =>
             prev.filter(w => w.placeId !== item.place_id),
           );
-          ShowError('Removed from Bucket List');
+          ShowError('Removed from Bucket List Successfully.');
         } else {
           ShowError(res?.message || 'Failed to remove from Bucket List');
         }
@@ -322,7 +322,7 @@ const SharedList = ({navigation, route}) => {
       // Mutual exclusivity: Remove from Go Again
       const inLiked = likedItems.find(l => l.placeId === item.place_id);
       if (inLiked) {
-        const resLiked = await RemoveReview({reviewId: inLiked._id}, token);
+        const resLiked = await RemoveReview({ reviewId: inLiked._id }, token);
         if (resLiked?.success) {
           setLikedItems(prev => prev.filter(l => l._id !== inLiked._id));
         }
@@ -331,7 +331,7 @@ const SharedList = ({navigation, route}) => {
       // Mutual exclusivity: Remove from Avoid
       const inAvoid = avoidItems.find(a => a.placeId === item.place_id);
       if (inAvoid) {
-        const resAvoid = await RemoveReview({reviewId: inAvoid._id}, token);
+        const resAvoid = await RemoveReview({ reviewId: inAvoid._id }, token);
         if (resAvoid?.success) {
           setAvoidItems(prev => prev.filter(a => a._id !== inAvoid._id));
         }
@@ -353,8 +353,8 @@ const SharedList = ({navigation, route}) => {
 
       const res = await AddWishList(token, data);
       if (res?.success) {
-        setWishlistItems(prev => [...prev, {placeId: item.place_id, ...data}]);
-        ShowError('Added to Bucket List');
+        setWishlistItems(prev => [...prev, { placeId: item.place_id, ...data }]);
+        ShowError('Added to Bucket List Successfully.');
       } else {
         ShowError(res?.message || 'Failed to add to Bucket List');
       }
@@ -367,7 +367,7 @@ const SharedList = ({navigation, route}) => {
   };
 
   // 5. Render Helpers
-  const renderPlaceItem = ({item}) => {
+  const renderPlaceItem = ({ item }) => {
     const name = item.restaurantName || item.name || 'No Name';
     const photosArr = item.photos || [];
     let imageUrl = null;
@@ -392,16 +392,16 @@ const SharedList = ({navigation, route}) => {
 
     return (
       <TouchableOpacity
-        onPress={() => navigateToRoute('HomeDetails', {placeDetails: item})}
+        onPress={() => navigateToRoute('HomeDetails', { placeDetails: item })}
         style={styles.placeItem}>
         {imageUrl ? (
-          <Image source={{uri: imageUrl}} style={styles.placeImage} />
+          <Image source={{ uri: imageUrl }} style={styles.placeImage} />
         ) : (
           <View style={[styles.placeImage, styles.centerGray]}>
             <Ionicons name="image-outline" size={24} color="#CCC" />
           </View>
         )}
-        <View style={{marginLeft: 15, flex: 1}}>
+        <View style={{ marginLeft: 15, flex: 1 }}>
           <AppText
             title={name}
             textSize={1.7}
@@ -428,7 +428,7 @@ const SharedList = ({navigation, route}) => {
           <TouchableOpacity
             onPress={() => handleHeart(item)}
             disabled={actionLoading}
-            style={[styles.circleActionBtn, actionLoading && {opacity: 0.6}]}>
+            style={[styles.circleActionBtn, actionLoading && { opacity: 0.6 }]}>
             <Ionicons
               name={isLiked ? 'heart' : 'heart-outline'}
               size={22}
@@ -439,7 +439,7 @@ const SharedList = ({navigation, route}) => {
           <TouchableOpacity
             onPress={() => handleAvoid(item)}
             disabled={actionLoading}
-            style={[styles.circleActionBtn, actionLoading && {opacity: 0.6}]}>
+            style={[styles.circleActionBtn, actionLoading && { opacity: 0.6 }]}>
             <Ionicons
               name={isAvoided ? 'thumbs-down' : 'thumbs-down-outline'}
               size={22}
@@ -450,10 +450,10 @@ const SharedList = ({navigation, route}) => {
           <TouchableOpacity
             onPress={() => handleWishlistToggle(item)}
             disabled={actionLoading}
-            style={[styles.circleActionBtn, actionLoading && {opacity: 0.6}]}>
-            <FontAwesome
-              name={isWishlisted ? 'bookmark' : 'bookmark-o'}
-              size={20}
+            style={[styles.circleActionBtn, actionLoading && { opacity: 0.6 }]}>
+            <Ionicons
+              name={isWishlisted ? 'basket' : 'basket-outline'}
+              size={22}
               color={isWishlisted ? '#FF9800' : '#47082E'}
             />
           </TouchableOpacity>
@@ -463,7 +463,7 @@ const SharedList = ({navigation, route}) => {
   };
 
   const ListHeader = () => (
-    <View style={{paddingBottom: 10}}>
+    <View style={{ paddingBottom: 10 }}>
       {/* <AppText
         title={`${name} shared their listings with you.`}
         textSize={1.7}
@@ -500,7 +500,7 @@ const SharedList = ({navigation, route}) => {
         <TouchableOpacity
           onPress={() => navigateToRoute('WishList')}
           style={styles.statChip}>
-          <FontAwesome name="bookmark" size={16} color="#FF9800" />
+          <Ionicons name="basket" size={16} color="#FF9800" />
           <AppText
             title={`${wishlistItems.length} Bucket List`}
             textSize={1.3}
@@ -514,7 +514,7 @@ const SharedList = ({navigation, route}) => {
         <ActivityIndicator
           size="large"
           color={AppColors.BTNCOLOURS}
-          style={{marginTop: 20}}
+          style={{ marginTop: 20 }}
         />
       )}
     </View>
@@ -548,7 +548,7 @@ const SharedList = ({navigation, route}) => {
                 paddingBottom={2}
               />
               {sharedPlaces?.goAgain?.map(item => (
-                <View key={item?.place_id}>{renderPlaceItem({item})}</View>
+                <View key={item?.place_id}>{renderPlaceItem({ item })}</View>
               ))}
             </View>
           )}
@@ -563,7 +563,7 @@ const SharedList = ({navigation, route}) => {
                 paddingBottom={2}
               />
               {sharedPlaces?.avoid?.map(item => (
-                <View key={item?.place_id}>{renderPlaceItem({item})}</View>
+                <View key={item?.place_id}>{renderPlaceItem({ item })}</View>
               ))}
             </View>
           )}
@@ -578,13 +578,13 @@ const SharedList = ({navigation, route}) => {
                 paddingBottom={2}
               />
               {sharedPlaces?.wishlist?.map(item => (
-                <View key={item?.place_id}>{renderPlaceItem({item})}</View>
+                <View key={item?.place_id}>{renderPlaceItem({ item })}</View>
               ))}
             </View>
           )}
 
           {!loading && !hasData && (
-            <View style={{marginTop: 50, alignItems: 'center'}}>
+            <View style={{ marginTop: 50, alignItems: 'center' }}>
               <AppText title="No Shared Listing" textColor="#666" />
             </View>
           )}
@@ -593,7 +593,7 @@ const SharedList = ({navigation, route}) => {
         <View style={styles.footer}>
           <TouchableOpacity
             activeOpacity={0.8}
-            onPress={() => navigation.navigate('Main')}
+            onPress={() => navigation.navigate('MainTabs', { screen: 'Home' })}
             style={styles.continueButton}>
             <Svg
               height="58"
@@ -621,14 +621,14 @@ const SharedList = ({navigation, route}) => {
 };
 
 const styles = StyleSheet.create({
-  container: {flex: 1},
+  container: { flex: 1 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 10,
   },
-  listContent: {paddingHorizontal: 20, paddingBottom: 120},
+  listContent: { paddingHorizontal: 20, paddingBottom: 120 },
   placeItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -650,7 +650,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#F0F0F0',
   },
-  actionButtons: {flexDirection: 'row', gap: 10},
+  actionButtons: { flexDirection: 'row', gap: 10 },
   circleActionBtn: {
     width: 38,
     height: 38,

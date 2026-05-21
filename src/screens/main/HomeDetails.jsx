@@ -1,4 +1,4 @@
-import React, {useEffect, useState, useMemo, useRef, Fragment} from 'react';
+import React, { useEffect, useState, useMemo, useRef, Fragment } from 'react';
 import {
   View,
   ScrollView,
@@ -9,7 +9,7 @@ import {
   Linking,
   Platform,
 } from 'react-native';
-import MapView, {Marker, PROVIDER_GOOGLE} from 'react-native-maps';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 
 import axios from 'axios';
 import Modal from 'react-native-modal';
@@ -18,7 +18,7 @@ import Sound from 'react-native-sound';
 import Entypo from 'react-native-vector-icons/Entypo';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AntDesign from 'react-native-vector-icons/AntDesign';
-import {useDispatch, useSelector} from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 
 // Enable playback in silence mode
 Sound.setCategory('Playback');
@@ -42,7 +42,7 @@ import {
   Google_Base_Url,
   Google_Places_Images,
 } from '../../utils/api_content';
-import {setPlaceDetail} from '../../redux/Slices';
+import { setPlaceDetail } from '../../redux/Slices';
 import {
   AddReviews,
   GetReviews,
@@ -54,17 +54,17 @@ import {
   GetWishList,
   RemoveWishList,
 } from '../../ApiCalls/Main/WishList_API/WishListAPI';
-import {RemoveReview} from '../../ApiCalls/Main/Reviews/ReviewsApiCall';
+import { RemoveReview } from '../../ApiCalls/Main/Reviews/ReviewsApiCall';
 import ShowError from '../../utils/ShowError';
 import ScreenWrapper from '../../components/ScreenWrapper';
 import moment from 'moment';
 import StarRating from 'react-native-star-rating-widget';
 import AvoidModal from '../../components/AvoidModal';
 import RemoveReviewModal from '../../components/RemoveReviewModal';
-import {getCategory} from '../../utils/functions';
+import { getCategory } from '../../utils/functions';
 
-const HomeDetails = ({route}) => {
-  const {placeDetails} = route.params;
+const HomeDetails = ({ route }) => {
+  const { placeDetails } = route.params;
   const token = useSelector(state => state.user.token);
   const userData = useSelector(state => state.user.userData);
   const dispatch = useDispatch();
@@ -191,7 +191,7 @@ const HomeDetails = ({route}) => {
       if (route.params?.isFromAvoid) {
         setTimeout(() => {
           setShowAvoidCelebration(true);
-          setTimeout(() => setShowAvoidCelebration(false), 5000);
+          setTimeout(() => setShowAvoidCelebration(false), 7000);
         }, 2000);
       }
     } else {
@@ -309,7 +309,7 @@ const HomeDetails = ({route}) => {
 
   // Compute breakdown from In-App reviews
   const ratingData = useMemo(() => {
-    const breakdown = inAppBreakdown || {1: 0, 2: 0, 3: 0, 4: 0, 5: 0};
+    const breakdown = inAppBreakdown || { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
     const total = inAppSummary?.totalReviews || 0;
 
     return Object.keys(breakdown)
@@ -378,7 +378,7 @@ const HomeDetails = ({route}) => {
         return res;
       } catch (err) {
         console.log('Error adding review for place:', place?.name, err);
-        return {success: false};
+        return { success: false };
       }
     };
 
@@ -390,7 +390,7 @@ const HomeDetails = ({route}) => {
           setTimeout(() => {
             ShowError('Avoided all branches successfully', 2000);
             setShowAvoidCelebration(true);
-            setTimeout(() => setShowAvoidCelebration(false), 5000);
+            setTimeout(() => setShowAvoidCelebration(false), 7000);
           }, 600);
           setTypeReview('');
           setRating(0);
@@ -409,7 +409,7 @@ const HomeDetails = ({route}) => {
             setShowAvoidModal(false);
             setTimeout(() => {
               setShowAvoidCelebration(true);
-              setTimeout(() => setShowAvoidCelebration(false), 5000);
+              setTimeout(() => setShowAvoidCelebration(false), 7000);
             }, 600);
           }
           setTypeReview('');
@@ -500,7 +500,7 @@ const HomeDetails = ({route}) => {
 
     setRemoveReviewLoader(true);
     try {
-      const res = await RemoveReview({reviewId}, token);
+      const res = await RemoveReview({ reviewId }, token);
       if (res?.success) {
         ShowError(res.msg || 'Review removed successfully', 2000);
         const id = placeDetails?.placeId || placeDetails?.place_id;
@@ -588,11 +588,11 @@ const HomeDetails = ({route}) => {
     try {
       if (isWishList) {
         console.log('Removing from wishlist:', placeId);
-        const res = await RemoveWishList(token, {placeId});
+        const res = await RemoveWishList(token, { placeId });
         console.log('RemoveWishList response in HomeDetails:', res);
         if (res?.success) {
           setIsWishList(false);
-          ShowError(res?.msg || 'Removed from Bucket List', 2000);
+          ShowError(res?.msg || 'Removed from Bucket List Successfully.', 2000);
         } else {
           ShowError(res?.message || 'Failed to remove from Bucket List', 2000);
         }
@@ -622,7 +622,7 @@ const HomeDetails = ({route}) => {
         console.log('AddWishList response in HomeDetails:-', res);
         if (res?.success) {
           setIsWishList(true);
-          ShowError(res?.msg || 'Added to Bucket List', 2000);
+          ShowError(res?.msg || 'Added to Bucket List Successfully.', 2000);
         } else {
           ShowError(res?.message || 'Failed to add to Bucket List', 2000);
         }
@@ -678,7 +678,8 @@ const HomeDetails = ({route}) => {
   // console.log('placeId:-', placeDetails?.placeId);
   // console.log('ratingData:-', ratingData);
   // console.log('isWishList:-', isWishList);
-  console.log('placeDetails:-', placeDetails);
+  // console.log('placeDetails:-', placeDetails);
+  console.log('morePlaceDetails:-', morePlaceDetails);
   return (
     <ScreenWrapper>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -688,7 +689,7 @@ const HomeDetails = ({route}) => {
 
         <View style={styles.contentPadding}>
           <View style={styles.titleRow}>
-            <View style={{width: responsiveWidth(70)}}>
+            <View style={{ width: responsiveWidth(70) }}>
               <AppText
                 title={
                   morePlaceDetails?.name || placeDetails?.name || 'No Name'
@@ -704,7 +705,7 @@ const HomeDetails = ({route}) => {
             <View style={styles.openClosedBadge}>
               <AppText
                 title={
-                  placeDetails?.opening_hours?.open_now ? 'Open Now' : 'Closed'
+                  morePlaceDetails?.opening_hours?.open_now ? 'Open Now' : 'Closed'
                 }
                 textColor={AppColors.BTNCOLOURS}
                 textSize={1.5}
@@ -731,7 +732,7 @@ const HomeDetails = ({route}) => {
                 scrollEnabled={false}
                 keyExtractor={item => item.id}
                 ItemSeparatorComponent={<LineBreak space={2} />}
-                renderItem={({item}) => (
+                renderItem={({ item }) => (
                   <View style={styles.ratingRow}>
                     <View style={styles.starLabel}>
                       <AppText
@@ -748,13 +749,13 @@ const HomeDetails = ({route}) => {
                     <RatingWithProgressbar
                       progress={item.progress}
                       animated
-                      style={{width: '70%'}}
+                      style={{ width: '70%' }}
                     />
                   </View>
                 )}
               />
 
-              <View style={{gap: 20, marginLeft: 10}}>
+              <View style={{ gap: 20, marginLeft: 10 }}>
                 <View>
                   <View style={styles.compactRow}>
                     <AppText
@@ -866,85 +867,85 @@ const HomeDetails = ({route}) => {
 
               {personalReviews.length > 0
                 ? personalReviews.map((review, index) => (
-                    <View key={index}>
-                      <View style={styles.reviewCard}>
-                        <View style={styles.reviewHeader}>
-                          <FastImage
-                            source={
-                              userData?.profileImage
-                                ? {uri: `${baseUrl}/${userData.profileImage}`}
-                                : AppImages.USER_PLACEHOLDER
-                            }
-                            style={styles.authorPhoto}
-                          />
-                          <View style={{flex: 1}}>
-                            <View
-                              style={[
-                                styles.rowAlignCenter,
-                                {justifyContent: 'space-between'},
-                              ]}>
-                              <AppText
-                                title={userData?.fullName || 'You'}
-                                textColor={AppColors.BLACK}
-                                textSize={1.6}
-                                textFontWeight
-                              />
-                            </View>
+                  <View key={index}>
+                    <View style={styles.reviewCard}>
+                      <View style={styles.reviewHeader}>
+                        <FastImage
+                          source={
+                            userData?.profileImage
+                              ? { uri: `${baseUrl}/${userData.profileImage}` }
+                              : AppImages.USER_PLACEHOLDER
+                          }
+                          style={styles.authorPhoto}
+                        />
+                        <View style={{ flex: 1 }}>
+                          <View
+                            style={[
+                              styles.rowAlignCenter,
+                              { justifyContent: 'space-between' },
+                            ]}>
                             <AppText
-                              title={review.actionType}
-                              textColor={
-                                review.actionType === 'Avoid'
-                                  ? AppColors.avoid
-                                  : AppColors.goAgain
-                              }
-                              textSize={1.3}
+                              title={userData?.fullName || 'You'}
+                              textColor={AppColors.BLACK}
+                              textSize={1.6}
                               textFontWeight
-                              paddingBottom={0.5}
-                            />
-
-                            <StarRating
-                              rating={review.rating || 0}
-                              onChange={() => {}}
-                              starSize={20}
-                              color={AppColors.BTNCOLOURS}
-                              emptyColor={AppColors.GRAY}
-                              starContainerStyle={{marginLeft: -8}}
                             />
                           </View>
+                          <AppText
+                            title={review.actionType}
+                            textColor={
+                              review.actionType === 'Avoid'
+                                ? AppColors.avoid
+                                : AppColors.goAgain
+                            }
+                            textSize={1.3}
+                            textFontWeight
+                            paddingBottom={0.5}
+                          />
 
-                          <View style={styles.timeContainer}>
-                            <AppText
-                              title={moment(review.createdAt).fromNow()}
-                              textColor={AppColors.GRAY}
-                              textSize={1.2}
-                              paddingLeft={2}
-                            />
-                          </View>
+                          <StarRating
+                            rating={review.rating || 0}
+                            onChange={() => { }}
+                            starSize={20}
+                            color={AppColors.BTNCOLOURS}
+                            emptyColor={AppColors.GRAY}
+                            starContainerStyle={{ marginLeft: -8 }}
+                          />
                         </View>
 
-                        <LineBreak space={1.5} />
-                        <AppText
-                          title={review.reviewText || 'No comment provided'}
-                          textColor={AppColors.BLACK}
-                          textSize={1.5}
-                          lineHeight={2}
-                        />
-
-                        {!isBrandBlocked && (
-                          <TouchableOpacity
-                            style={styles.editButton}
-                            onPress={handleEditPress}>
-                            <AntDesign
-                              name="edit"
-                              size={12}
-                              color={AppColors.WHITE}
-                            />
-                          </TouchableOpacity>
-                        )}
+                        <View style={styles.timeContainer}>
+                          <AppText
+                            title={moment(review.createdAt).fromNow()}
+                            textColor={AppColors.GRAY}
+                            textSize={1.2}
+                            paddingLeft={2}
+                          />
+                        </View>
                       </View>
-                      <LineBreak space={2} />
+
+                      <LineBreak space={1.5} />
+                      <AppText
+                        title={review.reviewText || 'No comment provided'}
+                        textColor={AppColors.BLACK}
+                        textSize={1.5}
+                        lineHeight={2}
+                      />
+
+                      {!isBrandBlocked && (
+                        <TouchableOpacity
+                          style={styles.editButton}
+                          onPress={handleEditPress}>
+                          <AntDesign
+                            name="edit"
+                            size={12}
+                            color={AppColors.WHITE}
+                          />
+                        </TouchableOpacity>
+                      )}
                     </View>
-                  ))
+                    <LineBreak space={2} />
+                  </View>
+                ))
                 : null}
             </View>
           )}
@@ -1088,12 +1089,12 @@ const HomeDetails = ({route}) => {
         animationIn="zoomIn"
         animationOut="zoomOut"
         backdropOpacity={0.2}
-        style={{margin: 0}}>
+        style={{ margin: 0 }}>
         <View style={styles.gifContainer}>
           <FastImage
             // source={require('../../assets/gif/celebration.gif')}
             source={require('../../assets/gif/goAgainAnimation.gif')}
-            style={{height: '100%', width: '100%'}}
+            style={{ height: '100%', width: '100%' }}
             resizeMode={FastImage.resizeMode.contain}
           />
         </View>
@@ -1105,11 +1106,11 @@ const HomeDetails = ({route}) => {
         animationIn="zoomIn"
         animationOut="zoomOut"
         backdropOpacity={0.2}
-        style={{margin: 0}}>
+        style={{ margin: 0 }}>
         <View style={styles.gifContainer}>
           <FastImage
             source={require('../../assets/gif/avoidAnimation.gif')}
-            style={{height: '100%', width: '100%'}}
+            style={{ height: '100%', width: '100%' }}
             resizeMode={FastImage.resizeMode.contain}
           />
         </View>
@@ -1119,10 +1120,10 @@ const HomeDetails = ({route}) => {
         isVisible={showAvoidModal}
         onCancel={() => setShowAvoidModal(false)}
         onAvoidPlace={() =>
-          createReview('Avoid', {confirmed: true, avoidAllBranches: false})
+          createReview('Avoid', { confirmed: true, avoidAllBranches: false })
         }
         onAvoidAllBranches={() =>
-          createReview('Avoid', {confirmed: true, avoidAllBranches: true})
+          createReview('Avoid', { confirmed: true, avoidAllBranches: true })
         }
         avoidPlaceLoading={avoidLoader}
         avoidAllBranchesLoading={avoidAllBranchesLoader}
@@ -1143,9 +1144,9 @@ const HomeDetails = ({route}) => {
 };
 
 const styles = StyleSheet.create({
-  container: {flex: 1},
-  center: {flex: 1, justifyContent: 'center', alignItems: 'center'},
-  contentPadding: {paddingHorizontal: 20},
+  container: { flex: 1 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  contentPadding: { paddingHorizontal: 20 },
   sectionBorder: {
     borderBottomWidth: 1,
     borderBottomColor: AppColors.appBgColor,
@@ -1155,7 +1156,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  compactRow: {flexDirection: 'row', alignItems: 'center', gap: 5},
+  compactRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   ratingRow: {
     flexDirection: 'row',
     justifyContent: 'flex-start',
@@ -1175,7 +1176,7 @@ const styles = StyleSheet.create({
   map: {
     ...StyleSheet.absoluteFillObject,
   },
-  mapPlaceholder: {width: responsiveWidth(90)},
+  mapPlaceholder: { width: responsiveWidth(90) },
 
   inputAction: {
     flex: 1,

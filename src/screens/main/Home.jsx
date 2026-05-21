@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef, Fragment} from 'react';
+import React, { useState, useEffect, useRef, Fragment } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -12,35 +12,35 @@ import {
   Image,
 } from 'react-native';
 import FastImage from 'react-native-fast-image';
-import {useDispatch, useSelector} from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AppColors from '../../utils/AppColors';
 import LineBreak from '../../components/LineBreak';
 import AppText from '../../components/AppTextComps/AppText';
-import {useCustomNavigation, useDebounce} from '../../utils/Hooks';
+import { useCustomNavigation, useDebounce } from '../../utils/Hooks';
 import {
   responsiveFontSize,
   responsiveHeight,
   responsiveWidth,
 } from '../../utils/Responsive_Dimensions';
-import {useUserPreferences} from '../../utils/UserPreferences';
+import { useUserPreferences } from '../../utils/UserPreferences';
 
-import {baseUrl} from '../../utils/api_content';
+import { baseUrl } from '../../utils/api_content';
 import HomeCard from '../../components/HomeCard';
 import ScreenWrapper from '../../components/ScreenWrapper';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import FetchNearbyPlaces from '../../ApiCalls/Main/FetchNearbyPlaces';
-import {GetReviews} from '../../ApiCalls/Main/Reviews/ReviewsApiCall';
-import {GetWishList} from '../../ApiCalls/Main/WishList_API/WishListAPI';
-import {setRecommendedPlaces} from '../../redux/Slices';
-import {useIsFocused} from '@react-navigation/native';
+import { GetReviews } from '../../ApiCalls/Main/Reviews/ReviewsApiCall';
+import { GetWishList } from '../../ApiCalls/Main/WishList_API/WishListAPI';
+import { setRecommendedPlaces } from '../../redux/Slices';
+import { useIsFocused } from '@react-navigation/native';
 // import {requestLocationPermission} from '../../utils/Permissions';
 import {
   startBackgroundService,
   stopBackgroundService,
 } from '../../services/BackgroundLocationService';
-import {getAllNotifications, getGreeting} from '../../GlobalFunctions/main';
+import { getAllNotifications, getGreeting } from '../../GlobalFunctions/main';
 
 const CATEGORIES = [
   {
@@ -125,7 +125,7 @@ const DEFAULT_LOCATION = {
 
 const Home = () => {
   const dispatch = useDispatch();
-  const {navigateToRoute, navigation} = useCustomNavigation();
+  const { navigateToRoute, navigation } = useCustomNavigation();
   const userData = useSelector(state => state.user.userData);
   const fetchedLocations = useSelector(
     state => state?.user?.places_nearby || [],
@@ -157,7 +157,7 @@ const Home = () => {
   // Flow control states
   const [includeShowBranding, setIncludeShowBranding] = useState(true);
 
-  const {recommendedLocations} = useUserPreferences(
+  const { recommendedLocations } = useUserPreferences(
     likedItems,
     wishlistItems,
     avoidItems,
@@ -499,7 +499,7 @@ const Home = () => {
               style={styles.profileImage}
             />
           </TouchableOpacity>
-          <View style={{flex: 1}}>
+          <View style={{ flex: 1 }}>
             <AppText
               title={`${getGreeting()}, ${userData?.fullName || 'User'}`}
               textColor={AppColors.BLACK}
@@ -515,7 +515,7 @@ const Home = () => {
                 size={14}
                 color={AppColors.BTNCOLOURS}
               />
-              <View style={{flexShrink: 1}}>
+              <View style={{ flexShrink: 1 }}>
                 <AppText
                   title={currentLocation?.address || 'Add Location'}
                   textColor={AppColors.GRAY}
@@ -528,7 +528,7 @@ const Home = () => {
           </View>
         </View>
 
-        <View style={{flexDirection: 'row', gap: 10, alignItems: 'center'}}>
+        <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
           <TouchableOpacity
             onPress={() => navigateToRoute('Notifications')}
             style={styles.notificationBtn}>
@@ -568,7 +568,7 @@ const Home = () => {
         <TouchableOpacity
           onPress={() => navigateToRoute('WishList')}
           style={styles.statChip}>
-          <FontAwesome name="bookmark" size={16} color="#FF9800" />
+          <Ionicons name="basket" size={16} color="#FF9800" />
           <AppText
             title={`${wishlistItems.length} Bucket List`}
             textSize={1.3}
@@ -650,7 +650,7 @@ const Home = () => {
       {/* Recommended Horizontal Section */}
       {includeShowBranding && settings?.recommendations && (
         <Fragment>
-          <View style={{paddingHorizontal: responsiveWidth(5)}}>
+          <View style={{ paddingHorizontal: responsiveWidth(5) }}>
             <View style={styles.sectionHeader}>
               <AppText
                 title="Recommended"
@@ -694,7 +694,7 @@ const Home = () => {
                 gap: 12,
                 marginBottom: responsiveHeight(2),
               }}
-              renderItem={({item}) => (
+              renderItem={({ item }) => (
                 <HomeCard
                   name={item?.name}
                   address={item?.vicinity}
@@ -703,14 +703,14 @@ const Home = () => {
                   cardHeight={30}
                   cardWidth={75}
                   cardOnPress={() =>
-                    navigateToRoute('HomeDetails', {placeDetails: item})
+                    navigateToRoute('HomeDetails', { placeDetails: item })
                   }
                 />
               )}
             />
           </Animated.View>
 
-          <View style={{paddingHorizontal: responsiveWidth(5)}}>
+          <View style={{ paddingHorizontal: responsiveWidth(5) }}>
             <LineBreak space={1} />
             <AppText
               title={`Discover ${selectedCategory.name} Nearby`}
@@ -731,7 +731,7 @@ const Home = () => {
   return (
     <ScreenWrapper>
       {isLoading ? (
-        <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator size="large" color={AppColors.BTNCOLOURS} />
         </View>
       ) : (
@@ -749,17 +749,17 @@ const Home = () => {
           numColumns={2}
           keyExtractor={(_, index) => `nearby-${index}`}
           columnWrapperStyle={styles.columnWrapper}
-          contentContainerStyle={{paddingBottom: responsiveHeight(4)}}
+          contentContainerStyle={{ paddingBottom: responsiveHeight(4) }}
           ListEmptyComponent={
             includeShowBranding && fetchedLocations.length === 0 ? (
-              <View style={{paddingHorizontal: responsiveWidth(5)}}>
+              <View style={{ paddingHorizontal: responsiveWidth(5) }}>
                 <AppText
                   title={`No ${selectedCategory.name.toLowerCase()} found nearby`}
                 />
               </View>
             ) : null
           }
-          renderItem={({item, index}) => (
+          renderItem={({ item, index }) => (
             <Animated.View
               style={{
                 opacity: nearbyAnim.interpolate({
@@ -781,7 +781,7 @@ const Home = () => {
                 category={selectedCategory.name}
                 CardImg={item?.photos?.[0]?.photo_reference}
                 cardOnPress={() =>
-                  navigateToRoute('HomeDetails', {placeDetails: item})
+                  navigateToRoute('HomeDetails', { placeDetails: item })
                 }
               />
             </Animated.View>
@@ -867,7 +867,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minWidth: responsiveWidth(25),
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 3,
     elevation: 2,
@@ -877,7 +877,7 @@ const styles = StyleSheet.create({
     borderColor: AppColors.BTNCOLOURS,
     elevation: 6,
     shadowColor: AppColors.BTNCOLOURS,
-    shadowOffset: {width: 0, height: 4},
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
     shadowRadius: 6,
   },
