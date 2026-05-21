@@ -47,6 +47,7 @@ import Reminder from '../screens/main/Profile/Reminder';
 import CreateReminder from '../screens/main/Profile/CreateReminder';
 import PremiumUsers from '../screens/main/Profile/PremiumUsers';
 import SharedList from '../screens/main/SharedList';
+import CustomerService from '../screens/main/Profile/CustomerService';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -161,6 +162,7 @@ const Main = () => {
       <Stack.Screen name="CreateReminder" component={CreateReminder} />
       <Stack.Screen name="PremiumUsers" component={PremiumUsers} />
       <Stack.Screen name="SharedList" component={SharedList} />
+      <Stack.Screen name="CustomerService" component={CustomerService} />
     </Stack.Navigator>
   );
 };

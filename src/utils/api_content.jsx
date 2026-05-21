@@ -30,6 +30,7 @@ export const endPoints = {
   getSharedListingsDetails: '/api/getSharedListingsDetails',
   readAllNotifications: '/api/user/readAllNotifications',
   notifyForNewPlace: '/api/user/notifyForNewPlace',
+  support: '/api/user/support',
 };
 
 export const ShowToast = (type: 'success' | 'error' | 'info', message) => {

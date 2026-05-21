@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { createStackNavigator } from '@react-navigation/stack';
-import Auth, { CreateProfileRoute } from './Auth';
+import React, {useState} from 'react';
+import {createStackNavigator} from '@react-navigation/stack';
+import Auth, {CreateProfileRoute} from './Auth';
 import Main from './Main';
 import Toast from 'react-native-toast-message';
-import { useSelector } from 'react-redux';
+import {useSelector} from 'react-redux';
 import SetLocation from '../screens/auth/AccountSetup/SetLocation';
 import EnterAddressManually from '../screens/main/MapCommonScreens/EnterAddressManually';
 import OnBoarding from '../screens/auth/OnBoarding';
@@ -29,7 +29,7 @@ const Routes = () => {
 
   return (
     <>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Navigator screenOptions={{headerShown: false}}>
         {showSplash ? (
           <Stack.Screen name="Splash">
             {props => (

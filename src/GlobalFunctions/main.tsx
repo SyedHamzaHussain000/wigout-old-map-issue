@@ -1,5 +1,5 @@
 import axios from 'axios';
-import {baseUrl, endPoints} from '../utils/api_content';
+import { baseUrl, endPoints } from '../utils/api_content';
 
 export const updateProfile = async ({
   id,
@@ -169,7 +169,7 @@ export const shareListing = async (
   },
 ) => {
   try {
-    const {isAll, isWishlist, isAvoid, isGoAgain} = params;
+    const { isAll, isWishlist, isAvoid, isGoAgain } = params;
     let url = `${baseUrl}${endPoints.shareMyListing}?`;
 
     if (isAll) {
@@ -190,7 +190,7 @@ export const shareListing = async (
       url = url.slice(0, -1);
     }
 
-    const data = {recipientId};
+    const data = { recipientId };
 
     const response = await axios.post(url, data, {
       headers: {
@@ -247,6 +247,39 @@ export const readAllNotifications = async (token: string) => {
     );
     return data?.data;
   } catch (error) {
+    return {
+      success: false,
+      message: error?.response?.data?.message || error.message,
+    };
+  }
+};
+
+export const support = async ({
+  token,
+  subject,
+  message,
+}: {
+  token: string;
+  subject: string;
+  message: string;
+}) => {
+  let data = {
+    subject,
+    message
+  }
+  try {
+    const response = await axios.post(
+      `${baseUrl}${endPoints.support}`,
+      data,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+    return response?.data;
+  } catch (error: any) {
     return {
       success: false,
       message: error?.response?.data?.message || error.message,
