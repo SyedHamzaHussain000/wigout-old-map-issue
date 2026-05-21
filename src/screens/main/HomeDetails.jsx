@@ -386,9 +386,12 @@ const HomeDetails = ({route}) => {
       if (options.avoidAllBranches) {
         const res = await processSingleReview(morePlaceDetails, true);
         if (res.success) {
-          ShowError('Avoided all branches successfully', 2000);
-          setShowAvoidCelebration(true);
-          setTimeout(() => setShowAvoidCelebration(false), 5000);
+          setShowAvoidModal(false);
+          setTimeout(() => {
+            ShowError('Avoided all branches successfully', 2000);
+            setShowAvoidCelebration(true);
+            setTimeout(() => setShowAvoidCelebration(false), 5000);
+          }, 600);
           setTypeReview('');
           setRating(0);
           syncUserStatus(morePlaceDetails?.place_id);
@@ -403,15 +406,24 @@ const HomeDetails = ({route}) => {
             setTimeout(() => setShowCelebration(false), 5000);
           }
           if (type === 'Avoid') {
-            setShowAvoidCelebration(true);
-            setTimeout(() => setShowAvoidCelebration(false), 5000);
+            setShowAvoidModal(false);
+            setTimeout(() => {
+              setShowAvoidCelebration(true);
+              setTimeout(() => setShowAvoidCelebration(false), 5000);
+            }, 600);
           }
           setTypeReview('');
           setRating(0);
           syncUserStatus(morePlaceDetails?.place_id);
         }
         if (!(res.success && type === 'Go Again')) {
-          ShowError(res.msg || 'Review processed', 2000);
+          if (type === 'Avoid') {
+            setTimeout(() => {
+              ShowError(res.msg || 'Review processed', 2000);
+            }, 600);
+          } else {
+            ShowError(res.msg || 'Review processed', 2000);
+          }
         }
       }
     } catch (err) {
