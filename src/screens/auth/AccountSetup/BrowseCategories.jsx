@@ -1,5 +1,5 @@
 /* eslint-disable react-native/no-inline-styles */
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, {useState, useEffect, useCallback, useMemo} from 'react';
 import {
   View,
   TouchableOpacity,
@@ -10,8 +10,8 @@ import {
   SafeAreaView,
   ActivityIndicator,
 } from 'react-native';
-import { useDispatch, useSelector } from 'react-redux';
-import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
+import {useDispatch, useSelector} from 'react-redux';
+import Svg, {Defs, LinearGradient, Stop, Rect} from 'react-native-svg';
 
 // Components & Utils
 import AppText from '../../../components/AppTextComps/AppText';
@@ -21,7 +21,7 @@ import {
   responsiveWidth,
   responsiveFontSize,
 } from '../../../utils/Responsive_Dimensions';
-import { useCustomNavigation, useDebounce } from '../../../utils/Hooks';
+import {useCustomNavigation, useDebounce} from '../../../utils/Hooks';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
@@ -29,7 +29,7 @@ import BackgroundScreen from '../../../components/AppTextComps/BackgroundScreen'
 import ShowError from '../../../utils/ShowError';
 
 // Logic & API
-import { setIsListBuilt } from '../../../redux/Slices';
+import {setIsListBuilt} from '../../../redux/Slices';
 import FetchNearbyPlaces from '../../../ApiCalls/Main/FetchNearbyPlaces';
 import {
   GetReviews,
@@ -42,17 +42,17 @@ import {
   GetWishList,
   RemoveWishList,
 } from '../../../ApiCalls/Main/WishList_API/WishListAPI';
-import { Google_Places_Images } from '../../../utils/api_content';
+import {Google_Places_Images} from '../../../utils/api_content';
 import ScreenWrapper from '../../../components/ScreenWrapper';
 import RemoveReviewModal from '../../../components/RemoveReviewModal';
-import { getCategory } from '../../../utils/functions';
+import {getCategory} from '../../../utils/functions';
 
-const BrowseCategories = ({ navigation }) => {
-  const { navigateToRoute, goBack } = useCustomNavigation();
+const BrowseCategories = ({navigation}) => {
+  const {navigateToRoute, goBack} = useCustomNavigation();
   const dispatch = useDispatch();
   const userSelector = useSelector(state => state.user);
 
-  const { token, current_location, places_nearby, isListBuilt } = userSelector;
+  const {token, current_location, places_nearby, isListBuilt} = userSelector;
 
   const [selectedCategory, setSelectedCategory] = useState('Restaurants');
   const [customPlace, setCustomPlace] = useState('');
@@ -222,7 +222,7 @@ const BrowseCategories = ({ navigation }) => {
         return res;
       } catch (e) {
         console.log('Error in processSingleAction:', e);
-        return { success: false };
+        return {success: false};
       }
     };
 
@@ -235,7 +235,7 @@ const BrowseCategories = ({ navigation }) => {
           setActionLoading(false);
           return;
         }
-        const res = await RemoveReview({ reviewId: existing._id }, token);
+        const res = await RemoveReview({reviewId: existing._id}, token);
         if (res?.success) {
           if (isGoAgain) {
             setLikesCount(p => p - 1);
@@ -254,7 +254,7 @@ const BrowseCategories = ({ navigation }) => {
         );
         if (existingOpposite) {
           const remRes = await RemoveReview(
-            { reviewId: existingOpposite._id },
+            {reviewId: existingOpposite._id},
             token,
           );
           if (remRes?.success) {
@@ -272,7 +272,7 @@ const BrowseCategories = ({ navigation }) => {
           w => w.placeId === item.place_id,
         );
         if (existingWish) {
-          const remRes = await RemoveWishList(token, { placeId: item.place_id });
+          const remRes = await RemoveWishList(token, {placeId: item.place_id});
           if (remRes?.success) {
             setWishlistCount(p => p - 1);
             setWishlistItems(p => p.filter(w => w.placeId !== item.place_id));
@@ -285,13 +285,13 @@ const BrowseCategories = ({ navigation }) => {
             setLikesCount(p => p + 1);
             setLikedItems(p => [
               ...p,
-              { _id: res.review?._id, placeId: item.place_id },
+              {_id: res.review?._id, placeId: item.place_id},
             ]);
           } else {
             setHatesCount(p => p + 1);
             setAvoidItems(p => [
               ...p,
-              { _id: res.review?._id, placeId: item.place_id },
+              {_id: res.review?._id, placeId: item.place_id},
             ]);
           }
           ShowError(`Added to ${actionType} list`);
@@ -312,7 +312,7 @@ const BrowseCategories = ({ navigation }) => {
       const existing = wishlistItems.find(w => w.placeId === item.place_id);
       if (existing) {
         console.log('Removing from wishlist:', item.place_id);
-        const res = await RemoveWishList(token, { placeId: item.place_id });
+        const res = await RemoveWishList(token, {placeId: item.place_id});
         console.log('RemoveWishList response in BrowseCategories:', res);
         if (res?.success) {
           setWishlistCount(p => p - 1);
@@ -327,7 +327,7 @@ const BrowseCategories = ({ navigation }) => {
       // Mutual exclusivity: remove from Go Again if present
       const existingLike = likedItems.find(l => l.placeId === item.place_id);
       if (existingLike) {
-        const remRes = await RemoveReview({ reviewId: existingLike._id }, token);
+        const remRes = await RemoveReview({reviewId: existingLike._id}, token);
         if (remRes?.success) {
           setLikesCount(p => p - 1);
           setLikedItems(p => p.filter(l => l._id !== existingLike._id));
@@ -337,7 +337,7 @@ const BrowseCategories = ({ navigation }) => {
       // Mutual exclusivity: remove from Avoid if present
       const existingAvoid = avoidItems.find(a => a.placeId === item.place_id);
       if (existingAvoid) {
-        const remRes = await RemoveReview({ reviewId: existingAvoid._id }, token);
+        const remRes = await RemoveReview({reviewId: existingAvoid._id}, token);
         if (remRes?.success) {
           setHatesCount(p => p - 1);
           setAvoidItems(p => p.filter(a => a._id !== existingAvoid._id));
@@ -362,7 +362,7 @@ const BrowseCategories = ({ navigation }) => {
       console.log('AddWishList response in BrowseCategories:', res);
       if (res?.success) {
         setWishlistCount(p => p + 1);
-        setWishlistItems(p => [...p, { placeId: item.place_id, ...data }]);
+        setWishlistItems(p => [...p, {placeId: item.place_id, ...data}]);
         ShowError('Added to Bucket List Successfully.');
       } else {
         ShowError(res?.message || 'Failed to add to Bucket List');
@@ -374,7 +374,7 @@ const BrowseCategories = ({ navigation }) => {
   };
 
   // 4. Sub-renderers
-  const renderPlaceItem = ({ item }) => {
+  const renderPlaceItem = ({item}) => {
     const imageUrl = item.photos?.[0]?.photo_reference
       ? `${Google_Places_Images}${item.photos[0].photo_reference}&maxwidth=200`
       : null;
@@ -389,17 +389,17 @@ const BrowseCategories = ({ navigation }) => {
 
     return (
       <TouchableOpacity
-        onPress={() => navigateToRoute('HomeDetails', { placeDetails: item })}
+        onPress={() => navigateToRoute('HomeDetails', {placeDetails: item})}
         style={styles.placeItem}>
         {imageUrl ? (
-          <Image source={{ uri: imageUrl }} style={styles.placeImage} />
+          <Image source={{uri: imageUrl}} style={styles.placeImage} />
         ) : (
           <View style={[styles.placeImage, styles.center]}>
             <Ionicons name="image-outline" size={24} color="#CCC" />
           </View>
         )}
 
-        <View style={{ marginLeft: 12, flex: 1 }}>
+        <View style={{marginLeft: 12, flex: 1}}>
           <AppText
             title={item.name}
             textSize={1.7}
@@ -450,7 +450,7 @@ const BrowseCategories = ({ navigation }) => {
   };
 
   const ListHeader = () => (
-    <View style={{ paddingBottom: 10 }}>
+    <View style={{paddingBottom: 10}}>
       <AppText
         title={
           'Quickly build your love/hate lists.\nTap hearts or thumbs down!'
@@ -566,6 +566,8 @@ const BrowseCategories = ({ navigation }) => {
     </View>
   );
 
+  console.log('isListBuilt:-', isListBuilt);
+
   return (
     <ScreenWrapper>
       <SafeAreaView style={styles.container}>
@@ -582,7 +584,7 @@ const BrowseCategories = ({ navigation }) => {
             textSize={2.6}
             textColor={AppColors.BTNCOLOURS}
             textFontWeight
-            style={{ flex: 1, textAlign: 'center', marginRight: 40 }}
+            style={{flex: 1, textAlign: 'center', marginRight: 40}}
           />
         </View>
 
@@ -607,10 +609,12 @@ const BrowseCategories = ({ navigation }) => {
             activeOpacity={0.8}
             onPress={() => {
               if (isListBuilt) {
-                // Return to main app if already built (e.g. from Profile)
-                navigation.navigate('Main');
+                // Already inside the Main navigator (e.g. from Build List tab or Profile)
+                // — just go back, 'Main' is not a reachable screen from here
+                navigation.goBack();
               } else {
-                // Complete onboarding
+                // First-time onboarding: flip the flag and Routes.jsx
+                // will automatically swap to the Main screen
                 dispatch(setIsListBuilt(true));
               }
             }}
@@ -641,16 +645,16 @@ const BrowseCategories = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  center: { justifyContent: 'center', alignItems: 'center' },
+  container: {flex: 1},
+  center: {justifyContent: 'center', alignItems: 'center'},
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 10,
   },
-  backBtn: { padding: 5 },
-  listContent: { paddingBottom: 120 },
+  backBtn: {padding: 5},
+  listContent: {paddingBottom: 120},
   categoriesContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -672,7 +676,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.6)',
   },
-  searchBarContainer: { paddingHorizontal: 20, marginVertical: 10 },
+  searchBarContainer: {paddingHorizontal: 20, marginVertical: 10},
   searchBarPill: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -683,7 +687,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#FFF',
   },
-  searchInput: { flex: 1, marginLeft: 10, fontSize: 16, color: '#47082E' },
+  searchInput: {flex: 1, marginLeft: 10, fontSize: 16, color: '#47082E'},
   placeItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -701,7 +705,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: '#EEE',
   },
-  actionButtons: { flexDirection: 'row', gap: 8 },
+  actionButtons: {flexDirection: 'row', gap: 8},
   circleActionBtn: {
     width: 38,
     height: 38,
