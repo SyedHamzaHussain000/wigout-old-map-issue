@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, {useState, useEffect, useCallback, useRef, useMemo} from 'react';
 import {
   View,
   ScrollView,
@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
-import { useSelector } from 'react-redux';
+import {useSelector} from 'react-redux';
 import Modal from 'react-native-modal';
 import FastImage from 'react-native-fast-image';
 
@@ -31,9 +31,9 @@ import {
   responsiveHeight,
   responsiveWidth,
 } from '../../../utils/Responsive_Dimensions';
-import { baseUrl } from '../../../utils/api_content';
-import { useCustomNavigation } from '../../../utils/Hooks';
-import { AppIcons } from '../../../assets/icons';
+import {baseUrl} from '../../../utils/api_content';
+import {useCustomNavigation} from '../../../utils/Hooks';
+import {AppIcons} from '../../../assets/icons';
 import AppImages from '../../../assets/images/AppImages';
 import AnimatedReanimated, {
   useSharedValue,
@@ -41,28 +41,28 @@ import AnimatedReanimated, {
   withTiming,
   withDelay,
 } from 'react-native-reanimated';
-import { Dimensions } from 'react-native';
+import {Dimensions} from 'react-native';
 
-const { width } = Dimensions.get('window');
+const {width} = Dimensions.get('window');
 
 // Icons
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 
 // API Calls
-import { GetReviews } from '../../../ApiCalls/Main/Reviews/ReviewsApiCall';
-import { GetWishList } from '../../../ApiCalls/Main/WishList_API/WishListAPI';
-import { useIsFocused } from '@react-navigation/native';
-import { requestLocationPermission } from '../../../utils/Permissions';
+import {GetReviews} from '../../../ApiCalls/Main/Reviews/ReviewsApiCall';
+import {GetWishList} from '../../../ApiCalls/Main/WishList_API/WishListAPI';
+import {useIsFocused} from '@react-navigation/native';
+import {requestLocationPermission} from '../../../utils/Permissions';
 import {
   startBackgroundService,
   stopBackgroundService,
 } from '../../../services/BackgroundLocationService';
 import JackpotSpinner from '../../../components/JackpotSpinner';
-import { getAllNotifications, getGreeting } from '../../../GlobalFunctions/main';
+import {getAllNotifications, getGreeting} from '../../../GlobalFunctions/main';
 
-const JournalHome = ({ navigation }) => {
-  const { navigateToRoute } = useCustomNavigation();
+const JournalHome = ({navigation}) => {
+  const {navigateToRoute} = useCustomNavigation();
   const userData = useSelector(state => state.user.userData);
   const token = useSelector(state => state.user.token);
 
@@ -212,7 +212,7 @@ const JournalHome = ({ navigation }) => {
 
   return (
     <ScreenWrapper>
-      <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView style={{flex: 1}}>
         <ScrollView
           style={styles.container}
           showsVerticalScrollIndicator={false}>
@@ -223,11 +223,11 @@ const JournalHome = ({ navigation }) => {
                 onPress={() => navigateToRoute('Profile')}
                 activeOpacity={0.8}>
                 <Image
-                  source={{ uri: `${baseUrl}/${userData?.profileImage}` }}
+                  source={{uri: `${baseUrl}/${userData?.profileImage}`}}
                   style={styles.profileImage}
                 />
               </TouchableOpacity>
-              <View style={{ flex: 1 }}>
+              <View style={{flex: 1}}>
                 <AppText
                   title={`${getGreeting()}, ${userData?.fullName || 'User'}`}
                   textColor={AppColors.BLACK}
@@ -243,7 +243,7 @@ const JournalHome = ({ navigation }) => {
                     size={14}
                     color={AppColors.BTNCOLOURS}
                   />
-                  <View style={{ flexShrink: 1 }}>
+                  <View style={{flexShrink: 1}}>
                     <AppText
                       title={currentLocation?.address || 'Add Location'}
                       textColor={AppColors.GRAY}
@@ -269,8 +269,8 @@ const JournalHome = ({ navigation }) => {
           {/* Like/Hate Cards */}
           <View style={styles.cardsRow}>
             <TouchableOpacity
-              style={[styles.card, { backgroundColor: '#E8F5E9' }]}
-              onPress={() => navigateToRoute('MyLikes', { likesData })}>
+              style={[styles.card, {backgroundColor: '#E8F5E9'}]}
+              onPress={() => navigateToRoute('MyLikes', {likesData})}>
               <View style={styles.cardIconContainer}>
                 <Ionicons name="heart-outline" size={24} color="#4CAF50" />
               </View>
@@ -288,8 +288,8 @@ const JournalHome = ({ navigation }) => {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.card, { backgroundColor: '#FFEBEE' }]}
-              onPress={() => navigateToRoute('MyHates', { hatesData })}>
+              style={[styles.card, {backgroundColor: '#FFEBEE'}]}
+              onPress={() => navigateToRoute('MyHates', {hatesData})}>
               <View style={styles.cardIconContainer}>
                 <Ionicons
                   name="thumbs-down-outline"
@@ -314,11 +314,11 @@ const JournalHome = ({ navigation }) => {
           {/* WishList/Visited Card  */}
           <View style={styles.cardsRow}>
             <TouchableOpacity
-              style={[styles.card, { backgroundColor: '#FFEACC' }]}
+              style={[styles.card, {backgroundColor: '#FFEACC'}]}
               onPress={() => navigateToRoute('WishList')}>
               <View style={styles.cardIconContainer}>
                 <Ionicons
-                  name={'basket'}
+                  name={'basket-outline'}
                   size={24}
                   color={AppColors.wishlist}
                 />
@@ -337,7 +337,7 @@ const JournalHome = ({ navigation }) => {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.card, { backgroundColor: '#E3F2FD' }]}
+              style={[styles.card, {backgroundColor: '#E3F2FD'}]}
               onPress={() => navigateToRoute('Visited')}>
               <View style={styles.cardIconContainer}>
                 <Ionicons name="location-outline" size={24} color={'#2196F3'} />
@@ -452,7 +452,7 @@ const JournalHome = ({ navigation }) => {
                 name="color-wand-outline"
                 size={20}
                 color={AppColors.WHITE}
-                style={{ marginRight: 10 }}
+                style={{marginRight: 10}}
               />
             }
           />
@@ -460,7 +460,7 @@ const JournalHome = ({ navigation }) => {
           {/* Optional: Show loader while refreshing */}
           {loader && (
             <ActivityIndicator
-              style={{ marginTop: 20 }}
+              style={{marginTop: 20}}
               size="small"
               color={AppColors.BTNCOLOURS}
             />
@@ -475,11 +475,11 @@ const JournalHome = ({ navigation }) => {
           animationIn="zoomIn"
           animationOut="zoomOut"
           backdropOpacity={0.2}
-          style={{ margin: 0 }}>
+          style={{margin: 0}}>
           <View style={styles.gifContainer}>
             <FastImage
               source={require('../../../assets/gif/goAgainAnimation.gif')}
-              style={{ height: '100%', width: '100%' }}
+              style={{height: '100%', width: '100%'}}
               resizeMode={FastImage.resizeMode.contain}
             />
           </View>

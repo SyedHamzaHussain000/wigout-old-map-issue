@@ -1,25 +1,27 @@
-import React, {useEffect} from 'react';
-import {NavigationContainer} from '@react-navigation/native';
+import React, { useEffect } from 'react';
+import { NavigationContainer } from '@react-navigation/native';
 import Routes from './src/routes/Routes';
-import {persistor, store} from './src/redux/Store';
-import {Provider, useSelector} from 'react-redux';
-import {PersistGate} from 'redux-persist/integration/react';
-import {GoogleSignin} from '@react-native-google-signin/google-signin';
-import {webClientId} from './src/utils/api_content';
-import {listenForForegroundMessages} from './src/utils/Notifications';
+import { persistor, store } from './src/redux/Store';
+import { Provider, useSelector } from 'react-redux';
+import { PersistGate } from 'redux-persist/integration/react';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { webClientId } from './src/utils/api_content';
+import { listenForForegroundMessages } from './src/utils/Notifications';
 import {
   startBackgroundService,
   stopBackgroundService,
 } from './src/services/BackgroundLocationService';
-import {requestLocationPermission} from './src/utils/Permissions';
-import {navigationRef, navigate} from './src/utils/NavigationService';
-import {EventType} from '@notifee/react-native';
+import { requestLocationPermission } from './src/utils/Permissions';
+import { navigationRef, navigate } from './src/utils/NavigationService';
+import { EventType } from '@notifee/react-native';
 import notifee from '@notifee/react-native';
-import {StatusBar} from 'react-native';
+import { AppState, AppStateStatus } from 'react-native';
+import { connectSocket, disconnectSocket } from './src/utils/Socket';
 
 const BackgroundManager = () => {
   const token = useSelector((state: any) => state?.user?.token);
 
+  // ── Location service: start on login, stop on logout ────────────────────
   useEffect(() => {
     const startService = async () => {
       if (token) {
@@ -33,14 +35,46 @@ const BackgroundManager = () => {
         stopBackgroundService();
       }
     };
-
     startService();
+  }, [token]);
+
+  // ── Socket: all lifecycle in one place ───────────────────────────────────
+  useEffect(() => {
+    const manageSocket = () => {
+      // 1. Connect or disconnect based on auth state
+      if (token) {
+        connectSocket(token);
+      } else {
+        disconnectSocket();
+        return; // No need to watch AppState when logged out
+      }
+
+      // 2. Handle app going to background / foreground
+      const handleAppStateChange = (nextState: AppStateStatus) => {
+        if (nextState === 'active') {
+          console.log('[Socket] App active — reconnecting');
+          connectSocket(token);
+        } else {
+          console.log(`[Socket] App ${nextState} — disconnecting`);
+          disconnectSocket();
+        }
+      };
+
+      const subscription = AppState.addEventListener('change', handleAppStateChange);
+
+      // 3. Cleanup: remove listener when token changes or component unmounts
+      return () => subscription.remove();
+    };
+
+    const cleanup = manageSocket();
+    return () => cleanup?.();
   }, [token]);
 
   return null;
 };
 
 const App = () => {
+
   useEffect(() => {
     GoogleSignin.configure({
       webClientId: webClientId,
@@ -50,7 +84,7 @@ const App = () => {
     const initNotifications = async () => {
       const unsubscribeMessaging = listenForForegroundMessages();
       const unsubscribeNotifeeForeground = notifee.onForegroundEvent(
-        async ({type, detail}) => {
+        async ({ type, detail }) => {
           if (type === EventType.PRESS) {
             console.log(
               'Notification pressed in Foreground!',
@@ -70,7 +104,7 @@ const App = () => {
             // console.log('Place ID from notification:', placeId);
 
             if (!placeDetails && placeId) {
-              placeDetails = {placeId};
+              placeDetails = { placeId };
             }
 
             if (placeDetails) {
@@ -120,7 +154,7 @@ const App = () => {
         console.log('Initial Notification Place ID:', placeId);
 
         if (!placeDetails && placeId) {
-          placeDetails = {placeId};
+          placeDetails = { placeId };
         }
 
         if (placeDetails) {
@@ -154,7 +188,6 @@ const App = () => {
       <PersistGate loading={null} persistor={persistor}>
         <NavigationContainer ref={navigationRef}>
           <BackgroundManager />
-          {/* <StatusBar barStyle={'dark-content'} hidden /> */}
           <Routes />
         </NavigationContainer>
       </PersistGate>

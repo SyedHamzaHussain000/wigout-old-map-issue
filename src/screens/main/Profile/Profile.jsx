@@ -186,7 +186,8 @@ const Profile = () => {
       ShowToast('error', res?.message || 'Failed to delete account.');
     }
   };
-  console.log('userData:-', userData?.subscription?.plan);
+
+  console.log('userData:-', userData);
   return (
     <ScreenWrapper>
       <ScrollView
