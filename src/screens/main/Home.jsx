@@ -1044,6 +1044,7 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.LIGHTGRAY,
   },
   notificationBtn: {
+    backgroundColor: AppColors.BTNCOLOURS,
     borderWidth: 1,
     borderColor: AppColors.menuBg,
     height: 50,
@@ -1055,6 +1056,7 @@ const styles = StyleSheet.create({
   notificationIcon: {
     width: 25,
     height: 25,
+    tintColor: '#FFF',
   },
   sectionHeader: {
     flexDirection: 'row',

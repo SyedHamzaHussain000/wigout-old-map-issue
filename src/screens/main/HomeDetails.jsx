@@ -1143,6 +1143,17 @@ const HomeDetails = ({route}) => {
                 mT={10}
               />
             )}
+
+            {!isWishList && personalReviews.length === 0 && (
+              <AppButton
+                title={'Add to Custom List'}
+                // handlePress={toggleWishlist}
+                btnWidth={92}
+                btnBackgroundColor={AppColors.BTNCOLOURS}
+                loading={false}
+                mT={10}
+              />
+            )}
           </Fragment>
         </View>
         <LineBreak space={4} />

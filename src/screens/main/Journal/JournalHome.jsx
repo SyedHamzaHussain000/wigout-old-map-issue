@@ -8,6 +8,7 @@ import {
   SafeAreaView,
   ActivityIndicator,
   RefreshControl,
+  Platform,
 } from 'react-native';
 import {useSelector} from 'react-redux';
 import Modal from 'react-native-modal';
@@ -31,7 +32,7 @@ import {
   responsiveHeight,
   responsiveWidth,
 } from '../../../utils/Responsive_Dimensions';
-import {baseUrl} from '../../../utils/api_content';
+import {baseUrl, ShowToast} from '../../../utils/api_content';
 import {useCustomNavigation} from '../../../utils/Hooks';
 import {AppIcons} from '../../../assets/icons';
 import AppImages from '../../../assets/images/AppImages';
@@ -79,6 +80,17 @@ const JournalHome = ({navigation}) => {
   const isFocused = useIsFocused();
   const currentLocation = useSelector(state => state.user.current_location);
 
+  const [categoryModalVisible, setCategoryModalVisible] = useState(false);
+  const [selectedCategories, setSelectedCategories] = useState({});
+
+  const getPlaceCategory = useCallback(item => {
+    let cat = item?.category || 'Restaurant';
+    if (cat === 'Rv Park') {
+      return 'Campground';
+    }
+    return cat;
+  }, []);
+
   const combinedItems = useMemo(() => {
     const combined = [];
     const ids = new Set();
@@ -112,7 +124,34 @@ const JournalHome = ({navigation}) => {
     return combined;
   }, [likesData, wishlistItems]);
 
-  const fetchNotifications = async () => {
+  const uniqueCategories = useMemo(() => {
+    const cats = new Set();
+    combinedItems.forEach(item => {
+      cats.add(getPlaceCategory(item.fullData));
+    });
+    return Array.from(cats).sort();
+  }, [combinedItems, getPlaceCategory]);
+
+  useEffect(() => {
+    if (uniqueCategories.length > 0) {
+      setSelectedCategories(prev => {
+        const next = {};
+        uniqueCategories.forEach(cat => {
+          next[cat] = prev[cat] !== undefined ? prev[cat] : true;
+        });
+        return next;
+      });
+    }
+  }, [uniqueCategories]);
+
+  const wheelData = useMemo(() => {
+    return combinedItems.filter(item => {
+      const cat = getPlaceCategory(item.fullData);
+      return selectedCategories[cat] !== false;
+    });
+  }, [combinedItems, selectedCategories, getPlaceCategory]);
+
+  const fetchNotifications = useCallback(async () => {
     try {
       const res = await getAllNotifications(token);
       const unreadNotifications = res?.data.filter(item => !item.read);
@@ -120,7 +159,7 @@ const JournalHome = ({navigation}) => {
     } catch (error) {
       console.error('Error fetching notifications:', error);
     }
-  };
+  }, [token]);
 
   const handleSpinEnd = selectedWinner => {
     setWinner(selectedWinner);
@@ -130,6 +169,41 @@ const JournalHome = ({navigation}) => {
     setWinner(null);
     setCelebrating(false);
     wheelRef.current?.spin();
+  };
+
+  const handleSurpriseMePress = () => {
+    setWinner(null);
+    setCelebrating(false);
+    setCategoryModalVisible(true);
+  };
+
+  const handleModalConfirm = () => {
+    const filteredCount = combinedItems.filter(item => {
+      const cat = getPlaceCategory(item.fullData);
+      return selectedCategories[cat] === true;
+    }).length;
+
+    if (filteredCount === 0) {
+      ShowToast(
+        'error',
+        'Please select categories containing at least one place.',
+      );
+      return;
+    }
+
+    setCategoryModalVisible(false);
+
+    // Give a short delay for modal close transition, then spin
+    setTimeout(() => {
+      triggerSpin();
+    }, 450);
+  };
+
+  const toggleCategory = cat => {
+    setSelectedCategories(prev => ({
+      ...prev,
+      [cat]: !prev[cat],
+    }));
   };
 
   // Use useCallback to prevent unnecessary function recreation
@@ -208,7 +282,7 @@ const JournalHome = ({navigation}) => {
 
   useEffect(() => {
     fetchNotifications();
-  }, [isFocused]);
+  }, [isFocused, fetchNotifications]);
 
   return (
     <ScreenWrapper>
@@ -386,7 +460,7 @@ const JournalHome = ({navigation}) => {
                 /> */}
                 <JackpotSpinner
                   ref={wheelRef}
-                  data={combinedItems}
+                  data={wheelData}
                   onSpinEnd={handleSpinEnd}
                   size={responsiveWidth(70)}
                   fingerPointer={true}
@@ -427,11 +501,23 @@ const JournalHome = ({navigation}) => {
                     btnHeight={40}
                     btnBackgroundColor={AppColors.BTNCOLOURS}
                   />
+                  <TouchableOpacity
+                    onPress={() => {
+                      setWinner(null);
+                      setSelectedCategories({});
+                    }}
+                    style={styles.spinBtn}>
+                    <AppText
+                      title="Reset Filter"
+                      textColor={AppColors.blackOpacity}
+                      textSize={1.8}
+                    />
+                  </TouchableOpacity>
                 </View>
               ) : (
                 <AppButton
                   title="Surprise Me"
-                  handlePress={triggerSpin}
+                  handlePress={handleSurpriseMePress}
                   btnWidth={40}
                   btnHeight={40}
                   btnBackgroundColor={AppColors.BTNCOLOURS}
@@ -482,6 +568,78 @@ const JournalHome = ({navigation}) => {
               style={{height: '100%', width: '100%'}}
               resizeMode={FastImage.resizeMode.contain}
             />
+          </View>
+        </Modal>
+
+        {/* Category Selection Modal */}
+        <Modal
+          isVisible={categoryModalVisible}
+          backdropOpacity={0.5}
+          onBackdropPress={() => setCategoryModalVisible(false)}
+          onBackButtonPress={() => setCategoryModalVisible(false)}
+          animationIn="slideInUp"
+          animationOut="slideOutDown"
+          style={{margin: 0, justifyContent: 'flex-end'}}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <AppText
+                title="Filter Categories"
+                textColor={AppColors.BLACK}
+                textSize={2.2}
+                textFontWeight
+              />
+              <TouchableOpacity onPress={() => setCategoryModalVisible(false)}>
+                <Ionicons name="close" size={24} color={AppColors.BLACK} />
+              </TouchableOpacity>
+            </View>
+
+            <AppText
+              title="Select which categories to include in the wheel spin:"
+              textColor={AppColors.GRAY}
+              textSize={1.5}
+              style={{marginBottom: 15}}
+            />
+
+            <ScrollView
+              style={{maxHeight: responsiveHeight(40)}}
+              showsVerticalScrollIndicator={false}>
+              {uniqueCategories.map(cat => {
+                const count = combinedItems.filter(
+                  item => getPlaceCategory(item.fullData) === cat,
+                ).length;
+                const isSelected = selectedCategories[cat] !== false;
+                return (
+                  <TouchableOpacity
+                    key={cat}
+                    style={styles.optionItem}
+                    onPress={() => toggleCategory(cat)}
+                    activeOpacity={0.7}>
+                    <AppText
+                      title={`${cat} (${count})`}
+                      textColor={AppColors.BLACK}
+                      textSize={1.8}
+                    />
+                    <Ionicons
+                      name={isSelected ? 'checkbox' : 'square-outline'}
+                      size={24}
+                      color={isSelected ? AppColors.BTNCOLOURS : AppColors.GRAY}
+                    />
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={styles.confirmBtn}
+              onPress={handleModalConfirm}>
+              <AppText
+                title="Spin Wheel"
+                textColor={AppColors.WHITE}
+                textSize={1.8}
+                textFontWeight
+              />
+            </TouchableOpacity>
           </View>
         </Modal>
       </SafeAreaView>
@@ -610,5 +768,41 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     zIndex: 999,
+  },
+  modalContent: {
+    backgroundColor: AppColors.WHITE,
+    borderTopLeftRadius: 25,
+    borderTopRightRadius: 25,
+    padding: 20,
+    paddingBottom: Platform.OS === 'ios' ? 35 : 20,
+    width: '100%',
+    maxHeight: responsiveHeight(70),
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: -3},
+    shadowOpacity: 0.15,
+    shadowRadius: 5,
+    elevation: 10,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  optionItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  confirmBtn: {
+    backgroundColor: AppColors.BTNCOLOURS,
+    borderRadius: 15,
+    height: 55,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 20,
   },
 });
