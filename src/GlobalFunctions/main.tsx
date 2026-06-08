@@ -265,12 +265,38 @@ export const support = async ({
 }) => {
   let data = {
     subject,
-    message
-  }
+    message,
+  };
   try {
     const response = await axios.post(
       `${baseUrl}${endPoints.support}`,
       data,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+    return response?.data;
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error?.response?.data?.message || error.message,
+    };
+  }
+};
+
+export const subscribeUser = async (
+  token: string,
+  plan: string,
+  purchaseToken?: string,
+  transactionId?: string,
+) => {
+  try {
+    const response = await axios.post(
+      `${baseUrl}${endPoints.subscribe}`,
+      { plan, purchaseToken, transactionId },
       {
         headers: {
           'Content-Type': 'application/json',

@@ -1,4 +1,4 @@
-import React, {useState, useMemo} from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   ScrollView,
@@ -7,8 +7,8 @@ import {
   StyleSheet,
   Platform,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
-import {useDispatch, useSelector} from 'react-redux';
+import { useNavigation } from '@react-navigation/native';
+import { useDispatch, useSelector } from 'react-redux';
 import Entypo from 'react-native-vector-icons/Entypo';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -24,9 +24,9 @@ import AppText from '../../../components/AppTextComps/AppText';
 import LineBreak from '../../../components/LineBreak';
 import LogoutModal from '../../../components/LogoutModal';
 import DeleteAccountModal from '../../../components/DeleteAccountModal';
-import {clearToken} from '../../../redux/Slices';
-import {baseUrl, ShowToast} from '../../../utils/api_content';
-import {deleteAccount} from '../../../GlobalFunctions/auth';
+import { clearToken } from '../../../redux/Slices';
+import { baseUrl, ShowToast } from '../../../utils/api_content';
+import { deleteAccount } from '../../../GlobalFunctions/auth';
 import {
   responsiveFontSize,
   responsiveHeight,
@@ -61,6 +61,18 @@ const Profile = () => {
         icon: (
           <FontAwesome5
             name="calendar"
+            size={responsiveFontSize(2)}
+            color={AppColors.BTNCOLOURS}
+          />
+        ),
+      },
+      {
+        id: 3,
+        title: 'Subscriptions',
+        navTo: 'Subscriptions',
+        icon: (
+          <Ionicons
+            name="trophy-outline"
             size={responsiveFontSize(2)}
             color={AppColors.BTNCOLOURS}
           />
@@ -178,7 +190,7 @@ const Profile = () => {
 
   const handleDeleteAccount = async () => {
     setShowDeleteModal(false);
-    const res = await deleteAccount({token});
+    const res = await deleteAccount({ token });
     if (res?.success) {
       ShowToast('success', res?.msg || 'Account deleted successfully!');
       dispatch(clearToken());
@@ -201,7 +213,7 @@ const Profile = () => {
         <View style={styles.header}>
           <View style={styles.avatarContainer}>
             <Image
-              source={{uri: `${baseUrl}/${userData?.profileImage}`}}
+              source={{ uri: `${baseUrl}/${userData?.profileImage}` }}
               style={styles.avatar}
             />
           </View>
@@ -248,8 +260,8 @@ const Profile = () => {
                       item.isLogout
                         ? AppColors.RED_COLOR
                         : item?.isDelete
-                        ? AppColors.RED_COLOR
-                        : AppColors.BLACK
+                          ? AppColors.RED_COLOR
+                          : AppColors.BLACK
                     }
                     textSize={1.8}
                   />
@@ -309,7 +321,7 @@ const styles = StyleSheet.create({
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: {width: 0, height: 4},
+        shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.15,
         shadowRadius: 8,
       },

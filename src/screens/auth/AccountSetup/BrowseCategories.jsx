@@ -97,7 +97,7 @@ const BrowseCategories = ({navigation}) => {
       },
       {
         id: '4',
-        name: 'RV Parks & Recreation',
+        name: 'Campgrounds', // RV Parks & Recreation
         icon: 'rv-truck',
         type: 'rv_park',
         keyword: 'rv park', // recreation rv-park camping campground campsite

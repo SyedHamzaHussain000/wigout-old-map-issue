@@ -26,23 +26,23 @@ export function connectSocket(authToken: string): Socket {
 
     // Built-in lifecycle listeners (logging / debugging)
     socket.on('connect', () => {
-        console.log('[Socket] Connected — id:', socket?.id);
+        // console.log('[Socket] Connected — id:', socket?.id);
     });
 
     socket.on('disconnect', reason => {
-        console.log('[Socket] Disconnected —', reason);
+        // console.log('[Socket] Disconnected —', reason);
     });
 
     socket.on('connect_error', err => {
-        console.warn('[Socket] Connection error —', err.message);
+        // console.warn('[Socket] Connection error —', err.message);
     });
 
     socket.on('reconnect_attempt', attempt => {
-        console.log('[Socket] Reconnect attempt #', attempt);
+        // console.log('[Socket] Reconnect attempt #', attempt);
     });
 
     socket.on('reconnect', () => {
-        console.log('[Socket] Reconnected');
+        // console.log('[Socket] Reconnected');
     });
 
     return socket;
@@ -53,7 +53,7 @@ export function disconnectSocket(): void {
     if (socket) {
         socket.disconnect();
         socket = null;
-        console.log('[Socket] Manually disconnected');
+        // console.log('[Socket] Manually disconnected');
     }
 }
 

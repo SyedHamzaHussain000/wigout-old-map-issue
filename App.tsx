@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import Routes from './src/routes/Routes';
 import { persistor, store } from './src/redux/Store';
-import { Provider, useSelector } from 'react-redux';
+import { Provider, useSelector, useDispatch } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { webClientId } from './src/utils/api_content';
@@ -15,11 +15,24 @@ import { requestLocationPermission } from './src/utils/Permissions';
 import { navigationRef, navigate } from './src/utils/NavigationService';
 import { EventType } from '@notifee/react-native';
 import notifee from '@notifee/react-native';
-import { AppState, AppStateStatus } from 'react-native';
+import { AppState, AppStateStatus, Platform } from 'react-native';
 import { connectSocket, disconnectSocket } from './src/utils/Socket';
+
+import {
+  withIAPContext,
+  purchaseUpdatedListener,
+  purchaseErrorListener,
+  finishTransaction,
+  Purchase,
+} from 'react-native-iap';
+import { subscribeUser } from './src/GlobalFunctions/main';
+import { UpdateProfile } from './src/redux/Slices';
+import { ShowToast } from './src/utils/api_content';
 
 const BackgroundManager = () => {
   const token = useSelector((state: any) => state?.user?.token);
+  const userData = useSelector((state: any) => state?.user?.userData);
+  const dispatch = useDispatch();
 
   // ── Location service: start on login, stop on logout ────────────────────
   useEffect(() => {
@@ -41,28 +54,24 @@ const BackgroundManager = () => {
   // ── Socket: all lifecycle in one place ───────────────────────────────────
   useEffect(() => {
     const manageSocket = () => {
-      // 1. Connect or disconnect based on auth state
       if (token) {
         connectSocket(token);
       } else {
         disconnectSocket();
-        return; // No need to watch AppState when logged out
+        return;
       }
 
-      // 2. Handle app going to background / foreground
       const handleAppStateChange = (nextState: AppStateStatus) => {
         if (nextState === 'active') {
-          console.log('[Socket] App active — reconnecting');
+          // console.log('[Socket] App active — reconnecting');
           connectSocket(token);
         } else {
-          console.log(`[Socket] App ${nextState} — disconnecting`);
+          // console.log(`[Socket] App ${nextState} — disconnecting`);
           disconnectSocket();
         }
       };
 
       const subscription = AppState.addEventListener('change', handleAppStateChange);
-
-      // 3. Cleanup: remove listener when token changes or component unmounts
       return () => subscription.remove();
     };
 
@@ -70,52 +79,107 @@ const BackgroundManager = () => {
     return () => cleanup?.();
   }, [token]);
 
+  // ── Global IAP Observers Framework ───────────────────────────────────────
+  useEffect(() => {
+    let purchaseUpdateSubscription: any;
+    let purchaseErrorSubscription: any;
+
+    const setupIAPListeners = () => {
+      try {
+        console.log('[Global IAP] Initializing listeners...');
+        purchaseUpdateSubscription = purchaseUpdatedListener(async (purchase: Purchase) => {
+          console.log('[Global IAP] ========= PURCHASE EVENT DETECTED =========');
+          console.log('[Global IAP] Product ID:', purchase.productId);
+          console.log('[Global IAP] Purchase Token (Google Play):', purchase.purchaseToken);
+          console.log('[Global IAP] Transaction ID:', purchase.transactionId || purchase.id);
+          console.log('[Global IAP] Full Purchase Object:', JSON.stringify(purchase, null, 2));
+          console.log('[Global IAP] =============================================');
+          const receipt = purchase.purchaseToken;
+          if (receipt) {
+            try {
+              const planId = purchase.productId;
+
+              // Backend verification dispatch call
+              const res = await subscribeUser(
+                token,
+                planId,
+                receipt,
+                purchase.transactionId || purchase.id
+              );
+
+              if (res?.success) {
+                ShowToast('success', 'Subscription processed successfully.');
+                dispatch(UpdateProfile(res?.data));
+              } else if (token) {
+                // Local fallback validation rules
+                const updatedUserData = {
+                  ...userData,
+                  subscription: {
+                    plan: planId,
+                    status: 'active',
+                    transactionId: purchase.transactionId || purchase.id,
+                  },
+                };
+                dispatch(UpdateProfile(updatedUserData));
+              }
+
+              // Acknowledge transaction lifecycle completion
+              await finishTransaction({ purchase, isConsumable: false });
+            } catch (err) {
+              console.error('[Global IAP] Process transaction error:', err);
+            }
+          }
+        });
+
+        purchaseErrorSubscription = purchaseErrorListener((error) => {
+          console.log('[Global IAP] ========= PURCHASE ERROR =========');
+          console.log('[Global IAP] Error code:', error?.code);
+          console.log('[Global IAP] Error message:', error?.message);
+          console.log('[Global IAP] Error responseCode:', error?.responseCode);
+          console.log('[Global IAP] Error debugMessage:', error?.debugMessage);
+          console.log('[Global IAP] Full error:', JSON.stringify(error, null, 2));
+          console.log('[Global IAP] =====================================');
+        });
+
+      } catch (iapErr) {
+        console.warn('[Global IAP] Registering listeners failed:', iapErr);
+      }
+    };
+
+    setupIAPListeners();
+
+    return () => {
+      if (purchaseUpdateSubscription) purchaseUpdateSubscription.remove();
+      if (purchaseErrorSubscription) purchaseErrorSubscription.remove();
+    };
+  }, [token, userData]);
+
   return null;
 };
 
 const App = () => {
-
   useEffect(() => {
     GoogleSignin.configure({
       webClientId: webClientId,
     });
 
-    // Initialize Notifications
     const initNotifications = async () => {
       const unsubscribeMessaging = listenForForegroundMessages();
       const unsubscribeNotifeeForeground = notifee.onForegroundEvent(
         async ({ type, detail }) => {
           if (type === EventType.PRESS) {
-            console.log(
-              'Notification pressed in Foreground!',
-              detail.notification,
-            );
+            console.log('Notification pressed in Foreground!', detail.notification);
             let placeDetails = detail.notification?.data?.placeDetails;
-            const placeId =
-              detail.notification?.data?.placeId ||
-              detail.notification?.data?.place_id;
-            const isFromWelcomeBack =
-              detail.notification?.data?.actionType === 'Go Again';
-            const isFromAvoid =
-              detail.notification?.data?.actionType === 'Avoid';
-            const actionType = detail.notification?.data?.actionType;
-            // console.log('Action type from notification:', actionType);
-            // console.log('Place Details from notification:', placeDetails);
-            // console.log('Place ID from notification:', placeId);
+            const placeId = detail.notification?.data?.placeId || detail.notification?.data?.place_id;
+            const isFromWelcomeBack = detail.notification?.data?.actionType === 'Go Again';
+            const isFromAvoid = detail.notification?.data?.actionType === 'Avoid';
 
             if (!placeDetails && placeId) {
               placeDetails = { placeId };
             }
 
             if (placeDetails) {
-              const parsedDetails =
-                typeof placeDetails === 'string'
-                  ? JSON.parse(placeDetails)
-                  : placeDetails;
-              console.log(
-                'Navigating to HomeDetails with:',
-                parsedDetails.name || parsedDetails.placeId,
-              );
+              const parsedDetails = typeof placeDetails === 'string' ? JSON.parse(placeDetails) : placeDetails;
               navigate('HomeDetails', {
                 placeDetails: parsedDetails,
                 isFromWelcomeBack,
@@ -132,40 +196,20 @@ const App = () => {
       };
     };
 
-    // Handle App launch from notification
     const checkInitialNotification = async () => {
       const initialNotification = await notifee.getInitialNotification();
       if (initialNotification) {
-        console.log(
-          'App launched from notification:',
-          initialNotification.notification,
-        );
         let placeDetails = initialNotification.notification?.data?.placeDetails;
-        const placeId =
-          initialNotification.notification?.data?.placeId ||
-          initialNotification.notification?.data?.place_id;
-        const isFromWelcomeBack =
-          initialNotification.notification?.data?.actionType === 'Go Again';
-        const isFromAvoid =
-          initialNotification.notification?.data?.actionType === 'Avoid';
-        const actionType = initialNotification.notification?.data?.actionType;
-        console.log('Action type from initial notification:', actionType);
-        console.log('Initial Notification Place Details:', placeDetails);
-        console.log('Initial Notification Place ID:', placeId);
+        const placeId = initialNotification.notification?.data?.placeId || initialNotification.notification?.data?.place_id;
+        const isFromWelcomeBack = initialNotification.notification?.data?.actionType === 'Go Again';
+        const isFromAvoid = initialNotification.notification?.data?.actionType === 'Avoid';
 
         if (!placeDetails && placeId) {
           placeDetails = { placeId };
         }
 
         if (placeDetails) {
-          const parsedDetails =
-            typeof placeDetails === 'string'
-              ? JSON.parse(placeDetails)
-              : placeDetails;
-          console.log(
-            'Navigating (Initial) to HomeDetails with:',
-            parsedDetails.name || parsedDetails.placeId,
-          );
+          const parsedDetails = typeof placeDetails === 'string' ? JSON.parse(placeDetails) : placeDetails;
           navigate('HomeDetails', {
             placeDetails: parsedDetails,
             isFromWelcomeBack,
@@ -195,4 +239,4 @@ const App = () => {
   );
 };
 
-export default App;
+export default withIAPContext(App);

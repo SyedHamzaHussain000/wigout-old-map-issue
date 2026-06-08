@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "59552515763-a426010c7huupp04ve72f0it8pn2nak9.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.wigout.app",
+            "certificate_hash": "2391b00ebb6e024b3a4a4485d5d571bd233e7f3d"
+          }
+        },
+        {
           "client_id": "59552515763-7pfcehum5to04ag3gno1gu1an7kvb2si.apps.googleusercontent.com",
           "client_type": 3
         }
@@ -29,6 +37,13 @@
             {
               "client_id": "59552515763-7pfcehum5to04ag3gno1gu1an7kvb2si.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "59552515763-79a1j5ndp317g53o86fs7qk2v25i8lkl.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.wigout.app"
+              }
             }
           ]
         }

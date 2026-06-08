@@ -7794,6 +7794,11 @@ react-native-google-places-textinput@^0.9.1:
   resolved "https://registry.npmjs.org/react-native-google-places-textinput/-/react-native-google-places-textinput-0.9.1.tgz"
   integrity sha512-UVLIYGwpzXo4xENKs0Nvv38mqwInbxQvdavcGpUwOfcU2D080q37ZDAsv9A/K0q+seBjl3zwEHvllIMEjLyW1Q==
 
+react-native-iap@12.16.2:
+  version "12.16.2"
+  resolved "https://registry.yarnpkg.com/react-native-iap/-/react-native-iap-12.16.2.tgz#56d870e5bd851ceafe3990089ec7099feee451cd"
+  integrity sha512-pIyO3eSZkYJYLdgDF90Or2wUsbiiYwa5xgUpaHBqZuVEk5Nz0ZDN4acwoXFfPa/a52MmQOYEeHbYLAQQW0o+rg==
+
 react-native-image-crop-picker@^0.51.0:
   version "0.51.0"
   resolved "https://registry.npmjs.org/react-native-image-crop-picker/-/react-native-image-crop-picker-0.51.0.tgz"
@@ -7832,6 +7837,11 @@ react-native-modal@^14.0.0-rc.1:
   integrity sha512-v5pvGyx1FlmBzdHyPqBsYQyS2mIJhVmuXyNo5EarIzxicKhuoul6XasXMviGcXboEUT0dTYWs88/VendojPiVw==
   dependencies:
     react-native-animatable "1.4.0"
+
+react-native-nitro-modules@^0.35.9:
+  version "0.35.9"
+  resolved "https://registry.yarnpkg.com/react-native-nitro-modules/-/react-native-nitro-modules-0.35.9.tgz#fe84f9fbcfc93305018fe3773cf0b39d8efa9c6d"
+  integrity sha512-yCO6eJ85SPPUo4a4an7H5oj6wPCSIT72fbjr5WZ/20n6zswaJ2gNNpnWtg2We0AZwkAOjSqkOJ0Vjc05p6kGiA==
 
 react-native-otp-entry@^1.8.4:
   version "1.8.4"

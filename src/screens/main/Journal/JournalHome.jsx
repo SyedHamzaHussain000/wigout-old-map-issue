@@ -515,7 +515,11 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.LIGHTGRAY,
   },
   notificationBtn: {
-    padding: 8,
+    // padding: 8,
+    height: 50,
+    width: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderRadius: 30,
     borderWidth: 1,
     borderColor: AppColors.menuBg, // Matching the Explore style (white border on transparent)
@@ -593,11 +597,10 @@ const styles = StyleSheet.create({
   winnerContainer: {
     alignItems: 'center',
     gap: 10,
-    // backgroundColor: 'red',
   },
   notificationIcon: {
-    width: 22,
-    height: 22,
+    width: 25,
+    height: 25,
   },
   gifContainer: {
     height: responsiveHeight(95),

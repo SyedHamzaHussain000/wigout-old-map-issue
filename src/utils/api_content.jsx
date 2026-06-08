@@ -31,6 +31,7 @@ export const endPoints = {
   readAllNotifications: '/api/user/readAllNotifications',
   notifyForNewPlace: '/api/user/notifyForNewPlace',
   support: '/api/user/support',
+  subscribe: '/api/user/subscribe',
 };
 
 export const ShowToast = (type: 'success' | 'error' | 'info', message) => {

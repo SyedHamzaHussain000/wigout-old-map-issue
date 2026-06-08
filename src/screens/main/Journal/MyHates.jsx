@@ -105,7 +105,11 @@ const AnimatedGridItem = memo(
           <View style={styles.categoryRow}>
             <MaterialIcons name="category" size={12} color="#F44336" />
             <AppText
-              title={item?.category || 'Restaurant'}
+              title={
+                item?.category === 'Rv Park'
+                  ? 'Campground'
+                  : item?.category || 'Restaurant'
+              }
               textColor={AppColors.GRAY}
               textSize={1.2}
             />

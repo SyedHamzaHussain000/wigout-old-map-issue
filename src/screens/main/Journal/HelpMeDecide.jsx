@@ -322,7 +322,9 @@ const HelpMeDecide = () => {
                     textFontWeight
                   />
                   <AppText
-                    title={item.category}
+                    title={
+                      item.category === 'Rv Park' ? 'Campground' : item.category
+                    }
                     textColor={AppColors.blackOpacity}
                     textSize={1.2}
                     textTransform={'capitalize'}

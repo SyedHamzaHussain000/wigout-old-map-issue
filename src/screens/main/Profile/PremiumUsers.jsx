@@ -87,6 +87,17 @@ const PremiumUsers = ({navigation}) => {
 
   const _shareListing = async () => {
     if (!selectedUser) return;
+
+    // Check kar raha hai ke options mein se koi ek bhi true hai ya nahi
+    const isAnyOptionSelected = Object.values(options).some(
+      value => value === true,
+    );
+
+    if (!isAnyOptionSelected) {
+      ShowToast('error', 'Please select at least one option to share.');
+      return; // API call rokh dega
+    }
+
     setSharing(true);
     const res = await shareListing(token, selectedUser?._id, options);
     if (res?.success) {

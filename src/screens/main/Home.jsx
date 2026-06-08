@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, Fragment } from 'react';
+import React, {useState, useEffect, useRef, Fragment, useMemo} from 'react';
 import {
   View,
   TouchableOpacity,
@@ -12,35 +12,34 @@ import {
   Image,
 } from 'react-native';
 import FastImage from 'react-native-fast-image';
-import { useDispatch, useSelector } from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AppColors from '../../utils/AppColors';
 import LineBreak from '../../components/LineBreak';
 import AppText from '../../components/AppTextComps/AppText';
-import { useCustomNavigation, useDebounce } from '../../utils/Hooks';
+import {useCustomNavigation, useDebounce} from '../../utils/Hooks';
 import {
   responsiveFontSize,
   responsiveHeight,
   responsiveWidth,
 } from '../../utils/Responsive_Dimensions';
-import { useUserPreferences } from '../../utils/UserPreferences';
+import {useUserPreferences} from '../../utils/UserPreferences';
 
-import { baseUrl } from '../../utils/api_content';
+import {baseUrl} from '../../utils/api_content';
 import HomeCard from '../../components/HomeCard';
 import ScreenWrapper from '../../components/ScreenWrapper';
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import FetchNearbyPlaces from '../../ApiCalls/Main/FetchNearbyPlaces';
-import { GetReviews } from '../../ApiCalls/Main/Reviews/ReviewsApiCall';
-import { GetWishList } from '../../ApiCalls/Main/WishList_API/WishListAPI';
-import { setRecommendedPlaces } from '../../redux/Slices';
-import { useIsFocused } from '@react-navigation/native';
-// import {requestLocationPermission} from '../../utils/Permissions';
+import {GetReviews} from '../../ApiCalls/Main/Reviews/ReviewsApiCall';
+import {GetWishList} from '../../ApiCalls/Main/WishList_API/WishListAPI';
+import {setRecommendedPlaces} from '../../redux/Slices';
+import {useIsFocused} from '@react-navigation/native';
 import {
   startBackgroundService,
   stopBackgroundService,
 } from '../../services/BackgroundLocationService';
-import { getAllNotifications, getGreeting } from '../../GlobalFunctions/main';
+import {getAllNotifications, getGreeting} from '../../GlobalFunctions/main';
+import AppImages from '../../assets/images/AppImages';
 
 const CATEGORIES = [
   {
@@ -56,7 +55,7 @@ const CATEGORIES = [
     name: 'Hotel',
     icon: 'office-building',
     type: 'lodging',
-    keyword: 'hotel inn motel accommodation stay overnight lodging',
+    keyword: 'hotel inn motel accommodation stay overnight lodging resort',
     library: 'MaterialCommunityIcons',
   },
   {
@@ -69,10 +68,10 @@ const CATEGORIES = [
   },
   {
     id: '4',
-    name: 'RV Parks & Recreation',
+    name: 'Campgrounds', // RV Parks & Recreation
     icon: 'rv-truck',
     type: 'rv_park',
-    keyword: 'rv park recreation rv-park camping campground campsite',
+    keyword: 'rv park',
     library: 'MaterialCommunityIcons',
   },
   {
@@ -80,7 +79,7 @@ const CATEGORIES = [
     name: 'To do Near Me',
     icon: 'map-outline',
     type: '',
-    keyword: 'zoo museum science center art show',
+    keyword: 'zoo museum science center art show attraction tourist_attraction',
     library: 'Ionicons',
   },
   {
@@ -88,7 +87,7 @@ const CATEGORIES = [
     name: 'Shopping',
     icon: 'cart-outline',
     type: '',
-    keyword: 'shopping mall store clothing_store',
+    keyword: 'shopping mall store clothing_store department_store',
     library: 'Ionicons',
   },
   {
@@ -125,7 +124,7 @@ const DEFAULT_LOCATION = {
 
 const Home = () => {
   const dispatch = useDispatch();
-  const { navigateToRoute, navigation } = useCustomNavigation();
+  const {navigateToRoute, navigation} = useCustomNavigation();
   const userData = useSelector(state => state.user.userData);
   const fetchedLocations = useSelector(
     state => state?.user?.places_nearby || [],
@@ -135,11 +134,10 @@ const Home = () => {
   );
   const currentLocation = useSelector(state => state.user.current_location);
   const token = useSelector(state => state.user.token);
-  // console.log('token in home', token);
 
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState(CATEGORIES[0]);
+  const [selectedCategory, setSelectedCategory] = useState(null);
   const [search, setSearch] = useState('');
   const [likedItems, setLikedItems] = useState([]);
   const [avoidItems, setAvoidItems] = useState([]);
@@ -148,25 +146,267 @@ const Home = () => {
 
   const debouncedSearch = useDebounce(search, 500);
 
-  // Animation values (preserved from your original code)
+  const isFirstLoad = useRef(true);
+
   const headerAnim = useRef(new Animated.Value(0)).current;
   const recommendedAnim = useRef(new Animated.Value(0)).current;
   const nearbyAnim = useRef(new Animated.Value(0)).current;
   const isFocussed = useIsFocused();
 
-  // Flow control states
   const [includeShowBranding, setIncludeShowBranding] = useState(true);
 
-  const { recommendedLocations } = useUserPreferences(
+  const recommendationPool = useMemo(() => {
+    const combined = [...placesRecommended, ...fetchedLocations];
+    const uniqueMap = new Map();
+    combined.forEach(item => {
+      const id = item.place_id || item.placeId || item?._id;
+      if (id && !uniqueMap.has(id)) {
+        uniqueMap.set(id, item);
+      }
+    });
+    return Array.from(uniqueMap.values());
+  }, [placesRecommended, fetchedLocations]);
+
+  const {recommendedLocations} = useUserPreferences(
     likedItems,
     wishlistItems,
     avoidItems,
-    placesRecommended,
+    recommendationPool,
   );
 
-  // Fetch logic for category/location updates
+  const displayedRecommended = useMemo(() => {
+    // 1. Agar koi filter apply nahi hai, to default recommended locations return karo
+    if (!selectedCategory) {
+      return recommendedLocations;
+    }
+
+    const catId = selectedCategory?.id;
+    const catType = selectedCategory?.type?.toLowerCase();
+    const catName = selectedCategory?.name?.toLowerCase();
+
+    return recommendedLocations.filter(item => {
+      const itemCategory = item?.category?.toLowerCase() || '';
+      const itemTypes = (item?.types || []).map(t => t.toLowerCase());
+      const itemName = item?.name?.toLowerCase() || '';
+
+      // ========================================================
+      // STAGE 1: ULTRA-STRICT CROSS-CATEGORY EXCLUSIONS (BLOCK LIST)
+      // ========================================================
+
+      // Agar Restaurants (ID: 1) -> Block Bar, Cafe, Lodging, Movie, Grocery
+      if (catId === '1') {
+        if (
+          itemTypes.includes('bar') ||
+          itemTypes.includes('cafe') ||
+          itemTypes.includes('lodging') ||
+          itemTypes.includes('grocery_or_supermarket') ||
+          itemTypes.includes('movie_theater') ||
+          itemCategory.includes('bar') ||
+          itemCategory.includes('cafe') ||
+          itemCategory.includes('lodging')
+        ) {
+          return false;
+        }
+      }
+
+      // Agar Hotel (ID: 2) -> Block RV Park, Campground, Bar, Restaurant
+      if (catId === '2') {
+        if (
+          itemTypes.includes('rv_park') ||
+          itemTypes.includes('campground') ||
+          itemTypes.includes('bar') ||
+          itemCategory.includes('rv park')
+        ) {
+          return false;
+        }
+      }
+
+      // Agar Cafes (ID: 3) -> Block Lodging (Hotels/Motels) strictly
+      if (catId === '3') {
+        if (itemTypes.includes('lodging') || itemCategory.includes('lodging')) {
+          return false;
+        }
+      }
+
+      // Agar RV Parks (ID: 4) -> Block Bar, Restaurant, Cafe (NOT lodging — many RV parks have lodging type)
+      if (catId === '4') {
+        if (
+          itemTypes.includes('bar') ||
+          itemTypes.includes('restaurant') ||
+          itemTypes.includes('cafe')
+        ) {
+          return false;
+        }
+      }
+
+      // Agar Shopping (ID: 6) -> Block Bar, Restaurant, Cafe, Lodging
+      if (catId === '6') {
+        if (
+          itemTypes.includes('bar') ||
+          itemTypes.includes('restaurant') ||
+          itemTypes.includes('cafe') ||
+          itemTypes.includes('lodging') ||
+          itemCategory.includes('bar') ||
+          itemCategory.includes('restaurant')
+        ) {
+          return false;
+        }
+      }
+
+      // Agar Bar (ID: 7) -> Block Lodging, Store
+      if (catId === '7') {
+        if (
+          itemTypes.includes('lodging') ||
+          itemTypes.includes('store') ||
+          itemCategory.includes('hotel')
+        ) {
+          return false;
+        }
+      }
+
+      // ========================================================
+      // STAGE 2: STRICT MATCHING RULES (ALLOW LIST)
+      // ========================================================
+
+      // 1. Restaurants Specific Allow Rule
+      if (catId === '1') {
+        return (
+          itemTypes.includes('restaurant') ||
+          itemTypes.includes('food') ||
+          itemCategory.includes('restaurant')
+        );
+      }
+
+      // 2. Hotels Specific Allow Rule
+      if (catId === '2') {
+        return (
+          itemTypes.includes('hotel') ||
+          itemTypes.includes('motel') ||
+          itemTypes.includes('resort') ||
+          itemTypes.includes('lodging') ||
+          itemCategory.includes('hotel') ||
+          itemCategory.includes('lodging')
+        );
+      }
+
+      // 3. Cafe Specific Allow Rule
+      if (catId === '3') {
+        return (
+          itemTypes.includes('cafe') ||
+          itemTypes.includes('coffee_shop') ||
+          itemCategory.includes('cafe') ||
+          itemCategory.includes('coffee') ||
+          itemName.includes('cafe') ||
+          itemName.includes('coffee')
+        );
+      }
+
+      // 4. RV Parks Specific Allow Rule
+      if (catId === '4') {
+        return (
+          itemTypes.includes('rv_park') ||
+          itemTypes.includes('campground') ||
+          itemTypes.includes('lodging') ||
+          itemName.includes('rv') ||
+          itemName.includes('rv park') ||
+          itemName.includes('campground') ||
+          itemName.includes('campsite') ||
+          itemName.includes('camp') ||
+          itemName.includes('recreation') ||
+          itemCategory.includes('rv') ||
+          itemCategory.includes('campground') ||
+          itemCategory.includes('recreation')
+        );
+      }
+
+      // 5. To Do Near Me Specific Allow Rule
+      if (catId === '5') {
+        return (
+          itemTypes.includes('tourist_attraction') ||
+          itemTypes.includes('zoo') ||
+          itemTypes.includes('museum') ||
+          itemTypes.includes('amusement_park') ||
+          itemTypes.includes('art_gallery') ||
+          itemTypes.includes('aquarium') ||
+          itemTypes.includes('bowling_alley') ||
+          itemTypes.includes('stadium') ||
+          itemTypes.includes('movie_theater') ||
+          itemTypes.includes('library') ||
+          itemCategory.includes('attraction') ||
+          itemCategory.includes('museum') ||
+          itemCategory.includes('park') ||
+          itemName.includes('zoo') ||
+          itemName.includes('museum') ||
+          itemName.includes('park') ||
+          itemName.includes('center')
+        );
+      }
+
+      // 6. Shopping Specific Allow Rule (FIXED LOGIC)
+      if (catId === '6') {
+        return (
+          itemTypes.includes('store') ||
+          itemTypes.includes('shopping_mall') ||
+          itemTypes.includes('clothing_store') ||
+          itemTypes.includes('department_store') ||
+          itemTypes.includes('supermarket') ||
+          itemCategory.includes('store') ||
+          itemCategory.includes('shop') ||
+          itemCategory.includes('shopping') ||
+          itemName.includes('shop') ||
+          itemName.includes('store')
+        );
+      }
+
+      // 7. General Fallbacks if no ID matched above
+      if (catType && itemTypes.includes(catType)) {
+        return true;
+      }
+
+      if (
+        catName &&
+        itemCategory &&
+        (itemCategory.includes(catName) || catName.includes(itemCategory))
+      ) {
+        return true;
+      }
+
+      if (selectedCategory?.keyword) {
+        const keywordsArray = selectedCategory.keyword.toLowerCase().split(' ');
+        return itemTypes.some(t => keywordsArray.includes(t));
+      }
+
+      return false;
+    });
+  }, [recommendedLocations, selectedCategory]);
+
+  const displayedNearby = useMemo(() => {
+    if (!selectedCategory) {
+      return fetchedLocations;
+    }
+    if (selectedCategory.type === 'restaurant') {
+      return fetchedLocations.filter(item => {
+        const itemTypes = (item?.types || []).map(t => t.toLowerCase());
+        const itemCategory = item?.category?.toLowerCase() || '';
+        const otherSpecTypes = ['bar', 'cafe', 'lodging'];
+        return (
+          !itemTypes.some(t => otherSpecTypes.includes(t)) &&
+          !otherSpecTypes.some(t => itemCategory.includes(t))
+        );
+      });
+    }
+    return fetchedLocations;
+  }, [fetchedLocations, selectedCategory]);
+
   useEffect(() => {
-    fetchData();
+    const showLoader = isFirstLoad.current;
+    if (isFirstLoad.current) {
+      isFirstLoad.current = false;
+    }
+    fetchData(showLoader);
+    if (token) {
+      fetchRecommendedData(likedItems, wishlistItems);
+    }
   }, [currentLocation, selectedCategory]);
 
   useEffect(() => {
@@ -206,7 +446,6 @@ const Home = () => {
         : DEFAULT_LOCATION;
 
     try {
-      // 1. Broad fetch for general recommendations
       const broadResults = await FetchNearbyPlaces(
         loc,
         dispatch,
@@ -215,22 +454,18 @@ const Home = () => {
         'skip',
       );
 
-      // 2. Targeted fetch for user's specific interests
       let targetedResults = [];
-
-      // Extract interests from both categories and Google types
       const rawInterests = [...currentLiked, ...currentWishlist].flatMap(
         item => {
           const cats = [];
-          if (item.category) cats.push(item.category.toLowerCase());
-          if (item.types && Array.isArray(item.types)) {
-            cats.push(...item.types.map(t => t.toLowerCase()));
+          if (item?.category) cats?.push(item?.category?.toLowerCase());
+          if (item?.types && Array?.isArray(item?.types)) {
+            cats?.push(...item?.types.map(t => t?.toLowerCase()));
           }
           return cats;
         },
       );
 
-      // Filter out generic tags
       const filterTypes = [
         'point_of_interest',
         'establishment',
@@ -241,50 +476,33 @@ const Home = () => {
         'natural_feature',
       ];
 
-      // 1. Filter out generic tags and unusable empty strings
       const filteredRaw = rawInterests.filter(
         cat => cat && !filterTypes.includes(cat),
       );
 
-      // 2. Count frequencies
       const frequencyMap = {};
       filteredRaw.forEach(cat => {
-        const normalized = cat.trim().toLowerCase().replace(/\s+/g, '_');
+        const normalized =
+          cat?.trim?.()?.toLowerCase?.()?.replace(/\s+/g, '_') || '';
         frequencyMap[normalized] = (frequencyMap[normalized] || 0) + 1;
       });
 
-      // 3. Sort unique interests by frequency (descending)
       const sortedInterests = Object.keys(frequencyMap).sort(
         (a, b) => frequencyMap[b] - frequencyMap[a],
       );
 
-      // Top 5 niche interests
       const topInterests = sortedInterests.slice(0, 5);
-
-      console.log('Engine Debug: Top niche interests (frequency-based):', {
-        counts: frequencyMap,
-        selected: topInterests,
-      });
 
       if (topInterests.length > 0) {
         const targetedFetches = topInterests.map(interest => {
-          // Robust fetch: use as type, and use original as keyword
           const keyword = interest.replace(/_/g, ' ');
           return FetchNearbyPlaces(loc, dispatch, interest, keyword, 'skip');
         });
         const resultsArray = await Promise.all(targetedFetches);
         targetedResults = resultsArray.flat();
-        console.log(
-          `Engine Debug: Targeted fetch (Top ${topInterests.length}) returned ${targetedResults.length} items`,
-        );
       }
 
-      // 3. Merge and deduplicate
       const combined = [...broadResults, ...targetedResults];
-      console.log(
-        `Engine Debug: Combined ${broadResults.length} broad and ${targetedResults.length} targeted results.`,
-      );
-
       const uniqueMap = new Map();
       combined.forEach(item => {
         const id = item.place_id || item.placeId || item?._id;
@@ -294,9 +512,6 @@ const Home = () => {
       });
 
       const finalSet = Array.from(uniqueMap.values());
-      console.log(
-        `Engine Debug: Dispatching ${finalSet.length} unique recommended places.`,
-      );
       dispatch(setRecommendedPlaces(finalSet));
     } catch (error) {
       console.log('Error fetching recommended data:', error);
@@ -313,12 +528,11 @@ const Home = () => {
     await FetchNearbyPlaces(
       loc,
       dispatch,
-      selectedCategory.type,
-      selectedCategory.keyword || '',
+      selectedCategory ? selectedCategory.type : 'all',
+      selectedCategory?.keyword || '',
     );
     if (showLoader) setIsLoading(false);
 
-    // Re-trigger entrance animations if data arrives later
     Animated.stagger(150, [
       Animated.timing(headerAnim, {
         toValue: 1,
@@ -363,7 +577,7 @@ const Home = () => {
         console.log('Error refreshing data:', error);
       }
     }
-    await fetchData(false); // Refresh nearby places without full screen loader
+    await fetchData(false);
     setRefreshing(false);
   };
 
@@ -381,10 +595,6 @@ const Home = () => {
     const refreshAllData = async () => {
       if (!token) return;
       try {
-        // 1. Fetch latest user history
-        console.log(
-          'Home focused: Refreshing user history and recommendations...',
-        );
         const [revRes, wishRes] = await Promise.all([
           GetReviews(token),
           GetWishList(token),
@@ -405,7 +615,6 @@ const Home = () => {
           setWishlistItems(freshWishlist);
         }
 
-        // 2. Trigger recommendations with FRESH data immediately
         fetchRecommendedData(freshLiked, freshWishlist);
       } catch (error) {
         console.log('Error refreshing data on Home focus:', error);
@@ -413,11 +622,10 @@ const Home = () => {
     };
 
     const unsubscribe = navigation.addListener('focus', refreshAllData);
-    refreshAllData(); // Initial refresh
+    refreshAllData();
     return unsubscribe;
   }, [navigation, token, currentLocation]);
 
-  // Handle Background Location Service initialization
   const settings = useSelector(state => state.user.notificationSettings);
 
   useEffect(() => {
@@ -426,10 +634,6 @@ const Home = () => {
         await stopBackgroundService();
         return;
       }
-
-      // const hasPermission = await requestLocationPermission();
-      // For now, assuming permissions are handled elsewhere or requested on toggle
-      console.log('Background location setting is ON, starting service...');
       await startBackgroundService();
     };
 
@@ -437,7 +641,6 @@ const Home = () => {
   }, [token, settings?.backgroundLocation]);
 
   useEffect(() => {
-    // Start initial animations staggered
     Animated.stagger(150, [
       Animated.timing(headerAnim, {
         toValue: 1,
@@ -460,7 +663,6 @@ const Home = () => {
         : DEFAULT_LOCATION;
 
     setIsLoading(true);
-    // Passing empty string for 'type' so it searches all categories using the keyword
     await FetchNearbyPlaces(loc, dispatch, '', query);
     setIsLoading(false);
   };
@@ -468,7 +670,6 @@ const Home = () => {
   const renderHeader = () => (
     <View>
       <LineBreak space={3} />
-      {/* Profile and Greeting Header */}
       <Animated.View
         style={[
           styles.headerContainer,
@@ -499,7 +700,7 @@ const Home = () => {
               style={styles.profileImage}
             />
           </TouchableOpacity>
-          <View style={{ flex: 1 }}>
+          <View style={{flex: 1}}>
             <AppText
               title={`${getGreeting()}, ${userData?.fullName || 'User'}`}
               textColor={AppColors.BLACK}
@@ -515,7 +716,7 @@ const Home = () => {
                 size={14}
                 color={AppColors.BTNCOLOURS}
               />
-              <View style={{ flexShrink: 1 }}>
+              <View style={{flexShrink: 1}}>
                 <AppText
                   title={currentLocation?.address || 'Add Location'}
                   textColor={AppColors.GRAY}
@@ -528,7 +729,7 @@ const Home = () => {
           </View>
         </View>
 
-        <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+        <View style={{flexDirection: 'row', gap: 10, alignItems: 'center'}}>
           <TouchableOpacity
             onPress={() => navigateToRoute('Notifications')}
             style={styles.notificationBtn}>
@@ -603,24 +804,23 @@ const Home = () => {
         </View>
       </View>
 
-      {/* Category Tabs Section */}
       <View style={styles.tabContainer}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.tabScrollContent}>
           {CATEGORIES.map(category => {
-            const isActive = selectedCategory.id === category.id;
+            const isActive = selectedCategory?.id === category?.id;
             return (
               <TouchableOpacity
-                key={category.id}
+                key={category?.id}
                 style={[styles.tabItem, isActive && styles.activeTabItem]}
-                onPress={() => setSelectedCategory(category)}
+                onPress={() => setSelectedCategory(isActive ? null : category)}
                 activeOpacity={0.7}>
                 <View style={styles.tabContent}>
-                  {category.library === 'Ionicons' ? (
+                  {category?.library === 'Ionicons' ? (
                     <Ionicons
-                      name={category.icon}
+                      name={category?.icon}
                       size={15}
                       color={isActive ? '#FFF' : '#47082E'}
                     />
@@ -647,13 +847,16 @@ const Home = () => {
 
       <LineBreak space={1} />
 
-      {/* Recommended Horizontal Section */}
       {includeShowBranding && settings?.recommendations && (
         <Fragment>
-          <View style={{ paddingHorizontal: responsiveWidth(5) }}>
+          <View style={{paddingHorizontal: responsiveWidth(5)}}>
             <View style={styles.sectionHeader}>
               <AppText
-                title="Recommended"
+                title={
+                  selectedCategory
+                    ? `Recommended ${selectedCategory.name}`
+                    : 'Recommended'
+                }
                 textColor={AppColors.BLACK}
                 textSize={2}
                 textFontWeight
@@ -669,7 +872,7 @@ const Home = () => {
               paddingHorizontal: responsiveWidth(5),
               opacity: recommendedAnim.interpolate({
                 inputRange: [0, 1],
-                outputRange: [0.1, 1], // Always keep 10% visible to avoid blank gap if stuck
+                outputRange: [0.1, 1],
               }),
               transform: [
                 {
@@ -681,20 +884,32 @@ const Home = () => {
               ],
             }}>
             <FlatList
-              data={recommendedLocations}
+              data={displayedRecommended}
               horizontal
               showsHorizontalScrollIndicator={false}
               keyExtractor={(_, index) => `rec-${index}`}
               ListEmptyComponent={
-                <AppText
-                  title={`No recommended ${selectedCategory.name.toLowerCase()} found`}
-                />
+                <View
+                  style={{
+                    paddingVertical: responsiveHeight(2),
+                    paddingLeft: responsiveWidth(1),
+                  }}>
+                  <AppText
+                    title={
+                      selectedCategory
+                        ? `No recommended ${selectedCategory.name.toLowerCase()} found`
+                        : 'No recommended places found'
+                    }
+                    textColor={AppColors.GRAY}
+                    textSize={1.4}
+                  />
+                </View>
               }
               contentContainerStyle={{
                 gap: 12,
                 marginBottom: responsiveHeight(2),
               }}
-              renderItem={({ item }) => (
+              renderItem={({item}) => (
                 <HomeCard
                   name={item?.name}
                   address={item?.vicinity}
@@ -703,17 +918,21 @@ const Home = () => {
                   cardHeight={30}
                   cardWidth={75}
                   cardOnPress={() =>
-                    navigateToRoute('HomeDetails', { placeDetails: item })
+                    navigateToRoute('HomeDetails', {placeDetails: item})
                   }
                 />
               )}
             />
           </Animated.View>
 
-          <View style={{ paddingHorizontal: responsiveWidth(5) }}>
+          <View style={{paddingHorizontal: responsiveWidth(5)}}>
             <LineBreak space={1} />
             <AppText
-              title={`Discover ${selectedCategory.name} Nearby`}
+              title={
+                selectedCategory
+                  ? `Discover ${selectedCategory.name} Nearby`
+                  : 'Discover Places Nearby'
+              }
               textColor={AppColors.BLACK}
               textSize={2}
               textFontWeight
@@ -725,18 +944,15 @@ const Home = () => {
     </View>
   );
 
-  // console.log('fetchedLocations:-', fetchedLocations);
-  // console.log('recommendedLocations:-', recommendedLocations);
-  // console.log('placesRecommended:-', placesRecommended);
   return (
     <ScreenWrapper>
       {isLoading ? (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
           <ActivityIndicator size="large" color={AppColors.BTNCOLOURS} />
         </View>
       ) : (
         <FlatList
-          data={includeShowBranding ? fetchedLocations : []}
+          data={includeShowBranding ? displayedNearby : []}
           ListHeaderComponent={renderHeader()}
           refreshControl={
             <RefreshControl
@@ -749,22 +965,26 @@ const Home = () => {
           numColumns={2}
           keyExtractor={(_, index) => `nearby-${index}`}
           columnWrapperStyle={styles.columnWrapper}
-          contentContainerStyle={{ paddingBottom: responsiveHeight(4) }}
+          contentContainerStyle={{paddingBottom: responsiveHeight(4)}}
           ListEmptyComponent={
-            includeShowBranding && fetchedLocations.length === 0 ? (
-              <View style={{ paddingHorizontal: responsiveWidth(5) }}>
+            includeShowBranding && displayedNearby.length === 0 ? (
+              <View style={{paddingHorizontal: responsiveWidth(5)}}>
                 <AppText
-                  title={`No ${selectedCategory.name.toLowerCase()} found nearby`}
+                  title={
+                    selectedCategory
+                      ? `No ${selectedCategory.name.toLowerCase()} found nearby`
+                      : 'No places found nearby'
+                  }
                 />
               </View>
             ) : null
           }
-          renderItem={({ item, index }) => (
+          renderItem={({item}) => (
             <Animated.View
               style={{
                 opacity: nearbyAnim.interpolate({
                   inputRange: [0, 1],
-                  outputRange: [0.1, 1], // Always keep 10% visible
+                  outputRange: [0.1, 1],
                 }),
                 transform: [
                   {
@@ -778,10 +998,10 @@ const Home = () => {
               <HomeCard
                 name={item?.name}
                 address={item?.vicinity}
-                category={selectedCategory.name}
+                category={selectedCategory?.name || getDisplayCategory(item)}
                 CardImg={item?.photos?.[0]?.photo_reference}
                 cardOnPress={() =>
-                  navigateToRoute('HomeDetails', { placeDetails: item })
+                  navigateToRoute('HomeDetails', {placeDetails: item})
                 }
               />
             </Animated.View>
@@ -791,6 +1011,8 @@ const Home = () => {
     </ScreenWrapper>
   );
 };
+
+export default Home;
 
 const styles = StyleSheet.create({
   headerContainer: {
@@ -804,7 +1026,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    flex: 1, // Allow this section to take available space
+    flex: 1,
   },
   locationContainer: {
     flexDirection: 'row',
@@ -813,7 +1035,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   locationText: {
-    maxWidth: responsiveWidth(40), // Slightly reduced for perfect fit
+    maxWidth: responsiveWidth(40),
   },
   profileImage: {
     width: 50,
@@ -824,12 +1046,15 @@ const styles = StyleSheet.create({
   notificationBtn: {
     borderWidth: 1,
     borderColor: AppColors.menuBg,
-    // padding: responsiveWidth(2),
-    height: 40,
-    width: 40,
+    height: 50,
+    width: 50,
     borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  notificationIcon: {
+    width: 25,
+    height: 25,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -841,7 +1066,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: responsiveWidth(5),
     marginBottom: responsiveHeight(2),
   },
-  // Tab Bar Styles (Glassmorphism)
   tabContainer: {
     paddingVertical: responsiveHeight(1.5),
     backgroundColor: 'transparent',
@@ -849,37 +1073,47 @@ const styles = StyleSheet.create({
   },
   tabScrollContent: {
     paddingHorizontal: responsiveWidth(5),
-    gap: responsiveWidth(3),
-    alignItems: 'center',
+    gap: 10,
+  },
+  tabItem: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: '#F5F5F5',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  activeTabItem: {
+    backgroundColor: '#47082E',
+    borderColor: '#47082E',
   },
   tabContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
   },
-  tabItem: {
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     paddingHorizontal: responsiveWidth(5),
-    paddingVertical: responsiveHeight(1.2),
-    borderRadius: 30,
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    minWidth: responsiveWidth(25),
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
+    marginTop: responsiveHeight(2),
+    gap: 8,
   },
-  activeTabItem: {
-    backgroundColor: AppColors.BTNCOLOURS,
-    borderColor: AppColors.BTNCOLOURS,
-    elevation: 6,
-    shadowColor: AppColors.BTNCOLOURS,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 6,
+  statChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FFF',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 20,
+    flex: 1,
+    justifyContent: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
   searchBarContainer: {
     paddingHorizontal: responsiveWidth(5),
@@ -888,41 +1122,18 @@ const styles = StyleSheet.create({
   searchBarPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
-    borderRadius: 30,
-    paddingHorizontal: 20,
-    height: 55,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.6)',
+    backgroundColor: '#FFF',
+    borderRadius: 25,
+    paddingHorizontal: 16,
+    height: 50,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    gap: 10,
   },
   searchInput: {
     flex: 1,
-    height: 45,
-    marginLeft: 12,
-    fontSize: responsiveFontSize(1.8),
-    color: '#47082E',
+    fontSize: 16,
+    color: '#000',
     padding: 0,
   },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 12,
-    marginTop: 15,
-  },
-  statChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 20,
-    gap: 6,
-    elevation: 2,
-  },
-  notificationIcon: {
-    width: 22,
-    height: 22,
-  },
 });
-
-export default Home;

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {
   View,
   FlatList,
@@ -10,22 +10,22 @@ import {
   TextInput,
   RefreshControl,
 } from 'react-native';
-import { useDispatch, useSelector } from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import AppHeader from '../../../components/AppHeader';
 import ScreenWrapper from '../../../components/ScreenWrapper';
 import AppColors from '../../../utils/AppColors';
 import FetchNearbyPlaces from '../../../ApiCalls/Main/FetchNearbyPlaces';
-import { GetWishList } from '../../../ApiCalls/Main/WishList_API/WishListAPI';
-import { GetReviews } from '../../../ApiCalls/Main/Reviews/ReviewsApiCall';
+import {GetWishList} from '../../../ApiCalls/Main/WishList_API/WishListAPI';
+import {GetReviews} from '../../../ApiCalls/Main/Reviews/ReviewsApiCall';
 import {
   responsiveFontSize,
   responsiveHeight,
   responsiveWidth,
 } from '../../../utils/Responsive_Dimensions';
-import { useCustomNavigation, useDebounce } from '../../../utils/Hooks';
+import {useCustomNavigation, useDebounce} from '../../../utils/Hooks';
 import AppText from '../../../components/AppTextComps/AppText';
 import HomeCard from '../../../components/HomeCard';
-import Animated, { FadeIn, FadeInDown, Layout } from 'react-native-reanimated';
+import Animated, {FadeIn, FadeInDown, Layout} from 'react-native-reanimated';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -58,10 +58,10 @@ const CATEGORIES = [
   },
   {
     id: '4',
-    name: 'RV Parks & Recreation',
+    name: 'Campgrounds', // RV Parks & Recreation
     icon: 'rv-truck',
     type: 'rv_park',
-    keyword: 'rv park recreation rv-park camping campground campsite',
+    keyword: 'rv park',
     library: 'MaterialCommunityIcons',
   },
   {
@@ -106,14 +106,14 @@ const CATEGORIES = [
   },
 ];
 
-const AnimatedCard = ({ item, index, navigation, selectedCategory }) => {
+const AnimatedCard = ({item, index, navigation, selectedCategory}) => {
   return (
     <Animated.View
       entering={FadeInDown.delay(index * 120)
         .duration(600)
         .springify()
         .damping(12)}>
-      <View style={{ marginBottom: responsiveHeight(2) }}>
+      <View style={{marginBottom: responsiveHeight(2)}}>
         <HomeCard
           name={item?.name}
           address={item?.vicinity}
@@ -122,7 +122,7 @@ const AnimatedCard = ({ item, index, navigation, selectedCategory }) => {
           cardWidth={92}
           category={selectedCategory?.name}
           cardOnPress={() =>
-            navigation.navigate('HomeDetails', { placeDetails: item })
+            navigation.navigate('HomeDetails', {placeDetails: item})
           }
         />
       </View>
@@ -130,7 +130,7 @@ const AnimatedCard = ({ item, index, navigation, selectedCategory }) => {
   );
 };
 
-const TopRated = ({ navigation }) => {
+const TopRated = ({navigation}) => {
   const dispatch = useDispatch();
   const currentLocation = useSelector(state => state.user.current_location);
   const placesNearby = useSelector(state => state.user.places_nearby);
@@ -143,7 +143,7 @@ const TopRated = ({ navigation }) => {
   const [likedItems, setLikedItems] = useState([]);
   const [avoidItems, setAvoidItems] = useState([]);
   const [wishlistItems, setWishlistItems] = useState([]);
-  const { navigateToRoute } = useCustomNavigation();
+  const {navigateToRoute} = useCustomNavigation();
   const debouncedSearch = useDebounce(search, 500);
 
   useEffect(() => {
@@ -236,7 +236,7 @@ const TopRated = ({ navigation }) => {
     .filter(place => place.rating && !excludedPlaceIds.has(place.place_id))
     .sort((a, b) => b.rating - a.rating);
 
-  const renderItem = ({ item, index }) => {
+  const renderItem = ({item, index}) => {
     return (
       <AnimatedCard
         item={item}
@@ -250,7 +250,7 @@ const TopRated = ({ navigation }) => {
   // console.log('selectedCategory:-', selectedCategory);
   return (
     <ScreenWrapper>
-      <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView style={{flex: 1}}>
         <AppHeader heading={`Local Faves ${selectedCategory.name}`} />
 
         <View style={styles.statsRow}>
@@ -373,7 +373,7 @@ const TopRated = ({ navigation }) => {
           }}>
           {isLoading ? (
             <View
-              style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+              style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
               <ActivityIndicator size="large" color={AppColors.BTNCOLOURS} />
             </View>
           ) : topRatedPlaces.length > 0 ? (
@@ -398,7 +398,7 @@ const TopRated = ({ navigation }) => {
             />
           ) : (
             <View
-              style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+              style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
               <AppText
                 title={`No ${selectedCategory.name.toLowerCase()} found nearby`}
                 textColor={AppColors.GRAY}
@@ -437,7 +437,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minWidth: responsiveWidth(25),
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.05,
     shadowRadius: 3,
     elevation: 2,
@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
     borderColor: AppColors.BTNCOLOURS,
     elevation: 6,
     shadowColor: AppColors.BTNCOLOURS,
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: {width: 0, height: 4},
     shadowOpacity: 0.35,
     shadowRadius: 6,
   },

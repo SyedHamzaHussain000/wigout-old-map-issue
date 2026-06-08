@@ -94,7 +94,11 @@ const AnimatedGridItem = memo(({item, index, onNavigate}) => {
             color={AppColors.BTNCOLOURS}
           />
           <AppText
-            title={item.category || 'Restaurant'}
+            title={
+              item.category === 'Rv Park'
+                ? 'Campground'
+                : item.category || 'Restaurant'
+            }
             textColor={AppColors.GRAY}
             textSize={1.3}
           />

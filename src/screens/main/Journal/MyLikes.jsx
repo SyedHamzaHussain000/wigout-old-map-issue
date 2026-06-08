@@ -79,7 +79,7 @@ const AnimatedGridItem = memo(
 
     const isEditing = editingItemId === item._id;
 
-    console.log('item.category:-', item);
+    // console.log('item.category:-', item?.category);
 
     return (
       <Animated.View style={[styles.gridCard, animatedStyle]}>
@@ -140,7 +140,11 @@ const AnimatedGridItem = memo(
               color={AppColors.BTNCOLOURS}
             />
             <AppText
-              title={item.category || 'Restaurant'}
+              title={
+                item.category === 'Rv Park'
+                  ? 'Campground'
+                  : item.category || 'Restaurant'
+              }
               textColor={AppColors.GRAY}
               textSize={1.3}
             />

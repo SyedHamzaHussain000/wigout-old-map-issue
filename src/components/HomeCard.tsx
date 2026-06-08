@@ -1,6 +1,6 @@
 /* eslint-disable react-native/no-inline-styles */
 import React from 'react';
-import {View, TouchableOpacity, ImageBackground} from 'react-native';
+import { View, TouchableOpacity, ImageBackground } from 'react-native';
 import Entypo from 'react-native-vector-icons/Entypo';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import AppColors from '../utils/AppColors';
@@ -10,7 +10,7 @@ import {
   responsiveWidth,
 } from '../utils/Responsive_Dimensions';
 import AppText from './AppTextComps/AppText';
-import {Google_Places_Images} from '../utils/api_content';
+import { Google_Places_Images } from '../utils/api_content';
 import AppImages from '../assets/images/AppImages';
 
 type cardProps = {
@@ -32,6 +32,7 @@ const HomeCard = ({
   cardWidth,
   category = 'Restaurant',
 }: cardProps) => {
+  const placeCategory = category === 'Rv Park' ? 'Campground' : category;
   return (
     <TouchableOpacity
       activeOpacity={0.8}
@@ -46,13 +47,13 @@ const HomeCard = ({
         marginBottom: responsiveHeight(1),
         backgroundColor: AppColors.menuBg,
         shadowColor: '#000',
-        shadowOffset: {width: 0, height: 2},
+        shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
         shadowRadius: 4,
         elevation: 5,
       }}>
       <ImageBackground
-        source={{uri: `${Google_Places_Images}${CardImg}`}}
+        source={{ uri: `${Google_Places_Images}${CardImg}` }}
         style={{
           flex: 1,
           justifyContent: 'flex-end',
@@ -85,7 +86,7 @@ const HomeCard = ({
               color={AppColors.WHITE}
             />
             <AppText
-              title={category}
+              title={placeCategory}
               textColor={AppColors.WHITE}
               textSize={1.2}
               numberOfLines={1}
