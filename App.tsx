@@ -26,30 +26,36 @@ import {
   Purchase,
 } from 'react-native-iap';
 import { subscribeUser } from './src/GlobalFunctions/main';
-import { UpdateProfile } from './src/redux/Slices';
+import { UpdateProfile, updateNotificationSettings } from './src/redux/Slices';
 import { ShowToast } from './src/utils/api_content';
 
 const BackgroundManager = () => {
   const token = useSelector((state: any) => state?.user?.token);
   const userData = useSelector((state: any) => state?.user?.userData);
+  const settings = useSelector((state: any) => state?.user?.notificationSettings);
   const dispatch = useDispatch();
 
   // ── Location service: start on login, stop on logout ────────────────────
   useEffect(() => {
     const startService = async () => {
       if (token) {
-        const permissionGranted = await requestLocationPermission();
-        if (permissionGranted) {
-          startBackgroundService();
+        if (settings?.backgroundLocation) {
+          const permissionGranted = await requestLocationPermission();
+          if (permissionGranted) {
+            startBackgroundService();
+          } else {
+            console.log('Location permission not granted, service not started.');
+            dispatch(updateNotificationSettings({ backgroundLocation: false }));
+          }
         } else {
-          console.log('Location permission not granted, service not started.');
+          stopBackgroundService();
         }
       } else {
         stopBackgroundService();
       }
     };
     startService();
-  }, [token]);
+  }, [token, settings?.backgroundLocation]);
 
   // ── Socket: all lifecycle in one place ───────────────────────────────────
   useEffect(() => {

@@ -53,7 +53,13 @@ const HomeCard = ({
         elevation: 5,
       }}>
       <ImageBackground
-        source={{ uri: `${Google_Places_Images}${CardImg}` }}
+        source={{
+          uri: CardImg
+            ? CardImg.startsWith('http')
+              ? CardImg
+              : `${Google_Places_Images}${CardImg}`
+            : undefined,
+        }}
         style={{
           flex: 1,
           justifyContent: 'flex-end',

@@ -40,7 +40,7 @@ const initialState: UserState = {
   reminders: [],
   notificationSettings: {
     soundVibrate: true,
-    backgroundLocation: false,
+    backgroundLocation: true,
     recommendations: true,
   },
 };
@@ -87,6 +87,11 @@ const authSlice = createSlice({
       state.token = '';
       state.userData = {};
       state.isListBuilt = false;
+      state.notificationSettings = {
+        soundVibrate: true,
+        backgroundLocation: true,
+        recommendations: true,
+      };
     },
     setToken: (state, action) => {
       state.token = action.payload;

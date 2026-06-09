@@ -41,6 +41,7 @@ import {
   Google_API_KEY,
   Google_Base_Url,
   Google_Places_Images,
+  ShowToast,
 } from '../../utils/api_content';
 import {setPlaceDetail} from '../../redux/Slices';
 import {
@@ -62,6 +63,11 @@ import StarRating from 'react-native-star-rating-widget';
 import AvoidModal from '../../components/AvoidModal';
 import RemoveReviewModal from '../../components/RemoveReviewModal';
 import {getCategory} from '../../utils/functions';
+import {
+  getCustomCategories,
+  addItemToCustomCategory,
+  removeItemFromCustomCategory,
+} from '../../GlobalFunctions/main';
 
 const HomeDetails = ({route}) => {
   const {placeDetails} = route.params;
@@ -91,6 +97,14 @@ const HomeDetails = ({route}) => {
   const [avoidAllBranchesLoader, setAvoidAllBranchesLoader] = useState(false);
   const [showRemoveModal, setShowRemoveModal] = useState(false);
   const [isBrandBlocked, setIsBrandBlocked] = useState(false);
+
+  // Custom Category states
+  const [customCategories, setCustomCategories] = useState([]);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [selectedCategoryId, setSelectedCategoryId] = useState(null);
+  const [categoryAddedId, setCategoryAddedId] = useState(null); // which category this place is in
+  const [categoryLoader, setCategoryLoader] = useState(false);
+  const [fetchCategoryLoader, setFetchCategoryLoader] = useState(false);
 
   // Sound refs with mounting guard
   const celebrationSound = useRef(null);
@@ -234,6 +248,11 @@ const HomeDetails = ({route}) => {
   }, [showAvoidCelebration]);
 
   useEffect(() => {
+    fetchCustomCategoriesForPlace();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
+
+  useEffect(() => {
     const id = placeDetails?.placeId || placeDetails?.place_id;
     // console.log('HomeDetails initializing with ID:', id);
     if (id) {
@@ -259,6 +278,7 @@ const HomeDetails = ({route}) => {
     } else {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [placeDetails, token]);
 
   useEffect(() => {
@@ -266,6 +286,7 @@ const HomeDetails = ({route}) => {
     if (id) {
       syncUserStatus(id);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [morePlaceDetails]);
 
   const syncUserStatus = async id => {
@@ -330,6 +351,98 @@ const HomeDetails = ({route}) => {
       }
     } catch (error) {
       console.log('Error syncing user status:', error);
+    }
+  };
+
+  const fetchCustomCategoriesForPlace = async () => {
+    if (!token) return;
+    setFetchCategoryLoader(true);
+    try {
+      const res = await getCustomCategories(token);
+      if (res?.success) {
+        const cats = res?.customCategories || [];
+        setCustomCategories(cats);
+        // Check if this place is already added to any category
+        const placeId = placeDetails?.placeId || placeDetails?.place_id;
+        let foundCatId = null;
+        for (const cat of cats) {
+          if (cat.items && cat.items.some(item => item.placeId === placeId)) {
+            foundCatId = cat._id;
+            break;
+          }
+        }
+        setCategoryAddedId(foundCatId);
+      }
+    } catch (error) {
+      console.log('Error fetching custom categories:', error);
+    } finally {
+      setFetchCategoryLoader(false);
+    }
+  };
+
+  const handleAddToCategory = async () => {
+    if (!selectedCategoryId) {
+      ShowToast('error', 'Please select a category.');
+      return;
+    }
+    setCategoryLoader(true);
+    try {
+      const place = morePlaceDetails || placeDetails;
+      const placeId = place?.place_id || place?.placeId;
+      const imageRef = place?.photos?.[0]?.photo_reference;
+      const item = {
+        placeId: placeId,
+        name: place?.name || '',
+        address:
+          place?.formatted_address || place?.vicinity || place?.address || '',
+        image: imageRef ? `${Google_Places_Images}${imageRef}` : '',
+        rating: place?.rating || 0,
+        userRatingsTotal:
+          place?.user_ratings_total || place?.userRatingsTotal || 0,
+        latitude: place?.geometry?.location?.lat || place?.latitude || 0,
+        longitude: place?.geometry?.location?.lng || place?.longitude || 0,
+        category: getCategory(morePlaceDetails) || place?.category || '',
+      };
+      const res = await addItemToCustomCategory(
+        token,
+        selectedCategoryId,
+        item,
+      );
+      if (res?.success) {
+        ShowToast('success', 'Added to custom category!');
+        setCategoryAddedId(selectedCategoryId);
+        setShowCategoryModal(false);
+        setSelectedCategoryId(null);
+      } else {
+        ShowToast('error', res?.message || 'Failed to add to category.');
+      }
+    } catch (error) {
+      ShowToast('error', 'An error occurred.');
+    } finally {
+      setCategoryLoader(false);
+    }
+  };
+
+  const handleRemoveFromCategory = async () => {
+    if (!categoryAddedId) return;
+    setCategoryLoader(true);
+    try {
+      const placeId = placeDetails?.placeId || placeDetails?.place_id;
+      const res = await removeItemFromCustomCategory(
+        token,
+        categoryAddedId,
+        placeId,
+      );
+      if (res?.success) {
+        ShowToast('success', 'Removed from custom category!');
+        setCategoryAddedId(null);
+      } else {
+        ShowToast('error', res?.message || 'Failed to remove from category.');
+      }
+    } catch (error) {
+      ShowToast('error', 'An error occurred.');
+    } finally {
+      setCategoryLoader(false);
     }
   };
 
@@ -1144,13 +1257,32 @@ const HomeDetails = ({route}) => {
               />
             )}
 
-            {!isWishList && personalReviews.length === 0 && (
+            {personalReviews.length === 0 && (
               <AppButton
-                title={'Add to Custom List'}
-                // handlePress={toggleWishlist}
+                title={
+                  categoryAddedId
+                    ? 'Remove from Custom Category'
+                    : 'Add to Custom Category'
+                }
+                handlePress={() => {
+                  if (categoryAddedId) {
+                    handleRemoveFromCategory();
+                  } else {
+                    if (customCategories.length === 0) {
+                      ShowToast(
+                        'info',
+                        'No custom categories found. Create one from the Home screen.',
+                      );
+                      return;
+                    }
+                    setShowCategoryModal(true);
+                  }
+                }}
                 btnWidth={92}
-                btnBackgroundColor={AppColors.BTNCOLOURS}
-                loading={false}
+                btnBackgroundColor={
+                  categoryAddedId ? '#D32F2F' : AppColors.BTNCOLOURS
+                }
+                loading={categoryLoader || fetchCategoryLoader}
                 mT={10}
               />
             )}
@@ -1215,6 +1347,107 @@ const HomeDetails = ({route}) => {
         loadingSpecific={removeSpecificLoader}
         loadingAll={removeReviewLoader}
       />
+
+      {/* Custom Category Selection Modal */}
+      <Modal
+        isVisible={showCategoryModal}
+        backdropOpacity={0.55}
+        onBackdropPress={() => {
+          if (!categoryLoader) {
+            setShowCategoryModal(false);
+            setSelectedCategoryId(null);
+          }
+        }}
+        onBackButtonPress={() => {
+          if (!categoryLoader) {
+            setShowCategoryModal(false);
+            setSelectedCategoryId(null);
+          }
+        }}
+        animationIn="slideInUp"
+        animationOut="slideOutDown"
+        style={{margin: 0, justifyContent: 'flex-end'}}>
+        <View style={styles.catModalContainer}>
+          {/* Header */}
+          <View style={styles.catModalHeader}>
+            <AppText
+              title="Add to Custom Category"
+              textColor={AppColors.BLACK}
+              textSize={2.2}
+              textFontWeight
+            />
+            <TouchableOpacity
+              disabled={categoryLoader}
+              onPress={() => {
+                setShowCategoryModal(false);
+                setSelectedCategoryId(null);
+              }}>
+              <Ionicons name="close" size={26} color={AppColors.BLACK} />
+            </TouchableOpacity>
+          </View>
+
+          <AppText
+            title="Select one category to add this place to:"
+            textColor={AppColors.GRAY}
+            textSize={1.5}
+          />
+
+          <View style={styles.catListWrapper}>
+            {customCategories.map(cat => {
+              const isSelected = selectedCategoryId === cat._id;
+              return (
+                <TouchableOpacity
+                  key={cat._id}
+                  activeOpacity={0.75}
+                  style={[
+                    styles.catOption,
+                    isSelected && styles.catOptionSelected,
+                  ]}
+                  onPress={() => setSelectedCategoryId(cat._id)}>
+                  <View style={styles.catOptionLeft}>
+                    <Ionicons
+                      name="star-outline"
+                      size={18}
+                      color={isSelected ? AppColors.WHITE : '#47082E'}
+                    />
+                    <AppText
+                      title={cat.title}
+                      textColor={isSelected ? AppColors.WHITE : AppColors.BLACK}
+                      textSize={1.7}
+                      textFontWeight={isSelected}
+                    />
+                  </View>
+                  <Ionicons
+                    name={isSelected ? 'checkbox' : 'square-outline'}
+                    size={22}
+                    color={isSelected ? AppColors.WHITE : '#BDBDBD'}
+                  />
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          <TouchableOpacity
+            activeOpacity={0.8}
+            disabled={!selectedCategoryId || categoryLoader}
+            style={[
+              styles.catConfirmBtn,
+              (!selectedCategoryId || categoryLoader) && {opacity: 0.5},
+            ]}
+            onPress={handleAddToCategory}>
+            {categoryLoader ? (
+              <ActivityIndicator color={AppColors.WHITE} />
+            ) : (
+              <AppText
+                title="Add to Category"
+                textColor={AppColors.WHITE}
+                textSize={1.9}
+                textFontWeight
+              />
+            )}
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </ScreenWrapper>
   );
 };
@@ -1341,6 +1574,59 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.BTNCOLOURS,
     padding: 8,
     borderRadius: 30,
+  },
+  catModalContainer: {
+    backgroundColor: AppColors.WHITE,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    padding: 22,
+    paddingBottom: Platform.OS === 'ios' ? 38 : 24,
+    width: '100%',
+    maxHeight: responsiveHeight(70),
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: -4},
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 12,
+  },
+  catModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  catListWrapper: {
+    marginTop: 14,
+    marginBottom: 18,
+    gap: 10,
+  },
+  catOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#E0E0E0',
+    backgroundColor: '#FAFAFA',
+  },
+  catOptionSelected: {
+    backgroundColor: AppColors.LIGHT_BTNCOLOURS,
+    borderColor: AppColors.BTNCOLOURS,
+  },
+  catOptionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  catConfirmBtn: {
+    backgroundColor: AppColors.BTNCOLOURS,
+    borderRadius: 16,
+    height: 56,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

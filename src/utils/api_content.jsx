@@ -32,6 +32,7 @@ export const endPoints = {
   notifyForNewPlace: '/api/user/notifyForNewPlace',
   support: '/api/user/support',
   subscribe: '/api/user/subscribe',
+  customCategory: '/api/user/customCategory',
 };
 
 export const ShowToast = (type: 'success' | 'error' | 'info', message) => {

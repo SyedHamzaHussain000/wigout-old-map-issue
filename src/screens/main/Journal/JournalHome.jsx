@@ -152,10 +152,13 @@ const JournalHome = ({navigation}) => {
   }, [combinedItems, selectedCategories, getPlaceCategory]);
 
   const fetchNotifications = useCallback(async () => {
+    if (!token) return;
     try {
       const res = await getAllNotifications(token);
-      const unreadNotifications = res?.data.filter(item => !item.read);
-      setIsRead(unreadNotifications?.length > 0 ? false : true);
+      if (res?.success && Array.isArray(res?.data)) {
+        const unreadNotifications = res.data.filter(item => !item.read);
+        setIsRead(unreadNotifications.length > 0 ? false : true);
+      }
     } catch (error) {
       console.error('Error fetching notifications:', error);
     }
@@ -681,7 +684,7 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     borderWidth: 1,
     borderColor: AppColors.menuBg, // Matching the Explore style (white border on transparent)
-    backgroundColor: 'transparent',
+    backgroundColor: AppColors.BTNCOLOURS,
   },
   locationContainer: {
     flexDirection: 'row',
@@ -759,6 +762,7 @@ const styles = StyleSheet.create({
   notificationIcon: {
     width: 25,
     height: 25,
+    tintColor: AppColors.WHITE,
   },
   gifContainer: {
     height: responsiveHeight(95),

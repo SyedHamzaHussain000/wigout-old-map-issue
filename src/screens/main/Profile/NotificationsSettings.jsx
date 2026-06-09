@@ -18,6 +18,7 @@ import {
   startBackgroundService,
   stopBackgroundService,
 } from '../../../services/BackgroundLocationService';
+import {requestLocationPermission} from '../../../utils/Permissions';
 
 const data = [
   {id: 1, title: 'Enable Sound & Vibrate', key: 'soundVibrate'},
@@ -30,17 +31,25 @@ const NotificationsSettings = () => {
   const dispatch = useDispatch();
   const settings = useSelector(state => state.user.notificationSettings);
 
-  const handleToggle = (id, key) => {
+  const handleToggle = async (id, key) => {
     const newValue = !settings[key];
-    dispatch(updateNotificationSettings({[key]: newValue}));
 
     // Specific logic for background location
     if (key === 'backgroundLocation') {
       if (newValue) {
-        startBackgroundService();
+        const permissionGranted = await requestLocationPermission();
+        if (permissionGranted) {
+          dispatch(updateNotificationSettings({[key]: true}));
+          startBackgroundService();
+        } else {
+          console.log('Location permission not granted, background location remains disabled.');
+        }
       } else {
+        dispatch(updateNotificationSettings({[key]: false}));
         stopBackgroundService();
       }
+    } else {
+      dispatch(updateNotificationSettings({[key]: newValue}));
     }
   };
 

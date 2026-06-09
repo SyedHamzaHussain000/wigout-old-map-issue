@@ -324,3 +324,125 @@ export const getGreeting = () => {
     return 'Good evening';
   }
 };
+
+export const createCustomCategory = async (token: string, title: string) => {
+  try {
+    const url = `${baseUrl}${endPoints.customCategory}`;
+    console.log('URL:----------', url);
+    const response = await axios.post(
+      url,
+      { title },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+    return response?.data;
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error?.response?.data?.message || error.message,
+    };
+  }
+};
+
+export const getCustomCategories = async (token: string) => {
+  try {
+    const response = await axios.get(
+      `${baseUrl}${endPoints.customCategory}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+    return response?.data;
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error?.response?.data?.message || error.message,
+    };
+  }
+};
+
+export const deleteCustomCategory = async (token: string, categoryId: string) => {
+  try {
+    const response = await axios.delete(
+      `${baseUrl}${endPoints.customCategory}/${categoryId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+    return response?.data;
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error?.response?.data?.message || error.message,
+    };
+  }
+};
+
+
+export const addItemToCustomCategory = async (
+  token: string,
+  categoryId: string,
+  item: {
+    placeId: string;
+    name: string;
+    address: string;
+    image: string;
+    rating: number;
+    userRatingsTotal: number;
+    latitude: number;
+    longitude: number;
+    category: string;
+  },
+) => {
+  try {
+    const response = await axios.post(
+      `${baseUrl}${endPoints.customCategory}/${categoryId}/item`,
+      item,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+    return response?.data;
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error?.response?.data?.message || error.message,
+    };
+  }
+};
+
+export const removeItemFromCustomCategory = async (
+  token: string,
+  categoryId: string,
+  placeId: string,
+) => {
+  try {
+    const response = await axios.delete(
+      `${baseUrl}${endPoints.customCategory}/${categoryId}/item`,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        data: {placeId},
+      },
+    );
+    return response?.data;
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error?.response?.data?.message || error.message,
+    };
+  }
+};

@@ -1,4 +1,11 @@
-import React, {useState, useEffect, useRef, Fragment, useMemo} from 'react';
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  Fragment,
+  useMemo,
+  useCallback,
+} from 'react';
 import {
   View,
   TouchableOpacity,
@@ -10,7 +17,9 @@ import {
   TextInput,
   RefreshControl,
   Image,
+  Platform,
 } from 'react-native';
+import Modal from 'react-native-modal';
 import FastImage from 'react-native-fast-image';
 import {useDispatch, useSelector} from 'react-redux';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -25,9 +34,10 @@ import {
 } from '../../utils/Responsive_Dimensions';
 import {useUserPreferences} from '../../utils/UserPreferences';
 
-import {baseUrl} from '../../utils/api_content';
+import {baseUrl, ShowToast} from '../../utils/api_content';
 import HomeCard from '../../components/HomeCard';
 import ScreenWrapper from '../../components/ScreenWrapper';
+import Entypo from 'react-native-vector-icons/Entypo';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import FetchNearbyPlaces from '../../ApiCalls/Main/FetchNearbyPlaces';
 import {GetReviews} from '../../ApiCalls/Main/Reviews/ReviewsApiCall';
@@ -38,7 +48,13 @@ import {
   startBackgroundService,
   stopBackgroundService,
 } from '../../services/BackgroundLocationService';
-import {getAllNotifications, getGreeting} from '../../GlobalFunctions/main';
+import {
+  getAllNotifications,
+  getGreeting,
+  createCustomCategory,
+  getCustomCategories,
+  deleteCustomCategory,
+} from '../../GlobalFunctions/main';
 import AppImages from '../../assets/images/AppImages';
 
 const CATEGORIES = [
@@ -138,6 +154,97 @@ const Home = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
+
+  const [customCategories, setCustomCategories] = useState([]);
+  const [addCategoryModalVisible, setAddCategoryModalVisible] = useState(false);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [newCategoryTitle, setNewCategoryTitle] = useState('');
+  const [categoryToDelete, setCategoryToDelete] = useState(null);
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+  const [isDeletingCategory, setIsDeletingCategory] = useState(false);
+
+  const fetchCustomCategories = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await getCustomCategories(token);
+      if (res?.success) {
+        setCustomCategories(res?.customCategories || []);
+      }
+    } catch (error) {
+      console.log('Error fetching custom categories:', error);
+    }
+  }, [token]);
+
+  const customCategoryItems = useMemo(() => {
+    if (!selectedCategory || !selectedCategory.isCustom) return [];
+    const found = customCategories.find(c => c._id === selectedCategory.id);
+    return found ? found.items || [] : [];
+  }, [selectedCategory, customCategories]);
+
+  const filterCategories = useMemo(() => {
+    return customCategories.map(cat => ({
+      id: cat._id,
+      name: cat.title,
+      icon: 'star-outline',
+      library: 'Ionicons',
+      isCustom: true,
+    }));
+  }, [customCategories]);
+
+  const handleCreateCategory = async () => {
+    if (!newCategoryTitle.trim()) {
+      ShowToast('error', 'Please enter a category title.');
+      return;
+    }
+    console.log('TOKEN:----------', token);
+    console.log('NEW CATEGORY:----------', newCategoryTitle.trim());
+    setIsCreatingCategory(true);
+    try {
+      const res = await createCustomCategory(token, newCategoryTitle.trim());
+      console.log('RESPONSE:----------', res);
+      if (res?.success) {
+        ShowToast('success', 'Category created successfully!');
+        setNewCategoryTitle('');
+        setAddCategoryModalVisible(false);
+        await fetchCustomCategories();
+      } else {
+        ShowToast('error', res?.message || 'Failed to create category.');
+      }
+    } catch (error) {
+      console.log('Error creating category:', error);
+      ShowToast('error', 'An error occurred.');
+    } finally {
+      setIsCreatingCategory(false);
+    }
+  };
+
+  const handleCategoryLongPress = category => {
+    setCategoryToDelete(category);
+    setDeleteModalVisible(true);
+  };
+
+  const handleDeleteCategory = async () => {
+    if (!categoryToDelete) return;
+    setIsDeletingCategory(true);
+    try {
+      const res = await deleteCustomCategory(token, categoryToDelete.id);
+      if (res?.success) {
+        ShowToast('success', 'Category deleted successfully!');
+        setDeleteModalVisible(false);
+        if (selectedCategory?.id === categoryToDelete.id) {
+          setSelectedCategory(null);
+        }
+        setCategoryToDelete(null);
+        await fetchCustomCategories();
+      } else {
+        ShowToast('error', res?.message || 'Failed to delete category.');
+      }
+    } catch (error) {
+      ShowToast('error', 'An error occurred.');
+    } finally {
+      setIsDeletingCategory(false);
+    }
+  };
   const [search, setSearch] = useState('');
   const [likedItems, setLikedItems] = useState([]);
   const [avoidItems, setAvoidItems] = useState([]);
@@ -153,7 +260,7 @@ const Home = () => {
   const nearbyAnim = useRef(new Animated.Value(0)).current;
   const isFocussed = useIsFocused();
 
-  const [includeShowBranding, setIncludeShowBranding] = useState(true);
+  const [includeShowBranding] = useState(true);
 
   const recommendationPool = useMemo(() => {
     const combined = [...placesRecommended, ...fetchedLocations];
@@ -398,22 +505,7 @@ const Home = () => {
     return fetchedLocations;
   }, [fetchedLocations, selectedCategory]);
 
-  useEffect(() => {
-    const showLoader = isFirstLoad.current;
-    if (isFirstLoad.current) {
-      isFirstLoad.current = false;
-    }
-    fetchData(showLoader);
-    if (token) {
-      fetchRecommendedData(likedItems, wishlistItems);
-    }
-  }, [currentLocation, selectedCategory]);
-
-  useEffect(() => {
-    fetchNotifications();
-  }, [isFocussed]);
-
-  const getDisplayCategory = item => {
+  const getDisplayCategory = useCallback(item => {
     const types = item?.types || [];
     const filterTypes = [
       'point_of_interest',
@@ -434,123 +526,183 @@ const Home = () => {
       .split(' ')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
-  };
+  }, []);
 
-  const fetchRecommendedData = async (
-    currentLiked = [],
-    currentWishlist = [],
-  ) => {
-    const loc =
-      currentLocation?.latitude && currentLocation?.longitude
-        ? currentLocation
-        : DEFAULT_LOCATION;
+  const fetchRecommendedData = useCallback(
+    async (currentLiked = [], currentWishlist = []) => {
+      const loc =
+        currentLocation?.latitude && currentLocation?.longitude
+          ? currentLocation
+          : DEFAULT_LOCATION;
 
-    try {
-      const broadResults = await FetchNearbyPlaces(
+      try {
+        const broadResults = await FetchNearbyPlaces(
+          loc,
+          dispatch,
+          'all',
+          '',
+          'skip',
+        );
+
+        let targetedResults = [];
+        const rawInterests = [...currentLiked, ...currentWishlist].flatMap(
+          item => {
+            const cats = [];
+            if (item?.category) cats?.push(item?.category?.toLowerCase());
+            if (item?.types && Array?.isArray(item?.types)) {
+              cats?.push(...item?.types.map(t => t?.toLowerCase()));
+            }
+            return cats;
+          },
+        );
+
+        const filterTypes = [
+          'point_of_interest',
+          'establishment',
+          'food',
+          'restaurant',
+          'health',
+          'store',
+          'natural_feature',
+        ];
+
+        const filteredRaw = rawInterests.filter(
+          cat => cat && !filterTypes.includes(cat),
+        );
+
+        const frequencyMap = {};
+        filteredRaw.forEach(cat => {
+          const normalized =
+            cat?.trim?.()?.toLowerCase?.()?.replace(/\s+/g, '_') || '';
+          frequencyMap[normalized] = (frequencyMap[normalized] || 0) + 1;
+        });
+
+        const sortedInterests = Object.keys(frequencyMap).sort(
+          (a, b) => frequencyMap[b] - frequencyMap[a],
+        );
+
+        const topInterests = sortedInterests.slice(0, 5);
+
+        if (topInterests.length > 0) {
+          const targetedFetches = topInterests.map(interest => {
+            const keyword = interest.replace(/_/g, ' ');
+            return FetchNearbyPlaces(loc, dispatch, interest, keyword, 'skip');
+          });
+          const resultsArray = await Promise.all(targetedFetches);
+          targetedResults = resultsArray.flat();
+        }
+
+        const combined = [...broadResults, ...targetedResults];
+        const uniqueMap = new Map();
+        combined.forEach(item => {
+          const id = item.place_id || item.placeId || item?._id;
+          if (id && !uniqueMap.has(id)) {
+            uniqueMap.set(id, item);
+          }
+        });
+
+        const finalSet = Array.from(uniqueMap.values());
+        dispatch(setRecommendedPlaces(finalSet));
+      } catch (error) {
+        console.log('Error fetching recommended data:', error);
+      }
+    },
+    [currentLocation, dispatch],
+  );
+
+  const fetchData = useCallback(
+    async (showLoader = true) => {
+      const loc =
+        currentLocation?.latitude && currentLocation?.longitude
+          ? currentLocation
+          : DEFAULT_LOCATION;
+
+      if (showLoader) setIsLoading(true);
+      await FetchNearbyPlaces(
         loc,
         dispatch,
-        'all',
-        '',
-        'skip',
+        selectedCategory ? selectedCategory.type : 'all',
+        selectedCategory?.keyword || '',
       );
+      if (showLoader) setIsLoading(false);
 
-      let targetedResults = [];
-      const rawInterests = [...currentLiked, ...currentWishlist].flatMap(
-        item => {
-          const cats = [];
-          if (item?.category) cats?.push(item?.category?.toLowerCase());
-          if (item?.types && Array?.isArray(item?.types)) {
-            cats?.push(...item?.types.map(t => t?.toLowerCase()));
-          }
-          return cats;
-        },
-      );
-
-      const filterTypes = [
-        'point_of_interest',
-        'establishment',
-        'food',
-        'restaurant',
-        'health',
-        'store',
-        'natural_feature',
-      ];
-
-      const filteredRaw = rawInterests.filter(
-        cat => cat && !filterTypes.includes(cat),
-      );
-
-      const frequencyMap = {};
-      filteredRaw.forEach(cat => {
-        const normalized =
-          cat?.trim?.()?.toLowerCase?.()?.replace(/\s+/g, '_') || '';
-        frequencyMap[normalized] = (frequencyMap[normalized] || 0) + 1;
-      });
-
-      const sortedInterests = Object.keys(frequencyMap).sort(
-        (a, b) => frequencyMap[b] - frequencyMap[a],
-      );
-
-      const topInterests = sortedInterests.slice(0, 5);
-
-      if (topInterests.length > 0) {
-        const targetedFetches = topInterests.map(interest => {
-          const keyword = interest.replace(/_/g, ' ');
-          return FetchNearbyPlaces(loc, dispatch, interest, keyword, 'skip');
-        });
-        const resultsArray = await Promise.all(targetedFetches);
-        targetedResults = resultsArray.flat();
-      }
-
-      const combined = [...broadResults, ...targetedResults];
-      const uniqueMap = new Map();
-      combined.forEach(item => {
-        const id = item.place_id || item.placeId || item?._id;
-        if (id && !uniqueMap.has(id)) {
-          uniqueMap.set(id, item);
-        }
-      });
-
-      const finalSet = Array.from(uniqueMap.values());
-      dispatch(setRecommendedPlaces(finalSet));
-    } catch (error) {
-      console.log('Error fetching recommended data:', error);
-    }
-  };
-
-  const fetchData = async (showLoader = true) => {
-    const loc =
-      currentLocation?.latitude && currentLocation?.longitude
-        ? currentLocation
-        : DEFAULT_LOCATION;
-
-    if (showLoader) setIsLoading(true);
-    await FetchNearbyPlaces(
-      loc,
+      Animated.stagger(150, [
+        Animated.timing(headerAnim, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+        Animated.timing(recommendedAnim, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+        Animated.timing(nearbyAnim, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    },
+    [
+      currentLocation,
       dispatch,
-      selectedCategory ? selectedCategory.type : 'all',
-      selectedCategory?.keyword || '',
-    );
-    if (showLoader) setIsLoading(false);
+      selectedCategory,
+      headerAnim,
+      recommendedAnim,
+      nearbyAnim,
+    ],
+  );
 
-    Animated.stagger(150, [
-      Animated.timing(headerAnim, {
-        toValue: 1,
-        duration: 400,
-        useNativeDriver: true,
-      }),
-      Animated.timing(recommendedAnim, {
-        toValue: 1,
-        duration: 400,
-        useNativeDriver: true,
-      }),
-      Animated.timing(nearbyAnim, {
-        toValue: 1,
-        duration: 400,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  };
+  const handleSearch = useCallback(
+    async query => {
+      const loc =
+        currentLocation?.latitude && currentLocation?.longitude
+          ? currentLocation
+          : DEFAULT_LOCATION;
+
+      setIsLoading(true);
+      await FetchNearbyPlaces(loc, dispatch, '', query);
+      setIsLoading(false);
+    },
+    [currentLocation, dispatch],
+  );
+
+  const fetchNotifications = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await getAllNotifications(token);
+      if (res?.success && Array.isArray(res?.data)) {
+        const unreadNotifications = res.data.filter(item => !item.read);
+        setIsRead(unreadNotifications.length > 0 ? false : true);
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    const showLoader = isFirstLoad.current;
+    if (isFirstLoad.current) {
+      isFirstLoad.current = false;
+    }
+    fetchData(showLoader);
+    if (token) {
+      fetchRecommendedData(likedItems, wishlistItems);
+    }
+  }, [
+    currentLocation,
+    selectedCategory,
+    fetchData,
+    fetchRecommendedData,
+    likedItems,
+    wishlistItems,
+    token,
+  ]);
+
+  useEffect(() => {
+    fetchNotifications();
+  }, [isFocussed, fetchNotifications]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -573,22 +725,13 @@ const Home = () => {
           setWishlistItems(freshWishlist);
         }
         await fetchRecommendedData(freshLiked, freshWishlist);
+        await fetchCustomCategories();
       } catch (error) {
         console.log('Error refreshing data:', error);
       }
     }
     await fetchData(false);
     setRefreshing(false);
-  };
-
-  const fetchNotifications = async () => {
-    try {
-      const res = await getAllNotifications(token);
-      const unreadNotifications = res?.data.filter(item => !item.read);
-      setIsRead(unreadNotifications?.length > 0 ? false : true);
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-    }
   };
 
   useEffect(() => {
@@ -616,6 +759,7 @@ const Home = () => {
         }
 
         fetchRecommendedData(freshLiked, freshWishlist);
+        await fetchCustomCategories();
       } catch (error) {
         console.log('Error refreshing data on Home focus:', error);
       }
@@ -624,7 +768,13 @@ const Home = () => {
     const unsubscribe = navigation.addListener('focus', refreshAllData);
     refreshAllData();
     return unsubscribe;
-  }, [navigation, token, currentLocation]);
+  }, [
+    navigation,
+    token,
+    currentLocation,
+    fetchCustomCategories,
+    fetchRecommendedData,
+  ]);
 
   const settings = useSelector(state => state.user.notificationSettings);
 
@@ -648,24 +798,14 @@ const Home = () => {
         useNativeDriver: true,
       }),
     ]).start();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (debouncedSearch && debouncedSearch.trim().length > 2) {
       handleSearch(debouncedSearch);
     }
-  }, [debouncedSearch]);
-
-  const handleSearch = async query => {
-    const loc =
-      currentLocation?.latitude && currentLocation?.longitude
-        ? currentLocation
-        : DEFAULT_LOCATION;
-
-    setIsLoading(true);
-    await FetchNearbyPlaces(loc, dispatch, '', query);
-    setIsLoading(false);
-  };
+  }, [debouncedSearch, handleSearch]);
 
   const renderHeader = () => (
     <View>
@@ -809,6 +949,52 @@ const Home = () => {
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.tabScrollContent}>
+          {/* Add Category Tab at Index 0 */}
+          <TouchableOpacity
+            style={styles.addCategoryButton}
+            onPress={() => setAddCategoryModalVisible(true)}
+            activeOpacity={0.7}>
+            <View style={styles.tabContent}>
+              <Entypo name="plus" size={15} color={AppColors.WHITE} />
+              <AppText
+                title="Add Category"
+                textColor={AppColors.WHITE}
+                textSize={1.5}
+                textFontWeight={false}
+                paddingLeft={1}
+              />
+            </View>
+          </TouchableOpacity>
+
+          {/* Custom Categories starting at Index 1 */}
+          {filterCategories.map(category => {
+            const isActive = selectedCategory?.id === category.id;
+            return (
+              <TouchableOpacity
+                key={category.id}
+                style={[styles.tabItem, isActive && styles.activeTabItem]}
+                onPress={() => setSelectedCategory(isActive ? null : category)}
+                onLongPress={() => handleCategoryLongPress(category)}
+                activeOpacity={0.7}>
+                <View style={styles.tabContent}>
+                  <Ionicons
+                    name={category.icon}
+                    size={15}
+                    color={isActive ? '#FFF' : '#47082E'}
+                  />
+                  <AppText
+                    title={category.name}
+                    textColor={isActive ? AppColors.WHITE : AppColors.GRAY}
+                    textSize={1.5}
+                    textFontWeight={isActive}
+                    paddingLeft={1}
+                  />
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+
+          {/* Predefined Categories */}
           {CATEGORIES.map(category => {
             const isActive = selectedCategory?.id === category?.id;
             return (
@@ -847,100 +1033,102 @@ const Home = () => {
 
       <LineBreak space={1} />
 
-      {includeShowBranding && settings?.recommendations && (
-        <Fragment>
-          <View style={{paddingHorizontal: responsiveWidth(5)}}>
-            <View style={styles.sectionHeader}>
+      {includeShowBranding &&
+        settings?.recommendations &&
+        !selectedCategory?.isCustom && (
+          <Fragment>
+            <View style={{paddingHorizontal: responsiveWidth(5)}}>
+              <View style={styles.sectionHeader}>
+                <AppText
+                  title={
+                    selectedCategory
+                      ? `Recommended ${selectedCategory.name}`
+                      : 'Recommended'
+                  }
+                  textColor={AppColors.BLACK}
+                  textSize={2}
+                  textFontWeight
+                />
+                <View />
+              </View>
+            </View>
+
+            <LineBreak space={2} />
+
+            <Animated.View
+              style={{
+                paddingHorizontal: responsiveWidth(5),
+                opacity: recommendedAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0.1, 1],
+                }),
+                transform: [
+                  {
+                    translateY: recommendedAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [20, 0],
+                    }),
+                  },
+                ],
+              }}>
+              <FlatList
+                data={displayedRecommended}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                keyExtractor={(_, index) => `rec-${index}`}
+                ListEmptyComponent={
+                  <View
+                    style={{
+                      paddingVertical: responsiveHeight(2),
+                      paddingLeft: responsiveWidth(1),
+                    }}>
+                    <AppText
+                      title={
+                        selectedCategory
+                          ? `No recommended ${selectedCategory.name.toLowerCase()} found`
+                          : 'No recommended places found'
+                      }
+                      textColor={AppColors.GRAY}
+                      textSize={1.4}
+                    />
+                  </View>
+                }
+                contentContainerStyle={{
+                  gap: 12,
+                  marginBottom: responsiveHeight(2),
+                }}
+                renderItem={({item}) => (
+                  <HomeCard
+                    name={item?.name}
+                    address={item?.vicinity}
+                    CardImg={item?.photos?.[0]?.photo_reference}
+                    category={getDisplayCategory(item)}
+                    cardHeight={30}
+                    cardWidth={75}
+                    cardOnPress={() =>
+                      navigateToRoute('HomeDetails', {placeDetails: item})
+                    }
+                  />
+                )}
+              />
+            </Animated.View>
+
+            <View style={{paddingHorizontal: responsiveWidth(5)}}>
+              <LineBreak space={1} />
               <AppText
                 title={
                   selectedCategory
-                    ? `Recommended ${selectedCategory.name}`
-                    : 'Recommended'
+                    ? `Discover ${selectedCategory.name} Nearby`
+                    : 'Discover Places Nearby'
                 }
                 textColor={AppColors.BLACK}
                 textSize={2}
                 textFontWeight
               />
-              <View />
+              <LineBreak space={2} />
             </View>
-          </View>
-
-          <LineBreak space={2} />
-
-          <Animated.View
-            style={{
-              paddingHorizontal: responsiveWidth(5),
-              opacity: recommendedAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [0.1, 1],
-              }),
-              transform: [
-                {
-                  translateY: recommendedAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [20, 0],
-                  }),
-                },
-              ],
-            }}>
-            <FlatList
-              data={displayedRecommended}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              keyExtractor={(_, index) => `rec-${index}`}
-              ListEmptyComponent={
-                <View
-                  style={{
-                    paddingVertical: responsiveHeight(2),
-                    paddingLeft: responsiveWidth(1),
-                  }}>
-                  <AppText
-                    title={
-                      selectedCategory
-                        ? `No recommended ${selectedCategory.name.toLowerCase()} found`
-                        : 'No recommended places found'
-                    }
-                    textColor={AppColors.GRAY}
-                    textSize={1.4}
-                  />
-                </View>
-              }
-              contentContainerStyle={{
-                gap: 12,
-                marginBottom: responsiveHeight(2),
-              }}
-              renderItem={({item}) => (
-                <HomeCard
-                  name={item?.name}
-                  address={item?.vicinity}
-                  CardImg={item?.photos?.[0]?.photo_reference}
-                  category={getDisplayCategory(item)}
-                  cardHeight={30}
-                  cardWidth={75}
-                  cardOnPress={() =>
-                    navigateToRoute('HomeDetails', {placeDetails: item})
-                  }
-                />
-              )}
-            />
-          </Animated.View>
-
-          <View style={{paddingHorizontal: responsiveWidth(5)}}>
-            <LineBreak space={1} />
-            <AppText
-              title={
-                selectedCategory
-                  ? `Discover ${selectedCategory.name} Nearby`
-                  : 'Discover Places Nearby'
-              }
-              textColor={AppColors.BLACK}
-              textSize={2}
-              textFontWeight
-            />
-            <LineBreak space={2} />
-          </View>
-        </Fragment>
-      )}
+          </Fragment>
+        )}
     </View>
   );
 
@@ -952,7 +1140,13 @@ const Home = () => {
         </View>
       ) : (
         <FlatList
-          data={includeShowBranding ? displayedNearby : []}
+          data={
+            selectedCategory?.isCustom
+              ? customCategoryItems
+              : includeShowBranding
+              ? displayedNearby
+              : []
+          }
           ListHeaderComponent={renderHeader()}
           refreshControl={
             <RefreshControl
@@ -967,7 +1161,15 @@ const Home = () => {
           columnWrapperStyle={styles.columnWrapper}
           contentContainerStyle={{paddingBottom: responsiveHeight(4)}}
           ListEmptyComponent={
-            includeShowBranding && displayedNearby.length === 0 ? (
+            selectedCategory?.isCustom ? (
+              customCategoryItems.length === 0 ? (
+                <View style={{paddingHorizontal: responsiveWidth(5)}}>
+                  <AppText
+                    title={`No places added to "${selectedCategory.name}"`}
+                  />
+                </View>
+              ) : null
+            ) : includeShowBranding && displayedNearby.length === 0 ? (
               <View style={{paddingHorizontal: responsiveWidth(5)}}>
                 <AppText
                   title={
@@ -997,9 +1199,9 @@ const Home = () => {
               }}>
               <HomeCard
                 name={item?.name}
-                address={item?.vicinity}
+                address={item?.vicinity || item?.address}
                 category={selectedCategory?.name || getDisplayCategory(item)}
-                CardImg={item?.photos?.[0]?.photo_reference}
+                CardImg={item?.photos?.[0]?.photo_reference || item?.image}
                 cardOnPress={() =>
                   navigateToRoute('HomeDetails', {placeDetails: item})
                 }
@@ -1008,6 +1210,129 @@ const Home = () => {
           )}
         />
       )}
+
+      {/* Add Category Modal */}
+      <Modal
+        isVisible={addCategoryModalVisible}
+        backdropOpacity={0.5}
+        onBackdropPress={() => {
+          if (!isCreatingCategory) setAddCategoryModalVisible(false);
+        }}
+        onBackButtonPress={() => {
+          if (!isCreatingCategory) setAddCategoryModalVisible(false);
+        }}
+        animationIn="slideInUp"
+        animationOut="slideOutDown"
+        style={{margin: 0, justifyContent: 'flex-end'}}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <AppText
+              title="Create Custom Category"
+              textColor={AppColors.BLACK}
+              textSize={2.2}
+              textFontWeight
+            />
+            <TouchableOpacity
+              disabled={isCreatingCategory}
+              onPress={() => setAddCategoryModalVisible(false)}>
+              <Ionicons name="close" size={24} color={AppColors.BLACK} />
+            </TouchableOpacity>
+          </View>
+
+          <AppText
+            title="Category Title"
+            textColor={AppColors.GRAY}
+            textSize={1.5}
+            paddingBottom={1.5}
+          />
+          <TextInput
+            style={styles.modalInput}
+            placeholder="e.g. Sushi spots, Coffee places"
+            placeholderTextColor="#999"
+            value={newCategoryTitle}
+            onChangeText={setNewCategoryTitle}
+            editable={!isCreatingCategory}
+          />
+
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={[styles.confirmBtn, isCreatingCategory && {opacity: 0.7}]}
+            disabled={isCreatingCategory}
+            onPress={handleCreateCategory}>
+            {isCreatingCategory ? (
+              <ActivityIndicator color={AppColors.WHITE} />
+            ) : (
+              <AppText
+                title="Create"
+                textColor={AppColors.WHITE}
+                textSize={1.8}
+                textFontWeight
+              />
+            )}
+          </TouchableOpacity>
+        </View>
+      </Modal>
+
+      {/* Delete Category Modal */}
+      <Modal
+        isVisible={deleteModalVisible}
+        backdropOpacity={0.5}
+        onBackdropPress={() => {
+          if (!isDeletingCategory) setDeleteModalVisible(false);
+        }}
+        onBackButtonPress={() => {
+          if (!isDeletingCategory) setDeleteModalVisible(false);
+        }}
+        animationIn="zoomIn"
+        animationOut="zoomOut"
+        style={{margin: 0, justifyContent: 'center', alignItems: 'center'}}>
+        <View style={styles.alertModalContent}>
+          <AppText
+            title="Delete Category"
+            textColor={AppColors.BLACK}
+            textSize={2.2}
+            textFontWeight
+          />
+          <AppText
+            title={`Are you sure you want to delete "${categoryToDelete?.name}"?`}
+            textColor={AppColors.GRAY}
+            textSize={1.6}
+            marginTop={2}
+            paddingBottom={2}
+          />
+
+          <View style={styles.modalButtonRow}>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={styles.modalCancelBtn}
+              disabled={isDeletingCategory}
+              onPress={() => setDeleteModalVisible(false)}>
+              <AppText
+                title="Cancel"
+                textColor={AppColors.BLACK}
+                textSize={1.8}
+              />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={styles.modalDeleteBtn}
+              disabled={isDeletingCategory}
+              onPress={handleDeleteCategory}>
+              {isDeletingCategory ? (
+                <ActivityIndicator color={AppColors.WHITE} />
+              ) : (
+                <AppText
+                  title="Delete"
+                  textColor={AppColors.WHITE}
+                  textSize={1.8}
+                  textFontWeight
+                />
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ScreenWrapper>
   );
 };
@@ -1085,6 +1410,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E0E0E0',
   },
+  addCategoryButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: AppColors.ThemeBlue,
+    // borderWidth: 1,
+    // borderColor: AppColors.menuBg,
+  },
   activeTabItem: {
     backgroundColor: '#47082E',
     borderColor: '#47082E',
@@ -1137,5 +1470,76 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#000',
     padding: 0,
+  },
+  modalContent: {
+    backgroundColor: AppColors.WHITE,
+    borderTopLeftRadius: 25,
+    borderTopRightRadius: 25,
+    padding: 20,
+    paddingBottom: Platform.OS === 'ios' ? 35 : 20,
+    width: '100%',
+    maxHeight: responsiveHeight(70),
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: -3},
+    shadowOpacity: 0.15,
+    shadowRadius: 5,
+    elevation: 10,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  modalInput: {
+    borderWidth: 1.5,
+    borderColor: '#E0E0E0',
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    height: 50,
+    fontSize: 16,
+    color: '#000',
+    marginBottom: 20,
+    backgroundColor: '#FAFAFA',
+  },
+  confirmBtn: {
+    backgroundColor: AppColors.BTNCOLOURS,
+    borderRadius: 15,
+    height: 55,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  alertModalContent: {
+    backgroundColor: AppColors.WHITE,
+    borderRadius: 20,
+    padding: 24,
+    width: responsiveWidth(85),
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalButtonRow: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  modalCancelBtn: {
+    flex: 1,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 12,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalDeleteBtn: {
+    flex: 1,
+    backgroundColor: '#D32F2F',
+    borderRadius: 12,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
