@@ -10,8 +10,11 @@ const FetchNearbyPlaces = async (
   customAction = null,
 ) => {
   // If type is 'all' or empty, we omit the type parameter to get a broad set of results
-  const typeParam = type && type !== 'all' ? `&type=${type}` : '';
-  const keywordParam = keyword ? `&keyword=${keyword}` : '';
+  // const typeParam = type && type !== 'all' ? `&type=${type}` : '';
+  // const keywordParam = keyword ? `&keyword=${keyword}` : '';
+  const typeParam =
+    type && type !== 'all' ? `&type=${encodeURIComponent(type)}` : '';
+  const keywordParam = keyword ? `&keyword=${encodeURIComponent(keyword)}` : '';
 
   let url = `${Google_Base_Url}place/nearbysearch/json?location=${location?.latitude},${location.longitude}&radius=160000${typeParam}${keywordParam}&key=${Google_API_KEY}`;
 

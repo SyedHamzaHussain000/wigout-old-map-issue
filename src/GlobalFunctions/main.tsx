@@ -287,19 +287,44 @@ export const support = async ({
   }
 };
 
-export const subscribeUser = async (
+export const verifyIAPReceipt = async (
   token: string,
-  plan: string,
-  purchaseToken?: string,
-  transactionId?: string,
+  payload: {
+    platform: 'google' | 'apple';
+    subType: string;
+    plan: string;
+    productId: string;
+    purchaseToken: string;
+    type?: string;
+    signedTransactionInfo?: string;
+  },
 ) => {
   try {
     const response = await axios.post(
-      `${baseUrl}${endPoints.subscribe}`,
-      { plan, purchaseToken, transactionId },
+      `${baseUrl}${endPoints.verifyIAPReceipt}`,
+      payload,
       {
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+    return response?.data;
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error?.response?.data?.message || error.message,
+    };
+  }
+};
+
+export const getUserSubscription = async (token: string) => {
+  try {
+    const response = await axios.get(
+      `${baseUrl}${endPoints.getUserSubscriptions}`,
+      {
+        headers: {
           Authorization: `Bearer ${token}`,
         },
       },

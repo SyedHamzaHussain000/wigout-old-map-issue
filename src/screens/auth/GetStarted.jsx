@@ -52,14 +52,16 @@ const GetStarted = () => {
   }, []);
 
   useEffect(() => {
-    const initNotificationsOnGetStarted = async () => {
-      // Explicit Notifee permission request for Android 13+
-      await notifee.requestPermission();
-      const granted = await requestUserPermission();
-      console.log('Notification Permission Granted on GetStarted:', granted);
-    };
+    setTimeout(() => {
+      const initNotificationsOnGetStarted = async () => {
+        // Explicit Notifee permission request for Android 13+
+        await notifee.requestPermission();
+        const granted = await requestUserPermission();
+        console.log('Notification Permission Granted on GetStarted:', granted);
+      };
 
-    initNotificationsOnGetStarted();
+      initNotificationsOnGetStarted();
+    }, 1000);
   }, []);
 
   const handleGoogleSignIn = useCallback(async () => {

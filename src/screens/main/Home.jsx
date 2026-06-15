@@ -37,7 +37,6 @@ import {useUserPreferences} from '../../utils/UserPreferences';
 import {baseUrl, ShowToast} from '../../utils/api_content';
 import HomeCard from '../../components/HomeCard';
 import ScreenWrapper from '../../components/ScreenWrapper';
-import Entypo from 'react-native-vector-icons/Entypo';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import FetchNearbyPlaces from '../../ApiCalls/Main/FetchNearbyPlaces';
 import {GetReviews} from '../../ApiCalls/Main/Reviews/ReviewsApiCall';
@@ -51,7 +50,6 @@ import {
 import {
   getAllNotifications,
   getGreeting,
-  createCustomCategory,
   getCustomCategories,
   deleteCustomCategory,
 } from '../../GlobalFunctions/main';
@@ -156,11 +154,8 @@ const Home = () => {
   const [selectedCategory, setSelectedCategory] = useState(null);
 
   const [customCategories, setCustomCategories] = useState([]);
-  const [addCategoryModalVisible, setAddCategoryModalVisible] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
-  const [newCategoryTitle, setNewCategoryTitle] = useState('');
   const [categoryToDelete, setCategoryToDelete] = useState(null);
-  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [isDeletingCategory, setIsDeletingCategory] = useState(false);
 
   const fetchCustomCategories = useCallback(async () => {
@@ -190,33 +185,6 @@ const Home = () => {
       isCustom: true,
     }));
   }, [customCategories]);
-
-  const handleCreateCategory = async () => {
-    if (!newCategoryTitle.trim()) {
-      ShowToast('error', 'Please enter a category title.');
-      return;
-    }
-    console.log('TOKEN:----------', token);
-    console.log('NEW CATEGORY:----------', newCategoryTitle.trim());
-    setIsCreatingCategory(true);
-    try {
-      const res = await createCustomCategory(token, newCategoryTitle.trim());
-      console.log('RESPONSE:----------', res);
-      if (res?.success) {
-        ShowToast('success', 'Category created successfully!');
-        setNewCategoryTitle('');
-        setAddCategoryModalVisible(false);
-        await fetchCustomCategories();
-      } else {
-        ShowToast('error', res?.message || 'Failed to create category.');
-      }
-    } catch (error) {
-      console.log('Error creating category:', error);
-      ShowToast('error', 'An error occurred.');
-    } finally {
-      setIsCreatingCategory(false);
-    }
-  };
 
   const handleCategoryLongPress = category => {
     setCategoryToDelete(category);
@@ -949,24 +917,8 @@ const Home = () => {
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.tabScrollContent}>
-          {/* Add Category Tab at Index 0 */}
-          <TouchableOpacity
-            style={styles.addCategoryButton}
-            onPress={() => setAddCategoryModalVisible(true)}
-            activeOpacity={0.7}>
-            <View style={styles.tabContent}>
-              <Entypo name="plus" size={15} color={AppColors.WHITE} />
-              <AppText
-                title="Add Category"
-                textColor={AppColors.WHITE}
-                textSize={1.5}
-                textFontWeight={false}
-                paddingLeft={1}
-              />
-            </View>
-          </TouchableOpacity>
 
-          {/* Custom Categories starting at Index 1 */}
+          {/* Custom Categories */}
           {filterCategories.map(category => {
             const isActive = selectedCategory?.id === category.id;
             return (
@@ -1211,69 +1163,7 @@ const Home = () => {
         />
       )}
 
-      {/* Add Category Modal */}
-      <Modal
-        isVisible={addCategoryModalVisible}
-        backdropOpacity={0.5}
-        onBackdropPress={() => {
-          if (!isCreatingCategory) setAddCategoryModalVisible(false);
-        }}
-        onBackButtonPress={() => {
-          if (!isCreatingCategory) setAddCategoryModalVisible(false);
-        }}
-        animationIn="slideInUp"
-        animationOut="slideOutDown"
-        style={{margin: 0, justifyContent: 'flex-end'}}>
-        <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
-            <AppText
-              title="Create Custom Category"
-              textColor={AppColors.BLACK}
-              textSize={2.2}
-              textFontWeight
-            />
-            <TouchableOpacity
-              disabled={isCreatingCategory}
-              onPress={() => setAddCategoryModalVisible(false)}>
-              <Ionicons name="close" size={24} color={AppColors.BLACK} />
-            </TouchableOpacity>
-          </View>
-
-          <AppText
-            title="Category Title"
-            textColor={AppColors.GRAY}
-            textSize={1.5}
-            paddingBottom={1.5}
-          />
-          <TextInput
-            style={styles.modalInput}
-            placeholder="e.g. Sushi spots, Coffee places"
-            placeholderTextColor="#999"
-            value={newCategoryTitle}
-            onChangeText={setNewCategoryTitle}
-            editable={!isCreatingCategory}
-          />
-
-          <TouchableOpacity
-            activeOpacity={0.8}
-            style={[styles.confirmBtn, isCreatingCategory && {opacity: 0.7}]}
-            disabled={isCreatingCategory}
-            onPress={handleCreateCategory}>
-            {isCreatingCategory ? (
-              <ActivityIndicator color={AppColors.WHITE} />
-            ) : (
-              <AppText
-                title="Create"
-                textColor={AppColors.WHITE}
-                textSize={1.8}
-                textFontWeight
-              />
-            )}
-          </TouchableOpacity>
-        </View>
-      </Modal>
-
-      {/* Delete Category Modal */}
+      {/* Delete Category Modal (Long-press to delete custom category) */}
       <Modal
         isVisible={deleteModalVisible}
         backdropOpacity={0.5}

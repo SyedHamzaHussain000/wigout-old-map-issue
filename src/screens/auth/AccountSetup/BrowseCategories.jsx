@@ -9,7 +9,9 @@ import {
   TextInput,
   SafeAreaView,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
+import Modal from 'react-native-modal';
 import {useDispatch, useSelector} from 'react-redux';
 import Svg, {Defs, LinearGradient, Stop, Rect} from 'react-native-svg';
 
@@ -27,9 +29,15 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import BackgroundScreen from '../../../components/AppTextComps/BackgroundScreen';
 import ShowError from '../../../utils/ShowError';
+import {ShowToast} from '../../../utils/api_content';
 
 // Logic & API
 import {setIsListBuilt} from '../../../redux/Slices';
+import {
+  createCustomCategory,
+  getCustomCategories,
+  deleteCustomCategory,
+} from '../../../GlobalFunctions/main';
 import FetchNearbyPlaces from '../../../ApiCalls/Main/FetchNearbyPlaces';
 import {
   GetReviews,
@@ -52,7 +60,8 @@ const BrowseCategories = ({navigation}) => {
   const dispatch = useDispatch();
   const userSelector = useSelector(state => state.user);
 
-  const {token, current_location, places_nearby, isListBuilt} = userSelector;
+  const {token, userData, current_location, places_nearby, isListBuilt} =
+    userSelector;
 
   const [selectedCategory, setSelectedCategory] = useState('Restaurants');
   const [customPlace, setCustomPlace] = useState('');
@@ -67,7 +76,17 @@ const BrowseCategories = ({navigation}) => {
   const [wishlistCount, setWishlistCount] = useState(0);
   const [actionLoading, setActionLoading] = useState(false);
 
+  // Custom Category state
+  const [addCategoryModalVisible, setAddCategoryModalVisible] = useState(false);
+  const [newCategoryTitle, setNewCategoryTitle] = useState('');
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+  const [customCategories, setCustomCategories] = useState([]);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState(null);
+  const [isDeletingCategory, setIsDeletingCategory] = useState(false);
+
   const debouncedSearch = useDebounce(customPlace, 600);
+  const subscription = userData?.subscription;
 
   const categories = useMemo(
     () => [
@@ -137,16 +156,79 @@ const BrowseCategories = ({navigation}) => {
           'gym fitness workout health exercise sports equipment training',
         library: 'Ionicons',
       },
-      {
-        id: '9',
-        name: 'Other',
-        icon: 'storefront-outline',
-        type: 'establishment',
-        library: 'Ionicons',
-      },
     ],
     [],
   );
+
+  // Fetch existing custom categories
+  const fetchCustomCategories = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await getCustomCategories(token);
+      if (res?.success) {
+        setCustomCategories(res?.customCategories || []);
+      }
+    } catch (error) {
+      console.log('Error fetching custom categories:', error);
+    }
+  }, [token]);
+
+  const handleCreateCategory = async () => {
+    if (!newCategoryTitle.trim()) {
+      ShowToast('error', 'Please enter a category title.');
+      return;
+    }
+    setIsCreatingCategory(true);
+    try {
+      const res = await createCustomCategory(token, newCategoryTitle.trim());
+      if (res?.success) {
+        ShowToast('success', 'Category created successfully!');
+        setNewCategoryTitle('');
+        setAddCategoryModalVisible(false);
+        await fetchCustomCategories();
+      } else {
+        ShowToast('error', res?.message || 'Failed to create category.');
+      }
+    } catch (error) {
+      console.log('Error creating category:', error);
+      ShowToast('error', 'An error occurred.');
+    } finally {
+      setIsCreatingCategory(false);
+    }
+  };
+
+  const handleLongPressCustomCategory = cat => {
+    setCategoryToDelete(cat);
+    setDeleteModalVisible(true);
+  };
+
+  const handleDeleteCategory = async () => {
+    if (!categoryToDelete) return;
+    setIsDeletingCategory(true);
+    try {
+      const res = await deleteCustomCategory(token, categoryToDelete._id);
+      if (res?.success) {
+        ShowToast('success', 'Category deleted successfully!');
+        setDeleteModalVisible(false);
+        if (selectedCategory === categoryToDelete.title) {
+          setSelectedCategory('Restaurants');
+        }
+        setCategoryToDelete(null);
+        await fetchCustomCategories();
+      } else {
+        ShowToast('error', res?.message || 'Failed to delete category.');
+      }
+    } catch (error) {
+      console.log('Error deleting category:', error);
+      ShowToast('error', 'An error occurred.');
+    } finally {
+      setIsDeletingCategory(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCustomCategories();
+  }, [fetchCustomCategories]);
 
   // 1. Initial Data Load
   useEffect(() => {
@@ -173,10 +255,24 @@ const BrowseCategories = ({navigation}) => {
     fetchInitialData();
   }, [token]);
 
+  // Derived: is the selected category a custom one?
+  const isCustomSelected = useMemo(() => {
+    return customCategories.some(c => c.title === selectedCategory);
+  }, [customCategories, selectedCategory]);
+
+  // Derived: items of the currently selected custom category
+  const customCategoryItems = useMemo(() => {
+    if (!isCustomSelected) return [];
+    const found = customCategories.find(c => c.title === selectedCategory);
+    return found?.items || [];
+  }, [isCustomSelected, customCategories, selectedCategory]);
+
   // 2. Fetch Places based on category or search
   const fetchPlaces = useCallback(
     async (query = '') => {
       if (!current_location?.latitude) return;
+      // Skip Google Places fetch when a custom category is selected
+      if (isCustomSelected) return;
       setLoading(true);
       const cat = categories.find(c => c.name === selectedCategory);
       const type = query ? '' : cat?.type || '';
@@ -184,7 +280,13 @@ const BrowseCategories = ({navigation}) => {
       await FetchNearbyPlaces(current_location, dispatch, type, keyword);
       setLoading(false);
     },
-    [selectedCategory, current_location, categories, dispatch],
+    [
+      selectedCategory,
+      isCustomSelected,
+      current_location,
+      categories,
+      dispatch,
+    ],
   );
 
   useEffect(() => {
@@ -375,21 +477,42 @@ const BrowseCategories = ({navigation}) => {
 
   // 4. Sub-renderers
   const renderPlaceItem = ({item}) => {
-    const imageUrl = item.photos?.[0]?.photo_reference
+    // Custom category items come with direct fields (placeId, image, address, latitude/longitude)
+    // Google Places items have place_id, photos[], vicinity
+    const isCustomItem = !!item.placeId && !item.place_id;
+
+    const imageUrl = isCustomItem
+      ? item.image || null
+      : item.photos?.[0]?.photo_reference
       ? `${Google_Places_Images}${item.photos[0].photo_reference}&maxwidth=200`
       : null;
 
-    const isLiked = likedItems.some(l => l.placeId === item.place_id);
-    const isAvoided = avoidItems.some(a => a.placeId === item.place_id);
-    // Only show wishlist as active if item is NOT already in Go Again or Avoid
+    const placeId = item.place_id || item.placeId;
+    const address =
+      item.vicinity || item.formatted_address || item.address || 'Nearby';
+
+    const isLiked = likedItems.some(l => l.placeId === placeId);
+    const isAvoided = avoidItems.some(a => a.placeId === placeId);
     const isWishlisted =
-      !isLiked &&
-      !isAvoided &&
-      wishlistItems.some(w => w.placeId === item.place_id);
+      !isLiked && !isAvoided && wishlistItems.some(w => w.placeId === placeId);
 
     return (
       <TouchableOpacity
-        onPress={() => navigateToRoute('HomeDetails', {placeDetails: item})}
+        onPress={() =>
+          navigateToRoute('HomeDetails', {
+            placeDetails: isCustomItem
+              ? {
+                  place_id: item.placeId,
+                  name: item.name,
+                  vicinity: item.address,
+                  rating: item.rating,
+                  image: item.image,
+                  latitude: item.latitude,
+                  longitude: item.longitude,
+                }
+              : item,
+          })
+        }
         style={styles.placeItem}>
         {imageUrl ? (
           <Image source={{uri: imageUrl}} style={styles.placeImage} />
@@ -409,7 +532,7 @@ const BrowseCategories = ({navigation}) => {
           />
           <AppText title={selectedCategory} textSize={1.3} textColor="#666" />
           <AppText
-            title={item.vicinity || 'Nearby'}
+            title={address}
             textSize={1.3}
             textColor="#666"
             numberOfLines={1}
@@ -548,6 +671,89 @@ const BrowseCategories = ({navigation}) => {
             </TouchableOpacity>
           );
         })}
+
+        {/* Custom Categories */}
+        {customCategories.map(cat => {
+          const isSelected = selectedCategory === cat.title;
+          return (
+            <TouchableOpacity
+              key={cat._id}
+              style={[
+                styles.categoryItem,
+                styles.customCategoryTile,
+                isSelected && styles.customCategoryTileSelected,
+              ]}
+              onPress={() => {
+                setCustomPlace('');
+                setSelectedCategory(cat.title);
+              }}
+              onLongPress={() => handleLongPressCustomCategory(cat)}
+              delayLongPress={400}
+              activeOpacity={0.7}>
+              {isSelected && (
+                <Svg height="100%" width="100%" style={StyleSheet.absoluteFill}>
+                  <Defs>
+                    <LinearGradient
+                      id={`grad-${cat._id}`}
+                      x1="0%"
+                      y1="0%"
+                      x2="0%"
+                      y2="100%">
+                      <Stop offset="0%" stopColor="#EB864D" />
+                      <Stop offset="100%" stopColor="#47082E" />
+                    </LinearGradient>
+                  </Defs>
+                  <Rect
+                    width="100%"
+                    height="100%"
+                    rx="18"
+                    fill={`url(#grad-${cat._id})`}
+                  />
+                </Svg>
+              )}
+              <Ionicons
+                name="star-outline"
+                size={26}
+                color={isSelected ? '#FFF' : '#47082E'}
+              />
+              <AppText
+                title={cat.title}
+                textSize={1.2}
+                textColor={isSelected ? '#FFF' : '#47082E'}
+                textFontWeight
+                textAlignment="center"
+                paddingHorizontal={2}
+              />
+            </TouchableOpacity>
+          );
+        })}
+
+        {/* + Add Custom Category Button — always last */}
+        <TouchableOpacity
+          style={[styles.categoryItem, styles.addCategoryTile]}
+          onPress={() => {
+            if (!subscription) {
+              ShowToast(
+                'info',
+                'Purchase any subscription to create custom categories.',
+              );
+              setTimeout(() => {
+                navigation.navigate('Subscriptions');
+              }, 1000);
+              return;
+            }
+            setAddCategoryModalVisible(true);
+          }}
+          activeOpacity={0.7}>
+          <Ionicons name="add" size={32} color="#47082E" />
+          <AppText
+            title="Add"
+            textSize={1.2}
+            textColor="#47082E"
+            textFontWeight
+            textAlignment="center"
+          />
+        </TouchableOpacity>
       </View>
 
       <View style={styles.searchBarContainer}>
@@ -567,6 +773,7 @@ const BrowseCategories = ({navigation}) => {
   );
 
   console.log('isListBuilt:-', isListBuilt);
+  // console.log('subscription:-', userData?.subscription);
 
   return (
     <ScreenWrapper>
@@ -589,16 +796,47 @@ const BrowseCategories = ({navigation}) => {
         </View>
 
         <FlatList
-          data={places_nearby}
+          data={isCustomSelected ? customCategoryItems : places_nearby}
           renderItem={renderPlaceItem}
           ListHeaderComponent={ListHeader()}
-          keyExtractor={item => item.place_id}
+          keyExtractor={(item, index) =>
+            item.place_id || item.placeId || String(index)
+          }
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             !loading && (
-              <View style={styles.center}>
-                <AppText title="No places found nearby." textColor="#666" />
+              <View
+                style={[
+                  styles.center,
+                  {paddingHorizontal: 30, paddingTop: 20},
+                ]}>
+                {isCustomSelected ? (
+                  <>
+                    <Ionicons
+                      name="folder-open-outline"
+                      size={48}
+                      color="#47082E"
+                      style={{opacity: 0.4, marginBottom: 10}}
+                    />
+                    <AppText
+                      title={`"${selectedCategory}" is empty`}
+                      textColor="#47082E"
+                      textSize={1.8}
+                      textFontWeight
+                      textAlignment="center"
+                    />
+                    <AppText
+                      title="No places have been added to this category yet."
+                      textColor="#999"
+                      textSize={1.4}
+                      textAlignment="center"
+                      marginTop={1}
+                    />
+                  </>
+                ) : (
+                  <AppText title="No places found nearby." textColor="#666" />
+                )}
               </View>
             )
           }
@@ -609,12 +847,8 @@ const BrowseCategories = ({navigation}) => {
             activeOpacity={0.8}
             onPress={() => {
               if (isListBuilt) {
-                // Already inside the Main navigator (e.g. from Build List tab or Profile)
-                // — just go back, 'Main' is not a reachable screen from here
                 navigation.goBack();
               } else {
-                // First-time onboarding: flip the flag and Routes.jsx
-                // will automatically swap to the Main screen
                 dispatch(setIsListBuilt(true));
               }
             }}
@@ -639,6 +873,141 @@ const BrowseCategories = ({navigation}) => {
             />
           </TouchableOpacity>
         </View>
+
+        {/* Add Custom Category Modal */}
+        <Modal
+          isVisible={addCategoryModalVisible}
+          backdropOpacity={0.5}
+          onBackdropPress={() => {
+            if (!isCreatingCategory) setAddCategoryModalVisible(false);
+          }}
+          onBackButtonPress={() => {
+            if (!isCreatingCategory) setAddCategoryModalVisible(false);
+          }}
+          animationIn="slideInUp"
+          animationOut="slideOutDown"
+          style={{margin: 0, justifyContent: 'flex-end'}}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <AppText
+                title="Create Custom Category"
+                textColor="#47082E"
+                textSize={2.2}
+                textFontWeight
+              />
+              <TouchableOpacity
+                disabled={isCreatingCategory}
+                onPress={() => {
+                  setAddCategoryModalVisible(false);
+                  setNewCategoryTitle('');
+                }}>
+                <Ionicons name="close" size={24} color="#47082E" />
+              </TouchableOpacity>
+            </View>
+
+            <AppText
+              title="Category Title"
+              textColor="#666"
+              textSize={1.5}
+              paddingBottom={1.5}
+            />
+            <TextInput
+              style={styles.modalInput}
+              placeholder="e.g. Sushi spots, Coffee places"
+              placeholderTextColor="#999"
+              value={newCategoryTitle}
+              onChangeText={setNewCategoryTitle}
+              editable={!isCreatingCategory}
+            />
+
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={[styles.confirmBtn, isCreatingCategory && {opacity: 0.7}]}
+              disabled={isCreatingCategory}
+              onPress={handleCreateCategory}>
+              {isCreatingCategory ? (
+                <ActivityIndicator color="#FFF" />
+              ) : (
+                <AppText
+                  title="Create"
+                  textColor="#FFF"
+                  textSize={1.8}
+                  textFontWeight
+                />
+              )}
+            </TouchableOpacity>
+          </View>
+        </Modal>
+
+        {/* Delete Custom Category Modal */}
+        <Modal
+          isVisible={deleteModalVisible}
+          backdropOpacity={0.5}
+          onBackdropPress={() => {
+            if (!isDeletingCategory) setDeleteModalVisible(false);
+          }}
+          onBackButtonPress={() => {
+            if (!isDeletingCategory) setDeleteModalVisible(false);
+          }}
+          animationIn="zoomIn"
+          animationOut="zoomOut"
+          style={{margin: 0, justifyContent: 'center', alignItems: 'center'}}>
+          <View style={styles.deleteModalContent}>
+            <Ionicons
+              name="trash-outline"
+              size={40}
+              color="#47082E"
+              style={{marginBottom: 10}}
+            />
+            <AppText
+              title="Delete Category"
+              textColor="#47082E"
+              textSize={2.2}
+              textFontWeight
+            />
+            <AppText
+              title={`Are you sure you want to delete "${categoryToDelete?.title}"?`}
+              textColor="#666"
+              textSize={1.5}
+              marginTop={2}
+              textAlignment="center"
+              paddingBottom={2}
+            />
+            <View style={styles.deleteModalButtonRow}>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                style={styles.deleteCancelBtn}
+                disabled={isDeletingCategory}
+                onPress={() => setDeleteModalVisible(false)}>
+                <AppText
+                  title="Cancel"
+                  textColor="#47082E"
+                  textSize={1.8}
+                  textFontWeight
+                />
+              </TouchableOpacity>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                style={[
+                  styles.deleteConfirmBtn,
+                  isDeletingCategory && {opacity: 0.7},
+                ]}
+                disabled={isDeletingCategory}
+                onPress={handleDeleteCategory}>
+                {isDeletingCategory ? (
+                  <ActivityIndicator color="#FFF" />
+                ) : (
+                  <AppText
+                    title="Delete"
+                    textColor="#FFF"
+                    textSize={1.8}
+                    textFontWeight
+                  />
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </SafeAreaView>
     </ScreenWrapper>
   );
@@ -675,6 +1044,83 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.4)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.6)',
+  },
+  addCategoryTile: {
+    backgroundColor: 'rgba(255, 255, 255, 0.55)',
+    borderWidth: 2,
+    borderColor: '#47082E',
+    borderStyle: 'dashed',
+  },
+  customCategoryTile: {
+    backgroundColor: 'rgba(71, 8, 46, 0.08)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(71, 8, 46, 0.3)',
+    overflow: 'hidden',
+  },
+  customCategoryTileSelected: {
+    borderWidth: 0,
+  },
+  deleteModalContent: {
+    backgroundColor: '#FFF',
+    borderRadius: 20,
+    padding: 24,
+    width: '85%',
+    alignItems: 'center',
+  },
+  deleteModalButtonRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+    width: '100%',
+  },
+  deleteCancelBtn: {
+    flex: 1,
+    height: 50,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#47082E',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  deleteConfirmBtn: {
+    flex: 1,
+    height: 50,
+    borderRadius: 14,
+    backgroundColor: '#47082E',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#FFF',
+    borderTopLeftRadius: 25,
+    borderTopRightRadius: 25,
+    padding: 20,
+    paddingBottom: Platform.OS === 'ios' ? 35 : 20,
+    width: '100%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  modalInput: {
+    borderWidth: 1.5,
+    borderColor: '#E0E0E0',
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    height: 50,
+    fontSize: 16,
+    color: '#000',
+    marginBottom: 20,
+    backgroundColor: '#FAFAFA',
+  },
+  confirmBtn: {
+    backgroundColor: '#47082E',
+    borderRadius: 15,
+    height: 55,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   searchBarContainer: {paddingHorizontal: 20, marginVertical: 10},
   searchBarPill: {

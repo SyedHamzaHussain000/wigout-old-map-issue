@@ -33,6 +33,8 @@ export const endPoints = {
   support: '/api/user/support',
   subscribe: '/api/user/subscribe',
   customCategory: '/api/user/customCategory',
+  verifyIAPReceipt: '/api/iap/verify-with-token',
+  getUserSubscriptions: '/api/iap/getSubscription',
 };
 
 export const ShowToast = (type: 'success' | 'error' | 'info', message) => {
