@@ -1,0 +1,127 @@
+{
+  "identifier" : "WIGOUT_STOREKIT_CONFIG",
+  "nonRenewingSubscriptions" : [ ],
+  "products" : [ ],
+  "settings" : {
+    "_failRate" : 0,
+    "_storeKitVersion" : 2
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "WIGOUT_PLANS_GROUP",
+      "localizations" : [ ],
+      "name" : "WIG-OUT Plans Group",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [ ],
+          "codeOffers" : [ ],
+          "displayPrice" : "0.69",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "sub_individual_weekly_basic",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Weekly Basic",
+              "displayName" : "Weekly Basic",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "sub_individual_weekly_basic",
+          "recurringSubscriptionPeriod" : "P1W",
+          "referenceName" : "Weekly Basic",
+          "subscriptionGroupID" : "WIGOUT_PLANS_GROUP",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [ ],
+          "codeOffers" : [ ],
+          "displayPrice" : "0.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "sub_individual_weekly_premium",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Weekly Premium",
+              "displayName" : "Weekly Premium",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "sub_individual_weekly_premium",
+          "recurringSubscriptionPeriod" : "P1W",
+          "referenceName" : "Weekly Premium",
+          "subscriptionGroupID" : "WIGOUT_PLANS_GROUP",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [ ],
+          "codeOffers" : [ ],
+          "displayPrice" : "3.69",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "sub_individual_monthly_premium",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Monthly Premium",
+              "displayName" : "Monthly Premium",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "sub_individual_monthly_premium",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Monthly Premium",
+          "subscriptionGroupID" : "WIGOUT_PLANS_GROUP",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [ ],
+          "codeOffers" : [ ],
+          "displayPrice" : "1.89",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "sub_couples_weekly_premium",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Couples Weekly Premium",
+              "displayName" : "Couples Weekly Premium",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "sub_couples_weekly_premium",
+          "recurringSubscriptionPeriod" : "P1W",
+          "referenceName" : "Couples Weekly Premium",
+          "subscriptionGroupID" : "WIGOUT_PLANS_GROUP",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [ ],
+          "codeOffers" : [ ],
+          "displayPrice" : "6.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "sub_couples_monthly_premium",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Couples Monthly Premium",
+              "displayName" : "Couples Monthly Premium",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "sub_couples_monthly_premium",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Couples Monthly Premium",
+          "subscriptionGroupID" : "WIGOUT_PLANS_GROUP",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}

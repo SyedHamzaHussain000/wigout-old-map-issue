@@ -200,7 +200,8 @@ const Profile = () => {
     }
   };
 
-  console.log('userData:-', userData);
+  // console.log('userData:-', userData);
+  console.log('subscription:-', subscription);
   return (
     <ScreenWrapper>
       <ScrollView
@@ -233,14 +234,22 @@ const Profile = () => {
             />
           )}
 
-          {subscription?.plan && (
-            <AppText
-              title={`Plan: ${subscription?.plan?.toUpperCase()} ${subscription?.subType?.toUpperCase()}`}
-              textColor={AppColors.BLACK}
-              textSize={1.7}
-              textTransform={'capitalize'}
-            />
-          )}
+          {subscription?.plan &&
+            subscription?.subscriptionStatus !== 'expired' &&
+            subscription?.subscriptionStatus !== 'cancelled' &&
+            subscription?.status !== 'expired' &&
+            subscription?.status !== 'cancelled' && (
+              <AppText
+                title={`Plan: ${
+                  subscription?.subscriptionName
+                    ? subscription?.subscriptionName
+                    : subscription?.plan?.toUpperCase()
+                }`}
+                textColor={AppColors.BLACK}
+                textSize={1.7}
+                textTransform={'capitalize'}
+              />
+            )}
         </View>
 
         <LineBreak space={1} />

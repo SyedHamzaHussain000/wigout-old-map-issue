@@ -24,11 +24,12 @@ import {
   purchaseErrorListener,
   finishTransaction,
   Purchase,
+  initConnection,
+  endConnection,
 } from 'react-native-iap';
-import { verifyIAPReceipt } from './src/GlobalFunctions/main'; // Ensure this matches your fetchCurrentSubscription API inside main
+import { verifyIAPReceipt, getUserSubscription } from './src/GlobalFunctions/main'; // Ensure this matches your fetchCurrentSubscription API inside main
 import { UpdateProfile, updateNotificationSettings } from './src/redux/Slices';
 import { ShowToast } from './src/utils/api_content';
-import axios from 'axios';
 
 const BackgroundManager = () => {
   const token = useSelector((state: any) => state?.user?.token);
@@ -47,15 +48,11 @@ const BackgroundManager = () => {
     const syncSubscriptionState = async () => {
       if (token) {
         try {
-          const config = { headers: { Authorization: `Bearer ${token}` } };
-          const response = await axios.get(
-            'https://bradly-unstagnating-nonperpendicularly.ngrok-free.dev/api/iap/getSubscription',
-            config
-          );
-          if (response.data && response.data.success && response.data.subscription) {
+          const response = await getUserSubscription(token);
+          if (response && response.success && response.subscription) {
             dispatch(UpdateProfile({
               ...userDataRef.current,
-              subscription: response.data.subscription
+              subscription: response.subscription
             }));
           }
         } catch (error) {
@@ -64,7 +61,7 @@ const BackgroundManager = () => {
       }
     };
     syncSubscriptionState();
-  }, [token]);
+  }, [token, dispatch]);
 
   // ── 2. Location service: start on login, stop on logout ────────────────────
   useEffect(() => {
@@ -86,7 +83,7 @@ const BackgroundManager = () => {
       }
     };
     startService();
-  }, [token, settings?.backgroundLocation]);
+  }, [token, settings?.backgroundLocation, dispatch]);
 
   // ── 3. Socket Lifecycle Hook ───────────────────────────────────────────────
   useEffect(() => {
@@ -116,7 +113,17 @@ const BackgroundManager = () => {
     let purchaseUpdateSubscription: any;
     let purchaseErrorSubscription: any;
 
-    console.log('[Global IAP] Initializing listeners...');
+    const setupIAP = async () => {
+      try {
+        console.log('[Global IAP] Initializing connection...');
+        await initConnection();
+        console.log('[Global IAP] Connection initialized.');
+      } catch (err) {
+        console.warn('[Global IAP] Connection initialization failed:', err);
+      }
+    };
+
+    setupIAP();
 
     purchaseUpdateSubscription = purchaseUpdatedListener(async (purchase: Purchase) => {
       console.log('[Global IAP] ========= PURCHASE EVENT DETECTED =========');
@@ -128,7 +135,7 @@ const BackgroundManager = () => {
 
           // Fixed Payload parsing to exactly match Play Console and Postman Assets
           const subType = planId.includes('weekly') ? 'weekly' : 'monthly';
-          const plan = planId.includes('couples') ? 'couples' : 'individual';
+          const plan = planId?.replace('sub_', '')?.split('_')?.map(e => e.charAt(0).toUpperCase() + e.slice(1))?.join(' ');
 
           const res = await verifyIAPReceipt(token, {
             platform: Platform.OS === 'android' ? 'google' : 'apple',
@@ -139,18 +146,34 @@ const BackgroundManager = () => {
             type: 'proceed',
           });
 
-          if (res?.success && res?.user) {
+          if (res?.success) {
             ShowToast('success', 'Subscription processed successfully.');
-            // Destructure updated server response explicitly
-            dispatch(UpdateProfile(res.user));
+            const updatedUser = res.user || res.data || {
+              ...userDataRef.current,
+              subscription: {
+                ...res.subscription, plan: plan,
+
+              }
+            };
+            if (!updatedUser.subscription && res.subscription) {
+              updatedUser.subscription = res.subscription;
+            } else if (!updatedUser.subscription) {
+              updatedUser.subscription = {
+                plan: plan,
+                status: 'active',
+                productId: planId,
+              };
+            }
+            dispatch(UpdateProfile(updatedUser));
           } else {
             // Safe Local Fallback Sync
             const localFallbackUser = {
               ...userDataRef.current,
               subscription: {
-                plan: planId,
+                plan: plan,
                 status: 'active',
                 transactionId: purchase.transactionId || purchase.id,
+                productId: planId,
               },
             };
             dispatch(UpdateProfile(localFallbackUser));
@@ -166,13 +189,20 @@ const BackgroundManager = () => {
 
     purchaseErrorSubscription = purchaseErrorListener((error) => {
       console.log('[Global IAP] Purchase processing failed or cancelled:', error?.message);
+      const isCancelled = error?.message?.toLowerCase().includes('cancel') || error?.code === 'E_USER_CANCELLED';
+      if (isCancelled) {
+        ShowToast('info', 'Purchase cancelled.');
+      } else {
+        ShowToast('error', error?.message || 'Purchase processing failed.');
+      }
     });
 
     return () => {
       if (purchaseUpdateSubscription) purchaseUpdateSubscription.remove();
       if (purchaseErrorSubscription) purchaseErrorSubscription.remove();
+      endConnection();
     };
-  }, [token]); // Dependencies restricted to token context loop only
+  }, [token, dispatch]);
 
   return null;
 };

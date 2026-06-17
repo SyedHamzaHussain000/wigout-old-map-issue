@@ -732,7 +732,12 @@ const BrowseCategories = ({navigation}) => {
         <TouchableOpacity
           style={[styles.categoryItem, styles.addCategoryTile]}
           onPress={() => {
-            if (!subscription) {
+            const hasActiveSubscription = subscription &&
+              subscription.subscriptionStatus !== 'expired' &&
+              subscription.subscriptionStatus !== 'cancelled' &&
+              subscription.status !== 'expired' &&
+              subscription.status !== 'cancelled';
+            if (!hasActiveSubscription) {
               ShowToast(
                 'info',
                 'Purchase any subscription to create custom categories.',
