@@ -28,7 +28,7 @@ import {
 import {useSelector} from 'react-redux';
 import {baseUrl, ShowToast} from '../../../utils/api_content';
 
-const PremiumUsers = ({navigation}) => {
+const PremiumUsers = ({navigation, route}) => {
   const token = useSelector(state => state.user?.token);
   const [search, setSearch] = useState('');
   const [users, setUsers] = useState([]);
@@ -46,6 +46,9 @@ const PremiumUsers = ({navigation}) => {
     isAvoid: false,
     isGoAgain: false,
   });
+
+  const couplesSubscription = route?.params?.couplesSubscription || false;
+  console.log('couplesSubscription:----------', couplesSubscription);
 
   useEffect(() => {
     _getAllSubscribedUsers(1);
@@ -67,6 +70,7 @@ const PremiumUsers = ({navigation}) => {
       setPage(res?.pagination?.currentPage || pageNumber);
       setTotalPages(res?.pagination?.totalPages || 1);
     } else {
+      console.log;
       ShowToast('error', res?.message || 'Failed to fetch users');
     }
     setLoading(false);
@@ -98,6 +102,13 @@ const PremiumUsers = ({navigation}) => {
       return; // API call rokh dega
     }
 
+    if (!couplesSubscription) {
+      ShowToast(
+        'info',
+        'This Feature is available for Premium Couples Subscribers.',
+      );
+      return;
+    }
     setSharing(true);
     const res = await shareListing(token, selectedUser?._id, options);
     if (res?.success) {
@@ -251,6 +262,20 @@ const PremiumUsers = ({navigation}) => {
     [],
   );
 
+  const listEmptyComponent = useCallback(
+    () => (
+      <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+        <AppText
+          title={'No users found'}
+          textColor={AppColors.blackOpacity}
+          textSize={1.9}
+          textFontWeight
+        />
+      </View>
+    ),
+    [],
+  );
+
   return (
     <ScreenWrapper>
       {loading && users.length === 0 ? (
@@ -274,6 +299,7 @@ const PremiumUsers = ({navigation}) => {
             </View>
           )}
           onRefresh={onRefresh}
+          ListEmptyComponent={listEmptyComponent}
           refreshing={refreshing}
           onEndReached={onLoadMore}
           onEndReachedThreshold={0.5}

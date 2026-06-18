@@ -44,6 +44,14 @@ const Profile = () => {
   const iconSize = responsiveFontSize(2.2);
   const arrowSize = responsiveFontSize(2.5);
   const subscription = userData?.subscription;
+  const subscriptionName =
+    userData?.subscription?.subscriptionName || userData?.subscription?.plan;
+  const isActiveSubscription =
+    userData?.subscription?.subscriptionStatus === 'active';
+  const couplesSubscription =
+    isActiveSubscription && subscriptionName?.includes('Couples');
+
+  console.log('couplesSubscription:-------', couplesSubscription);
 
   const menuItems = useMemo(
     () => [
@@ -130,7 +138,8 @@ const Profile = () => {
       {
         id: 7,
         title: 'Premium Users',
-        navTo: 'PremiumUsers',
+        // navTo: 'PremiumUsers',
+        isPremiumUsers: true,
         icon: (
           <Ionicons
             name="people-outline"
@@ -184,6 +193,16 @@ const Profile = () => {
       setShowLogoutModal(true);
     } else if (item?.isDelete) {
       setShowDeleteModal(true);
+    } else if (item?.isPremiumUsers) {
+      navigation.navigate('PremiumUsers', {couplesSubscription});
+      // if (couplesSubscription) {
+      //   navigation.navigate('PremiumUsers');
+      // } else {
+      //   ShowToast(
+      //     'info',
+      //     'This Feature available in Premium Couples Subscription',
+      //   );
+      // }
     } else if (item.navTo) {
       navigation.navigate(item.navTo);
     }
@@ -202,6 +221,7 @@ const Profile = () => {
 
   // console.log('userData:-', userData);
   console.log('subscription:-', subscription);
+  console.log('subscriptionName:-', subscriptionName);
   return (
     <ScreenWrapper>
       <ScrollView
@@ -234,22 +254,14 @@ const Profile = () => {
             />
           )}
 
-          {subscription?.plan &&
-            subscription?.subscriptionStatus !== 'expired' &&
-            subscription?.subscriptionStatus !== 'cancelled' &&
-            subscription?.status !== 'expired' &&
-            subscription?.status !== 'cancelled' && (
-              <AppText
-                title={`Plan: ${
-                  subscription?.subscriptionName
-                    ? subscription?.subscriptionName
-                    : subscription?.plan?.toUpperCase()
-                }`}
-                textColor={AppColors.BLACK}
-                textSize={1.7}
-                textTransform={'capitalize'}
-              />
-            )}
+          {isActiveSubscription && (
+            <AppText
+              title={`Plan: ${subscription?.subscriptionName}`}
+              textColor={AppColors.BLACK}
+              textSize={1.7}
+              textTransform={'capitalize'}
+            />
+          )}
         </View>
 
         <LineBreak space={1} />

@@ -16,21 +16,6 @@ const LatLngIntoAddress = async (lat, lng) => {
 
     console.log('LatLngIntoAddress URL:-', url);
 
-    // Temporary diagnostic tests
-    try {
-      const testRes = await axios.get('https://httpbin.org/get');
-      console.log('Test Request httpbin Success:', testRes.data ? 'Yes' : 'No');
-    } catch (e) {
-      console.log('Test Request httpbin Failed:', e.message);
-    }
-
-    try {
-      const testRes = await axios.get('https://www.google.com');
-      console.log('Test Request google.com Success:', testRes.status);
-    } catch (e) {
-      console.log('Test Request google.com Failed:', e.message);
-    }
-
     try {
       const fetchRes = await fetch(url);
       const fetchJson = await fetchRes.json();

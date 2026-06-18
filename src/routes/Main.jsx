@@ -1,7 +1,7 @@
 import React from 'react';
-import { Platform } from 'react-native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createStackNavigator } from '@react-navigation/stack';
+import {Platform} from 'react-native';
+import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+import {createStackNavigator} from '@react-navigation/stack';
 
 // Utils & Theme
 import {
@@ -49,6 +49,7 @@ import PremiumUsers from '../screens/main/Profile/PremiumUsers';
 import SharedList from '../screens/main/SharedList';
 import CustomerService from '../screens/main/Profile/CustomerService';
 import Subscriptions from '../screens/main/Profile/Subscriptions';
+import Payment from '../screens/main/Payment';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -87,17 +88,17 @@ const TAB_CONFIG = {
 const MyTabs = () => {
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
+      screenOptions={({route}) => ({
         headerShown: false,
         tabBarActiveTintColor: AppColors.WHITE,
-        tabBarLabelStyle: { fontSize: responsiveFontSize(1.4) },
+        tabBarLabelStyle: {fontSize: responsiveFontSize(1.4)},
         tabBarStyle: {
           height: responsiveHeight(10),
           paddingTop: responsiveHeight(1.5),
           backgroundColor: AppColors.BTNCOLOURS,
           marginTop: -responsiveHeight(IOS ? 4 : 2.4),
         },
-        tabBarIcon: ({ focused, color, size }) => {
+        tabBarIcon: ({focused, color, size}) => {
           const config = TAB_CONFIG[route.name];
           if (!config) return null;
 
@@ -112,7 +113,7 @@ const MyTabs = () => {
       <Tab.Screen
         name="Build List"
         component={BuildYourList}
-        initialParams={{ isFromTab: true }}
+        initialParams={{isFromTab: true}}
       />
       <Tab.Screen name="Explore" component={Home} />
       <Tab.Screen name="Local Faves" component={TopRated} />
@@ -125,7 +126,7 @@ const Main = () => {
   return (
     <Stack.Navigator
       initialRouteName="MainTabs"
-      screenOptions={{ headerShown: false }}>
+      screenOptions={{headerShown: false}}>
       <Stack.Screen name="MainTabs" component={MyTabs} />
 
       {/* Grouping related screens mentally makes this easier to manage */}
@@ -165,6 +166,7 @@ const Main = () => {
       <Stack.Screen name="SharedList" component={SharedList} />
       <Stack.Screen name="CustomerService" component={CustomerService} />
       <Stack.Screen name="Subscriptions" component={Subscriptions} />
+      <Stack.Screen name="Payment" component={Payment} />
     </Stack.Navigator>
   );
 };

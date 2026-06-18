@@ -10,6 +10,7 @@ import {
   SafeAreaView,
   ActivityIndicator,
   Platform,
+  Alert,
 } from 'react-native';
 import Modal from 'react-native-modal';
 import {useDispatch, useSelector} from 'react-redux';
@@ -87,6 +88,17 @@ const BrowseCategories = ({navigation}) => {
 
   const debouncedSearch = useDebounce(customPlace, 600);
   const subscription = userData?.subscription;
+  const subscriptionName =
+    userData?.subscription?.subscriptionName || userData?.subscription?.plan;
+  const isActiveSubscription =
+    userData?.subscription?.subscriptionStatus === 'active';
+  const isIndividualSubscription =
+    isActiveSubscription && subscriptionName?.includes('Individual');
+  const premiumSubscriber =
+    isActiveSubscription && subscriptionName?.includes('Premium');
+  console.log('subscriptionName:----------', subscriptionName);
+  console.log('isIndividualSubscription:----------', isIndividualSubscription);
+  console.log('premiumSubscriber:----------', premiumSubscriber);
 
   const categories = useMemo(
     () => [
@@ -165,8 +177,14 @@ const BrowseCategories = ({navigation}) => {
     if (!token) return;
     try {
       const res = await getCustomCategories(token);
-      if (res?.success) {
-        setCustomCategories(res?.customCategories || []);
+      if (res?.success && res?.customCategories) {
+        const sortedCategories = [...res.customCategories].sort((a, b) => {
+          return new Date(a.createdAt) - new Date(b.createdAt);
+        });
+
+        setCustomCategories(sortedCategories);
+      } else {
+        setCustomCategories([]);
       }
     } catch (error) {
       console.log('Error fetching custom categories:', error);
@@ -174,24 +192,89 @@ const BrowseCategories = ({navigation}) => {
   }, [token]);
 
   const handleCreateCategory = async () => {
-    if (!newCategoryTitle.trim()) {
+    const titleTrimmed = newCategoryTitle.trim();
+
+    // 1. Validation Check: Input empty nahi hona chahiye
+    if (!titleTrimmed) {
       ShowToast('error', 'Please enter a category title.');
       return;
     }
+
+    // 2. Global Subscription Security Gate
+    if (!isActiveSubscription) {
+      ShowToast(
+        'info',
+        'Purchase any Individual subscription to create custom categories.',
+      );
+      setTimeout(() => {
+        setAddCategoryModalVisible(false);
+        navigation.navigate('Subscriptions');
+      }, 2000);
+      return;
+    }
+
+    // 3. CORE LOGIC EVALUATION
+    const currentCount = customCategories?.length || 0;
+
+    // SCENARIO A: User is Individual Premium (Unlimited creation access)
+    if (premiumSubscriber) {
+      await executeCategoryCreationAPI(titleTrimmed);
+      return;
+    }
+
+    // SCENARIO B: User is Individual Basic
+    if (isIndividualSubscription) {
+      if (currentCount === 0) {
+        // First category is free under basic tier standard
+        await executeCategoryCreationAPI(titleTrimmed);
+      } else {
+        // Attempting to make more than 1 category requires explicit $3 execution prompt
+        Alert.alert(
+          'Limit Reached (Basic Plan)',
+          'Your Basic plan includes 1 free custom category. Would you like to pay $3.00 to unlock an additional custom category slots?',
+          [
+            {
+              text: 'Cancel',
+              style: 'cancel',
+            },
+            {
+              text: 'Pay $3.00 Now',
+              onPress: () => {
+                console.log(
+                  '[IAP Simulation] Executing microtransaction for $3...',
+                );
+                setAddCategoryModalVisible(false);
+                navigateToRoute('Payment');
+                // executeCategoryCreationAPI(titleTrimmed);
+              },
+            },
+          ],
+          {cancelable: true},
+        );
+      }
+      return;
+    }
+
+    // Fallback safeguard logic (e.g. Couples plans or unhandled states)
+    await executeCategoryCreationAPI(titleTrimmed);
+  };
+
+  // Dedicated abstraction helper to keep your API calling logic clean
+  const executeCategoryCreationAPI = async categoryTitle => {
     setIsCreatingCategory(true);
     try {
-      const res = await createCustomCategory(token, newCategoryTitle.trim());
+      const res = await createCustomCategory(token, categoryTitle);
       if (res?.success) {
         ShowToast('success', 'Category created successfully!');
         setNewCategoryTitle('');
         setAddCategoryModalVisible(false);
-        await fetchCustomCategories();
+        await fetchCustomCategories(); // Synchronize lists layout
       } else {
         ShowToast('error', res?.message || 'Failed to create category.');
       }
     } catch (error) {
-      console.log('Error creating category:', error);
-      ShowToast('error', 'An error occurred.');
+      console.log('Error executing category creation flow:', error);
+      ShowToast('error', 'An error occurred while linking container database.');
     } finally {
       setIsCreatingCategory(false);
     }
@@ -263,7 +346,9 @@ const BrowseCategories = ({navigation}) => {
   // Derived: items of the currently selected custom category
   const customCategoryItems = useMemo(() => {
     if (!isCustomSelected) return [];
-    const found = customCategories.find(c => c.title === selectedCategory);
+    const found = customCategories
+      ?.sort()
+      ?.find(c => c.title === selectedCategory);
     return found?.items || [];
   }, [isCustomSelected, customCategories, selectedCategory]);
 
@@ -780,6 +865,7 @@ const BrowseCategories = ({navigation}) => {
 
   // console.log('isListBuilt:-', isListBuilt);
   console.log('subscription:-', userData?.subscription);
+  console.log('customCategories:-', customCategories);
 
   return (
     <ScreenWrapper>
