@@ -311,46 +311,19 @@ const Subscriptions = ({navigation}) => {
           purchaseToken: receiptToken || '',
           type: 'proceed',
           signedTransactionInfo:
-            Platform.OS === 'android' ? null : receiptToken,
+            Platform.OS === 'android' ? undefined : receiptToken,
         };
         console.log('Payload:-', payload);
         const res = await verifyIAPReceipt(token, payload);
         console.log('res in verifyIAPReceipt:-', res);
 
         if (res?.success) {
-          const updatedUser = res.user ||
-            res.data || {
-              ...userData,
-              subscription: {
-                ...res.subscription,
-                plan: plan || '',
-                status: 'active',
-                productId: targetPlanId,
-              },
-            };
-          if (!updatedUser.subscription && res.subscription) {
-            updatedUser.subscription = res.subscription;
-          } else if (!updatedUser.subscription) {
-            updatedUser.subscription = {
-              plan: plan,
-              status: 'active',
-              productId: targetPlanId,
-            };
-          }
+          const updatedUser = res.user;
+
           dispatch(UpdateProfile(updatedUser));
           ShowToast('success', 'Your subscription was successfully restored!');
         } else {
-          // Local Fallback Sync
-          const restoredLocalMap = {
-            ...userData,
-            subscription: {
-              plan: plan,
-              status: 'active',
-              productId: targetPlanId,
-            },
-          };
-          dispatch(UpdateProfile(restoredLocalMap));
-          ShowToast('success', 'Subscription restored (Local Fallback Mode)!');
+          ShowToast('error', 'Subscription not restored!');
         }
       } else {
         Alert.alert(
@@ -403,7 +376,6 @@ const Subscriptions = ({navigation}) => {
               : purchase.transactionReceipt;
 
           const subType = productId.includes('monthly') ? 'monthly' : 'weekly';
-          // const plan = productId.includes('couples') ? 'couples' : 'individual';
           const plan = subProduct?.title;
 
           const res = await verifyIAPReceipt(token, {
@@ -414,35 +386,17 @@ const Subscriptions = ({navigation}) => {
             purchaseToken: purchaseToken || '',
             type: 'proceed',
             signedTransactionInfo:
-              Platform.OS === 'android' ? null : purchaseToken,
+              Platform.OS === 'android' ? undefined : purchaseToken,
           });
 
           console.log('[IAP Purchase] verifyIAPReceipt response:', res);
 
           if (res?.success) {
-            const updatedUser = res.user ||
-              res.data || {
-                ...userData,
-                subscription: {...res.subscription, plan: plan},
-                // subscription: res.subscription || {
-                //   plan,
-                //   status: 'active',
-                //   productId,
-                //   subType,
-                //   subscriptionStatus: 'active',
-                // },
-              };
-            if (!updatedUser.subscription && res.subscription) {
-              updatedUser.subscription = res.subscription;
-            } else if (!updatedUser.subscription) {
-              updatedUser.subscription = {
-                plan,
-                status: 'active',
-                productId,
-                subType,
-                subscriptionStatus: 'active',
-              };
-            }
+            const updatedUser = res.user || {
+              ...userData,
+              subscription: {...res.subscription, plan: plan},
+            };
+
             dispatch(UpdateProfile(updatedUser));
             ShowToast('success', 'Subscription activated successfully!');
           } else {
@@ -474,17 +428,13 @@ const Subscriptions = ({navigation}) => {
           ShowToast('info', 'Purchase cancelled.');
         } else {
           ShowToast('error', err?.message || 'Failed to initiate purchase.');
-          promptMockSimulation(productId);
+          // promptMockSimulation(productId);
         }
       } finally {
         setPurchasing(false);
       }
     } else {
-      ShowToast(
-        'info',
-        'Product not loaded in store. Starting Sandbox Simulation.',
-      );
-      promptMockSimulation(productId);
+      ShowToast('info', 'Product not loaded in store.');
     }
   };
 

@@ -732,7 +732,8 @@ const BrowseCategories = ({navigation}) => {
         <TouchableOpacity
           style={[styles.categoryItem, styles.addCategoryTile]}
           onPress={() => {
-            const hasActiveSubscription = subscription &&
+            const hasActiveSubscription =
+              subscription &&
               subscription.subscriptionStatus !== 'expired' &&
               subscription.subscriptionStatus !== 'cancelled' &&
               subscription.status !== 'expired' &&
@@ -777,8 +778,8 @@ const BrowseCategories = ({navigation}) => {
     </View>
   );
 
-  console.log('isListBuilt:-', isListBuilt);
-  // console.log('subscription:-', userData?.subscription);
+  // console.log('isListBuilt:-', isListBuilt);
+  console.log('subscription:-', userData?.subscription);
 
   return (
     <ScreenWrapper>

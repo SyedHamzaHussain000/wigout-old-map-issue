@@ -130,6 +130,7 @@ const BackgroundManager = () => {
       const purchaseToken = Platform.OS === 'android' ? purchase.purchaseToken : purchase.transactionReceipt;
 
       if (purchaseToken) {
+        // console.log('purchaseToken:--------', purchaseToken);
         try {
           const planId = purchase.productId;
 
@@ -144,39 +145,20 @@ const BackgroundManager = () => {
             productId: planId,
             purchaseToken: purchaseToken,
             type: 'proceed',
+            signedTransactionInfo: Platform.OS === 'android' ? undefined : purchaseToken,
           });
-
+          console.log('res:--------------', res);
           if (res?.success) {
             ShowToast('success', 'Subscription processed successfully.');
-            const updatedUser = res.user || res.data || {
+            const updatedUser = res.user || {
               ...userDataRef.current,
               subscription: {
                 ...res.subscription, plan: plan,
 
               }
             };
-            if (!updatedUser.subscription && res.subscription) {
-              updatedUser.subscription = res.subscription;
-            } else if (!updatedUser.subscription) {
-              updatedUser.subscription = {
-                plan: plan,
-                status: 'active',
-                productId: planId,
-              };
-            }
+
             dispatch(UpdateProfile(updatedUser));
-          } else {
-            // Safe Local Fallback Sync
-            const localFallbackUser = {
-              ...userDataRef.current,
-              subscription: {
-                plan: plan,
-                status: 'active',
-                transactionId: purchase.transactionId || purchase.id,
-                productId: planId,
-              },
-            };
-            dispatch(UpdateProfile(localFallbackUser));
           }
 
           // Acknowledge store lifecycle completion hook safely
