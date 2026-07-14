@@ -117,14 +117,14 @@ const checkAndNotifyForNewPlace = async (token, latitude, longitude) => {
 const checkProximityAndNotify = async token => {
   Geolocation.getCurrentPosition(
     async position => {
-      const {latitude, longitude} = position.coords;
+      // const {latitude, longitude} = position.coords;
       // console.log('Current Background Location:', latitude, longitude);
       // let latitude = 37.425433; // AVOID
       // let longitude = -122.1452; // AVOID
       // let latitude = 37.763028; // GO AGAIN
       // let longitude = -122.424111; // GO AGAIN
-      // let latitude = 37.3225578; // NEW
-      // let longitude = -122.0346885; // NEW
+      let latitude = 37.3225578; // NEW
+      let longitude = -122.0346885; // NEW
       // let latitude = 37.8063737; // WishList
       // let longitude = -122.2706835; // WishList
 

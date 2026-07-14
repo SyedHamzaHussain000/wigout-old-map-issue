@@ -96,9 +96,6 @@ const BrowseCategories = ({navigation}) => {
     isActiveSubscription && subscriptionName?.includes('Individual');
   const premiumSubscriber =
     isActiveSubscription && subscriptionName?.includes('Premium');
-  console.log('subscriptionName:----------', subscriptionName);
-  console.log('isIndividualSubscription:----------', isIndividualSubscription);
-  console.log('premiumSubscriber:----------', premiumSubscriber);
 
   const categories = useMemo(
     () => [
@@ -181,7 +178,7 @@ const BrowseCategories = ({navigation}) => {
         const sortedCategories = [...res.customCategories].sort((a, b) => {
           return new Date(a.createdAt) - new Date(b.createdAt);
         });
-
+        console.log('resss:-', res.customCategories);
         setCustomCategories(sortedCategories);
       } else {
         setCustomCategories([]);
@@ -864,8 +861,12 @@ const BrowseCategories = ({navigation}) => {
   );
 
   // console.log('isListBuilt:-', isListBuilt);
-  console.log('subscription:-', userData?.subscription);
-  console.log('customCategories:-', customCategories);
+  // console.log('subscription:-', userData?.subscription);
+  // console.log('customCategories:-', customCategories);
+  // console.log('subscriptionName:----------', subscriptionName);
+  // console.log('isIndividualSubscription:----------', isIndividualSubscription);
+  // console.log('premiumSubscriber:----------', premiumSubscriber);
+  console.log(' current_location:----------', current_location);
 
   return (
     <ScreenWrapper>

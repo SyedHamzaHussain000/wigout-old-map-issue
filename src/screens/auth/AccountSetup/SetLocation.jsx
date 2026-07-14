@@ -29,6 +29,7 @@ import LatLngIntoAddress from '../../../GlobalFunctions/other/LatLngIntoAddress'
 import {GetCurrentLocation} from '../../../GlobalFunctions/other/GetCurrentLocation';
 import AppText from '../../../components/AppTextComps/AppText';
 import FetchNearbyPlaces from '../../../ApiCalls/Main/FetchNearbyPlaces';
+import {GetPlaceName} from '../../../GlobalFunctions/other/GetPlaceName';
 
 const SetLocation = ({navigation}) => {
   const {navigateToRoute} = useCustomNavigation();
@@ -66,11 +67,11 @@ const SetLocation = ({navigation}) => {
     setLocationLoading(true);
     const location = await GetCurrentLocation();
 
-    const _LatLngIntoAddress = await LatLngIntoAddress(
+    const _LatLngIntoAddress = await GetPlaceName(
       location.latitude,
       location.longitude,
     );
-    console.log('_LatLngIntoAddress:-', _LatLngIntoAddress);
+    console.log('_LatLngIntoAddress:->', _LatLngIntoAddress);
 
     dispatch(
       setCurrentLocation({
@@ -80,9 +81,30 @@ const SetLocation = ({navigation}) => {
       }),
     );
     setLocationLoading(false);
-    const res = await FetchNearbyPlaces(location, dispatch);
-    setAllNearbyPlaces(res);
+    // const res = await FetchNearbyPlaces(location, dispatch);
+    // setAllNearbyPlaces(res);
   };
+  // const fetchCurrentLocation = async () => {
+  //   setLocationLoading(true);
+  //   const location = await GetCurrentLocation();
+
+  //   const _LatLngIntoAddress = await LatLngIntoAddress(
+  //     location.latitude,
+  //     location.longitude,
+  //   );
+  //   console.log('_LatLngIntoAddress:-', _LatLngIntoAddress);
+
+  //   dispatch(
+  //     setCurrentLocation({
+  //       latitude: location.latitude,
+  //       longitude: location.longitude,
+  //       address: _LatLngIntoAddress,
+  //     }),
+  //   );
+  //   setLocationLoading(false);
+  //   const res = await FetchNearbyPlaces(location, dispatch);
+  //   setAllNearbyPlaces(res);
+  // };
 
   const handleLocationContinue = async () => {
     if (!currentLocation.address) {
@@ -133,7 +155,7 @@ const SetLocation = ({navigation}) => {
     }
   };
 
-  // console.log('currentLocation:-', currentLocation);
+  console.log('currentLocation:-', currentLocation);
   // console.log('Address:-', currentLocation?.address);
 
   return (
